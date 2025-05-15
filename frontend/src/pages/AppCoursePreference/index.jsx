@@ -60,7 +60,11 @@ const UploadButton = styled(Button)(({ theme }) => ({
   textTransform: "none",
   "&:hover": {
     backgroundColor: "#000000",
-  }
+  },
+  width: "100%",
+  justifyContent: "flex-start",
+  padding: "8px 16px",
+  marginBottom: "8px"
 }));
 
 // Styled components for the success modal
@@ -95,6 +99,18 @@ const TrackButton = styled(Button)(({ theme }) => ({
     backgroundColor: "#e6c800",
   }
 }));
+
+// Document type definitions with user-friendly names
+const documentTypes = [
+  { value: "APPLICANTS_EVALUATION_SHEET", label: "Applicant's Evaluation Sheet" },
+  { value: "INFORMATIVE_COPY_OF_TOR", label: "Informative Copy of TOR" },
+  { value: "PSA_AUTHENTICATED_BIRTH_CERTIFICATE", label: "PSA Birth Certificate" },
+  { value: "CERTIFICATE_OF_TRANSFER_CREDENTIAL", label: "Certificate of Transfer Credential" },
+  { value: "MARRIAGE_CERTIFICATE", label: "Marriage Certificate" },
+  { value: "CERTIFICATE_OF_EMPLOYMENT", label: "Certificate of Employment" },
+  { value: "EMPLOYER_CERTIFIED_DETAILED_JOB_DESCRIPTION", label: "Employer Certified Job Description" },
+  { value: "EVIDENCE_OF_BUSINESS_OWNERSHIP", label: "Evidence of Business Ownership" }
+];
 
 const ApplicationForm = () => {
   const navigate = useNavigate();
@@ -168,6 +184,7 @@ const ApplicationForm = () => {
         name: doc.fileName,
         id: doc.documentId,
         downloadUrl: doc.downloadUrl,
+        documentType: doc.documentType // Include document type
       }));
       setFiles(documents);
     } catch (error) {
@@ -266,21 +283,25 @@ const ApplicationForm = () => {
     setSelectedCourse(null);
   };
 
-  const handleFileUpload = async (event) => {
-    const fileList = Array.from(event.target.files);
+  const handleFileUpload = async (event, documentType) => {
+    const file = event.target.files[0];
 
-    if (fileList.length === 0) {
-      handleError("No files selected for upload.");
+    if (!file) {
+      handleError("No file selected for upload.");
+      return;
+    }
+
+    // Check file size (15MB limit)
+    if (file.size > 15 * 1024 * 1024) {
+      handleError("File size exceeds the limit of 15MB");
       return;
     }
 
     // Prepare form data for file upload
     const formData = new FormData();
-    fileList.forEach((file) => {
-      formData.append("files", file);
-    });
-    formData.append("applicantId", applicantId); // Updated to use applicantId
-    formData.append("documentType", "General"); // Example document type
+    formData.append("files", file);
+    formData.append("applicantId", applicantId);
+    formData.append("documentType", documentType);
 
     try {
       const response = await axios.post("http://localhost:8080/api/documents/upload", formData, {
@@ -289,30 +310,38 @@ const ApplicationForm = () => {
         },
       });
 
-      handleSuccess("Files uploaded successfully!");
-      console.log("Uploaded files:", response.data);
+      handleSuccess(`${getDocumentTypeLabel(documentType)} uploaded successfully!`);
+      console.log("Uploaded file:", response.data);
 
-      // Handle both single and multiple file uploads
-      const uploadedFiles = Array.isArray(response.data)
-        ? response.data.map((doc) => ({
-            name: doc.fileName,
-            id: doc.documentId,
-            downloadUrl: doc.downloadUrl,
-          }))
-        : [
-            {
-              name: response.data.fileName,
-              id: response.data.documentId,
-              downloadUrl: response.data.downloadUrl,
-            },
-          ];
+      // Handle response
+      const uploadedFile = {
+        name: response.data.fileName,
+        id: response.data.documentId,
+        downloadUrl: response.data.downloadUrl,
+        documentType: documentType
+      };
 
-      // Update the local state with the uploaded files
-      setFiles((prevFiles) => [...prevFiles, ...uploadedFiles]);
+      // Update the local state with the uploaded file
+      setFiles((prevFiles) => [...prevFiles, uploadedFile]);
     } catch (error) {
-      console.error("Error uploading files:", error);
-      handleError("Failed to upload files. Please try again.");
+      console.error("Error uploading file:", error);
+      if (error.response && error.response.data) {
+        handleError(`Failed to upload: ${error.response.data}`);
+      } else {
+        handleError("Failed to upload file. Please try again.");
+      }
     }
+  };
+
+  // Helper function to get document type label
+  const getDocumentTypeLabel = (value) => {
+    const docType = documentTypes.find(type => type.value === value);
+    return docType ? docType.label : value;
+  };
+
+  // Check if a document type already has a file uploaded
+  const isDocumentTypeUploaded = (documentType) => {
+    return files.some(file => file.documentType === documentType);
   };
 
   const handleSubmit = async () => {
@@ -380,8 +409,8 @@ const ApplicationForm = () => {
         </Typography>
         
         <ApplicationPaper elevation={3}>
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={7}>
+          <Grid container spacing={4} sx={{ flexWrap: "nowrap" }}>
+            <Grid item md={7} sx={{ minWidth: 0, flex: 1 }}>
               <Stack spacing={3}>
                 <Box>
                   <Typography variant="subtitle2" gutterBottom>Name:</Typography>
@@ -460,27 +489,98 @@ const ApplicationForm = () => {
               </Stack>
             </Grid>
             
-            <Grid item xs={12} md={5}>
+            <Grid item md={5} sx={{ minWidth: 0, flex: 1 }}>
               <Stack spacing={3}>
-                <Typography variant="subtitle1">Upload Documents</Typography>
+                <Typography variant="subtitle1">Required Documents</Typography>
                 
-                <UploadButton
-                  variant="contained"
-                  component="label"
-                  startIcon={<UploadFile />}
-                  size="small"
-                >
-                  Select File
-                  <input
-                    type="file"
-                    hidden
-                    onChange={handleFileUpload}
-                    multiple
-                  />
-                </UploadButton>
+                {/* Document upload buttons */}
+                <Box sx={{ maxHeight: 300, overflow: "auto", border: "1px solid #e0e0e0", borderRadius: 1, p: 2 }}>
+                  {documentTypes.map((docType) => {
+                    // Check if a file has already been uploaded for this document type
+                    const uploadedDoc = files.find(file => file.documentType === docType.value);
+                    
+                    return (
+                      <Box key={docType.value} sx={{ mb: 2 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                          <Typography variant="body2" fontWeight={uploadedDoc ? "bold" : "normal"}>
+                            {docType.label}
+                            {uploadedDoc && 
+                              <Box component="span" sx={{ ml: 1, color: "success.main" }}>
+                                ✓
+                              </Box>
+                            }
+                          </Typography>
+                        </Box>
+                        
+                        {uploadedDoc ? (
+                          <Box 
+                            sx={{ 
+                              p: 1, 
+                              bgcolor: "#f0f0f0", 
+                              borderRadius: 1,
+                              display: "flex",
+                              alignItems: "center"
+                            }}
+                          >
+                            <Box 
+                              sx={{ 
+                                width: 8, 
+                                height: 8, 
+                                borderRadius: '50%', 
+                                bgcolor: '#800000',
+                                mr: 1 
+                              }} 
+                            />
+                            <a 
+                              href={uploadedDoc.downloadUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{ 
+                                color: '#800000', 
+                                textDecoration: 'none',
+                                fontWeight: 500,
+                                flexGrow: 1
+                              }}
+                            >
+                              {uploadedDoc.name}
+                            </a>
+                            <Button
+                              size="small"
+                              variant="text"
+                              color="primary"
+                              component="label"
+                              sx={{ minWidth: "auto" }}
+                            >
+                              Change
+                              <input
+                                type="file"
+                                hidden
+                                onChange={(e) => handleFileUpload(e, docType.value)}
+                              />
+                            </Button>
+                          </Box>
+                        ) : (
+                          <UploadButton
+                            variant="contained"
+                            component="label"
+                            startIcon={<UploadFile />}
+                            size="small"
+                          >
+                            Upload {docType.label}
+                            <input
+                              type="file"
+                              hidden
+                              onChange={(e) => handleFileUpload(e, docType.value)}
+                            />
+                          </UploadButton>
+                        )}
+                      </Box>
+                    );
+                  })}
+                </Box>
                 
                 <Box>
-                  <Typography variant="subtitle2" gutterBottom>Files Uploaded</Typography>
+                  <Typography variant="subtitle2" gutterBottom>Files Uploaded ({files.length})</Typography>
                   {files.length > 0 ? (
                     <List dense sx={{ 
                       bgcolor: "#f5f5f5", 
@@ -519,6 +619,7 @@ const ApplicationForm = () => {
                                   </a>
                                 </Box>
                               }
+                              secondary={getDocumentTypeLabel(file.documentType)}
                             />
                           </ListItem>
                         </React.Fragment>
