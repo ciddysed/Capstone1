@@ -11,16 +11,11 @@ import {
   ListItem,
   Button,
   Stack,
-  FormControl,
-  MenuItem,
-  Select,
-  InputLabel,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import SearchIcon from "@mui/icons-material/Search";
 import logo from "../../assets/logo.png";
 import backgroundImage from "../../assets/login-bg.png";
-import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 
 const ListLayout = ({ children }) => {
@@ -28,6 +23,20 @@ const ListLayout = ({ children }) => {
   const [activeButton, setActiveButton] = useState("Dashboard");
 
   const navItems = ["Applicants", "Logout"];
+
+  const handleNotificationClick = () => {
+    navigate("/login");
+  };
+
+  const handleNavItemClick = (item) => {
+    setActiveButton(item);
+
+    if (item === "Applicants") {
+      navigate("/evaluator/applicants");
+    } else if (item === "Logout") {
+      navigate("/login");
+    }
+  };
 
   return (
     <Box
@@ -62,7 +71,7 @@ const ListLayout = ({ children }) => {
               <ListItem key={item} disablePadding sx={{ my: 1 }}>
                 <Button
                   fullWidth
-                  onClick={() => setActiveButton(item)}
+                  onClick={() => handleNavItemClick(item)}
                   sx={{
                     justifyContent: "flex-start",
                     color: activeButton === item ? "#000" : "#fff",
@@ -113,7 +122,7 @@ const ListLayout = ({ children }) => {
                     sx: { borderRadius: 5, bgcolor: "#fff" },
                   }}
                 />
-                <IconButton onClick={navigate("/login")}>
+                <IconButton onClick={handleNotificationClick}>
                   <NotificationsIcon />
                 </IconButton>
               </Box>

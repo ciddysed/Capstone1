@@ -29,6 +29,11 @@ const getValidationSchema = (formType) =>
         .string()
         .oneOf([yup.ref("password")], "Passwords must match")
         .required("Please re-enter password"),
+      name: yup.string().required("Name is required"),
+      contactNumber: yup
+        .string()
+        .required("Contact number is required")
+        .matches(/^[0-9]+$/, "Must be only digits"),
     }),
   });
 
@@ -64,7 +69,8 @@ const EvaluatorLoginForm = ({
             body: JSON.stringify({
               email: data.email,
               password: data.password,
-              // Add other fields if needed for Evaluator model
+              name: data.name,
+              contactNumber: data.contactNumber,
             }),
           }
         );
@@ -144,6 +150,19 @@ const EvaluatorLoginForm = ({
         </Stack>
         <Stack gap={2}>
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            {currentFormType === "signup" && (
+              <StyledTextField
+                type="text"
+                fullWidth
+                placeholder="Enter your name"
+                variant="outlined"
+                size="small"
+                {...register("name")}
+                error={!!errors.name}
+                helperText={errors.name?.message}
+              />
+            )}
+            
             <StyledTextField
               type="email"
               fullWidth
@@ -154,6 +173,19 @@ const EvaluatorLoginForm = ({
               error={!!errors.email}
               helperText={errors.email?.message}
             />
+
+            {currentFormType === "signup" && (
+              <StyledTextField
+                type="text"
+                fullWidth
+                placeholder="Enter your contact number"
+                variant="outlined"
+                size="small"
+                {...register("contactNumber")}
+                error={!!errors.contactNumber}
+                helperText={errors.contactNumber?.message}
+              />
+            )}
 
             <StyledTextField
               type="password"
