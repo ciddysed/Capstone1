@@ -13,7 +13,7 @@ import EvaluatorHomePage from "../pages/evaluators/HomePage";
 import ApplicantsListPage from "../pages/evaluators/ApplicantsListPage";
 import ViewApplicantPage from "../pages/evaluators/ViewApplicantPage";
 import OrganizedCourseDialog from "../components/OrganizedCourseDialog";
-
+import DocumentPreviewPage from "../pages/ApplicationTrack/DocumentPreviewModal";
 
 const AppRoutes = () => {
   return useRoutes([
@@ -102,6 +102,15 @@ const AppRoutes = () => {
         // <ProtectedRoute>
         <EvaluatorHomePage />
         // </ProtectedRoute>
+      ),
+    },
+
+    {
+      path: "/document-preview/:id",
+      element: (
+        <ProtectedRoute>
+          <DocumentPreviewPage />
+        </ProtectedRoute>
       ),
     },
 
