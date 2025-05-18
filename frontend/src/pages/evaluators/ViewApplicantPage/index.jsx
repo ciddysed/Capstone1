@@ -9,8 +9,15 @@ import {
   List,
   ListItem,
   ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import DownloadIcon from "@mui/icons-material/Download";
 import { useNavigate, useLocation } from "react-router-dom";
 import ListLayout from "../../../templates/ListLayout";
 
@@ -24,6 +31,11 @@ const ViewApplicantPage = () => {
   const [coursePreferences, setCoursePreferences] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [previewType, setPreviewType] = useState("");
+  const [previewFileName, setPreviewFileName] = useState("");
 
   useEffect(() => {
     if (!applicantId) return;
@@ -33,11 +45,21 @@ const ViewApplicantPage = () => {
       .then(setApplicant)
       .catch(() => setApplicant(null));
 
-    // Fetch course preferences
+    // Fetch course preferences and set selectedCourse to the first course (if any)
     fetch(`http://localhost:8080/api/preferences/applicant/${applicantId}`)
       .then((res) => res.json())
-      .then(setCoursePreferences)
-      .catch(() => setCoursePreferences([]));
+      .then((prefs) => {
+        setCoursePreferences(prefs);
+        if (prefs && prefs.length > 0 && prefs[0].course) {
+          setSelectedCourse(prefs[0].course);
+        } else {
+          setSelectedCourse(null);
+        }
+      })
+      .catch(() => {
+        setCoursePreferences([]);
+        setSelectedCourse(null);
+      });
 
     // Fetch documents with error handling for 500
     fetch(`http://localhost:8080/api/documents/applicant/${applicantId}`)
@@ -73,6 +95,22 @@ const ViewApplicantPage = () => {
       THIRD: "Course 3",
     };
     return formats[priority] || priority;
+  };
+
+  // Helper to preview document in modal
+  const handlePreview = (doc) => {
+    const url = `http://localhost:8080/api/documents/preview/${doc.documentId}`;
+    setPreviewUrl(url);
+    // Defensive: check for fileName or name before calling toLowerCase
+    const fileName = doc.fileName || doc.name || "";
+    setPreviewType(typeof fileName === "string" ? fileName.toLowerCase() : "");
+    setPreviewFileName(fileName);
+    setPreviewOpen(true);
+  };
+
+  // Helper to download document
+  const handleDownload = (docId) => {
+    window.open(`http://localhost:8080/api/documents/download/${docId}`, "_blank");
   };
 
   return (
@@ -129,58 +167,104 @@ const ViewApplicantPage = () => {
           </Stack>
         </Paper>
 
-        {/* Right: Course Preferences & Documents */}
-        <Paper elevation={4} sx={{ flex: 1, p: 3 }}>
-          <Typography
-            variant="subtitle1"
-            fontWeight={600}
-            sx={{ mb: 2, borderBottom: "2px solid #ddd", pb: 1 }}
-          >
-            Course Preferences
-          </Typography>
-          <List dense sx={{ bgcolor: "#f5f5f5", borderRadius: 1, mb: 2 }}>
-            {coursePreferences.length > 0 ? (
-              coursePreferences.map((pref, idx) => (
-                <ListItem key={idx}>
-                  <ListItemText
-                    primary={`${formatPriority(pref.priorityOrder)}: ${getCourseName(
-                      pref.course.courseId
-                    )}`}
-                    secondary={pref.status}
-                  />
-                  <Chip label={pref.status} />
+        {/* Right: Applied For and Uploaded Documents */}
+        <Stack flex={1} spacing={2}>
+          {/* Applied For Paper */}
+          <Paper elevation={4} sx={{ p: 3 }}>
+            <Typography
+              variant="subtitle1"
+              fontWeight={600}
+              sx={{ mb: 2, borderBottom: "2px solid #ddd", pb: 1 }}
+            >
+              Applied for
+            </Typography>
+            <Typography variant="body1" fontWeight={500}>
+              {selectedCourse ? selectedCourse.courseName : "-"}
+            </Typography>
+          </Paper>
+          {/* Uploaded Documents Paper */}
+          <Paper elevation={4} sx={{ p: 3 }}>
+            <Typography
+              variant="subtitle1"
+              fontWeight={600}
+              sx={{ mb: 2, borderBottom: "2px solid #ddd", pb: 1 }}
+            >
+              Uploaded Documents
+            </Typography>
+            <List dense sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}>
+              {documents.length > 0 ? (
+                documents.map((doc, idx) => (
+                  <ListItem key={idx}
+                    secondaryAction={
+                      <Stack direction="row" spacing={1}>
+                        <IconButton
+                          edge="end"
+                          aria-label="preview"
+                          onClick={() => handlePreview(doc)}
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                        <IconButton
+                          edge="end"
+                          aria-label="download"
+                          onClick={() => handleDownload(doc.documentId)}
+                        >
+                          <DownloadIcon />
+                        </IconButton>
+                      </Stack>
+                    }
+                  >
+                    <ListItemText primary={doc.fileName || doc.name} />
+                  </ListItem>
+                ))
+              ) : (
+                <ListItem>
+                  <ListItemText primary="No documents uploaded yet." />
                 </ListItem>
-              ))
-            ) : (
-              <ListItem>
-                <ListItemText primary="No course preferences found." />
-              </ListItem>
-            )}
-          </List>
-
-          <Typography
-            variant="subtitle1"
-            fontWeight={600}
-            sx={{ mb: 2, borderBottom: "2px solid #ddd", pb: 1 }}
-          >
-            Uploaded Documents
-          </Typography>
-          <List dense sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}>
-            {documents.length > 0 ? (
-              documents.map((doc, idx) => (
-                <ListItem key={idx}>
-                  <ListItemText primary={doc.fileName || doc.name} />
-                  {/* Add download/view buttons as needed */}
-                </ListItem>
-              ))
-            ) : (
-              <ListItem>
-                <ListItemText primary="No documents uploaded yet." />
-              </ListItem>
-            )}
-          </List>
-        </Paper>
+              )}
+            </List>
+          </Paper>
+        </Stack>
       </Stack>
+
+      {/* Preview Modal */}
+      <Dialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Preview: {previewFileName}
+        </DialogTitle>
+        <DialogContent dividers sx={{ minHeight: 400 }}>
+          {previewType.endsWith(".pdf") ? (
+            <iframe
+              src={previewUrl}
+              title="PDF Preview"
+              width="100%"
+              height="500px"
+              style={{ border: "none" }}
+            />
+          ) : previewType.endsWith(".jpg") ||
+            previewType.endsWith(".jpeg") ||
+            previewType.endsWith(".png") ||
+            previewType.endsWith(".gif") ? (
+            <img
+              src={previewUrl}
+              alt="Document Preview"
+              style={{ maxWidth: "100%", maxHeight: 500, display: "block", margin: "0 auto" }}
+            />
+          ) : (
+            <Typography>
+              Preview not available for this file type.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPreviewOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </ListLayout>
   );
 };
