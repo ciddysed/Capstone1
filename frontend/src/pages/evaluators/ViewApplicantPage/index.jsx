@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -11,28 +11,76 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Chip,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import DownloadIcon from "@mui/icons-material/Download";
-import { useNavigate } from "react-router-dom";
-import ListLayout from "../../../templates/ListLayout"; // Adjust path if needed
-
-const applicant = {
-  name: "John Doe",
-  email: "john@example.com",
-  dateApplied: "2025-05-05",
-  address: "123 Sample Street, Cebu City",
-  appliedFor: "Evaluator",
-};
-
-const documents = [
-  { id: 1, requirement: "Resume", filename: "john_doe_resume.pdf" },
-  { id: 2, requirement: "Transcript", filename: "john_doe_transcript.pdf" },
-];
+import { useNavigate, useLocation } from "react-router-dom";
+import ListLayout from "../../../templates/ListLayout";
 
 const ViewApplicantPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { applicantId } = location.state || {};
+
+  const [applicant, setApplicant] = useState(null);
+  const [coursePreferences, setCoursePreferences] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [courses, setCourses] = useState([]);
+
+  useEffect(() => {
+    if (!applicantId) return;
+    // Fetch applicant profile
+    fetch(`http://localhost:8080/api/applicants/${applicantId}`)
+      .then((res) => res.json())
+      .then(setApplicant)
+      .catch(() => setApplicant(null));
+
+    // Fetch course preferences
+    fetch(`http://localhost:8080/api/preferences/applicant/${applicantId}`)
+      .then((res) => res.json())
+      .then(setCoursePreferences)
+      .catch(() => setCoursePreferences([]));
+
+    // Fetch documents with error handling for 500
+    fetch(`http://localhost:8080/api/documents/applicant/${applicantId}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          // If backend returns 500 or error, return empty array
+          return [];
+        }
+        // Defensive: try/catch for .json()
+        try {
+          return await res.json();
+        } catch {
+          return [];
+        }
+      })
+      .then(setDocuments)
+      .catch(() => setDocuments([]));
+
+    // Fetch all courses for mapping courseId to courseName
+    fetch("http://localhost:8080/api/courses")
+      .then((res) => res.json())
+      .then(setCourses)
+      .catch(() => setCourses([]));
+  }, [applicantId]);
+
+  const getCourseName = (courseId) => {
+    const course = courses.find((c) => c.courseId === courseId);
+    return course ? course.courseName : "-";
+  };
+
+  const formatPriority = (priority) => {
+    const formats = {
+      FIRST: "Course 1",
+      SECOND: "Course 2",
+      THIRD: "Course 3",
+    };
+    return formats[priority] || priority;
+  };
 
   return (
     <ListLayout>
@@ -58,16 +106,65 @@ const ViewApplicantPage = () => {
             Applicant Profile
           </Typography>
           <Stack spacing={1}>
-            <DetailRow label="Name" value={applicant.name} />
-            <DetailRow label="Email" value={applicant.email} />
-            <DetailRow label="Date Applied" value={applicant.dateApplied} />
-            <DetailRow label="Address" value={applicant.address} />
-            <DetailRow label="Applied For" value={applicant.appliedFor} />
+            <DetailRow
+              label="Name"
+              value={
+                applicant
+                  ? [
+                      applicant.firstName,
+                      applicant.middleInitial
+                        ? applicant.middleInitial + "."
+                        : "",
+                      applicant.lastName,
+                    ]
+                      .filter(Boolean)
+                      .join(" ")
+                  : "-"
+              }
+            />
+            <DetailRow label="Email" value={applicant?.email || "-"} />
+            <DetailRow label="Address" value={applicant?.address || "-"} />
+            <DetailRow
+              label="Date of Birth"
+              value={
+                applicant?.dateOfBirth
+                  ? new Date(applicant.dateOfBirth).toLocaleDateString()
+                  : "-"
+              }
+            />
+            <DetailRow label="Gender" value={applicant?.gender || "-"} />
           </Stack>
         </Paper>
 
-        {/* Right: Documents */}
+        {/* Right: Course Preferences & Documents */}
         <Paper elevation={4} sx={{ flex: 1, p: 3 }}>
+          <Typography
+            variant="subtitle1"
+            fontWeight={600}
+            sx={{ mb: 2, borderBottom: "2px solid #ddd", pb: 1 }}
+          >
+            Course Preferences
+          </Typography>
+          <List dense sx={{ bgcolor: "#f5f5f5", borderRadius: 1, mb: 2 }}>
+            {coursePreferences.length > 0 ? (
+              coursePreferences.map((pref, idx) => (
+                <ListItem key={idx}>
+                  <ListItemText
+                    primary={`${formatPriority(pref.priorityOrder)}: ${getCourseName(
+                      pref.course.courseId
+                    )}`}
+                    secondary={pref.status}
+                  />
+                  <Chip label={pref.status} />
+                </ListItem>
+              ))
+            ) : (
+              <ListItem>
+                <ListItemText primary="No course preferences found." />
+              </ListItem>
+            )}
+          </List>
+
           <Typography
             variant="subtitle1"
             fontWeight={600}
@@ -75,57 +172,20 @@ const ViewApplicantPage = () => {
           >
             Uploaded Documents
           </Typography>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 600 }}>Requirement</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>File Name</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 600 }}>
-                  Actions
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {documents.map((doc) => (
-                <TableRow key={doc.id}>
-                  <TableCell>{doc.requirement}</TableCell>
-                  <TableCell>{doc.filename}</TableCell>
-                  <TableCell align="center">
-                    <Stack direction="row" spacing={1} justifyContent="center">
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<VisibilityIcon />}
-                        sx={{
-                          color: "#800000",
-                          borderColor: "#800000",
-                          "&:hover": {
-                            borderColor: "#800000",
-                            backgroundColor: "#fff0f0",
-                          },
-                        }}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<DownloadIcon />}
-                        sx={{
-                          backgroundColor: "#800000",
-                          "&:hover": {
-                            backgroundColor: "#660000",
-                          },
-                        }}
-                      >
-                        Download
-                      </Button>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <List dense sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}>
+            {documents.length > 0 ? (
+              documents.map((doc, idx) => (
+                <ListItem key={idx}>
+                  <ListItemText primary={doc.fileName || doc.name} />
+                  {/* Add download/view buttons as needed */}
+                </ListItem>
+              ))
+            ) : (
+              <ListItem>
+                <ListItemText primary="No documents uploaded yet." />
+              </ListItem>
+            )}
+          </List>
         </Paper>
       </Stack>
     </ListLayout>

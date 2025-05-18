@@ -77,6 +77,7 @@ const AppRoutes = () => {
       element: (
         // <ProtectedRoute>
         <ApplicantsListPage />
+        // </ProtectedRoute>
       ),
     },
     {

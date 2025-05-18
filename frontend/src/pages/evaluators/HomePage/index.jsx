@@ -5,11 +5,24 @@ import MainLayout from "../../../templates/MainLayout";
 import backgroundImage from "../../../assets/login-bg.png";
 
 const EvaluatorHomePage = () => {
+  // Retrieve evaluatorId from localStorage (or another auth context if you use one)
+  const evaluatorId = localStorage.getItem("evaluatorId");
   // Simulated data state – replace with actual logic: Temporary only, pls change if there is already a backend
   const data = null;
 
   return (
     <MainLayout background={backgroundImage}>
+      {/* Show evaluatorId for demonstration */}
+      {evaluatorId && (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          align="center"
+          sx={{ mt: 2 }}
+        >
+         
+        </Typography>
+      )}
       {data ? (
         <Box>
           {/* Placeholder when there's data */}

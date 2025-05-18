@@ -92,20 +92,48 @@ const EvaluatorLoginForm = ({
           }
         );
 
-        const result = await response.text();
-        console.log("SA EVALUATOR NI", response);
+        let result;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          result = await response.json();
+        } else {
+          result = await response.text();
+        }
+        console.log("Login response:", result);
 
-        if (response.status === 200) {
-          if (result === "Login successful!") {
-            handleSuccess("Login successful!");
-            navigate("/evaluator/homepage");
+        // Fix: Check for admin property (your backend returns "admin": true)
+        let isAdmin = false;
+        if ("admin" in result) {
+          isAdmin = Boolean(result.admin);
+        } else if ("isAdmin" in result) {
+          isAdmin = Boolean(result.isAdmin);
+        } else if ("role" in result && typeof result.role === "string") {
+          isAdmin = result.role.toLowerCase() === "admin";
+        }
+        console.log("isAdmin (final):", isAdmin, "role:", result.role);
+
+        if (response.status === 200 && typeof result === "object" && result !== null) {
+          // Store evaluatorId in localStorage if present
+          if ("evaluatorId" in result) {
+            localStorage.setItem("evaluatorId", result.evaluatorId);
           } else {
+            localStorage.removeItem("evaluatorId");
+          }
+          // Navigate based on admin (now robust)
+          if (isAdmin) {
+            handleSuccess("Login successful!");
+            navigate("/evaluator/applicants");
+          } else {
+            handleSuccess(
+              "Your registration is being processed. Please wait for your approval as admin."
+            );
             navigate("/evaluator/homepage");
-
-            handleSuccess(result); // Message for "being processed"
           }
         } else {
-          handleError(result); // "Invalid email or password."
+          localStorage.removeItem("evaluatorId");
+          handleError(
+            typeof result === "string" ? result : "Invalid email or password."
+          );
         }
       }
     } catch (error) {
@@ -143,7 +171,12 @@ const EvaluatorLoginForm = ({
           </ToggleButtonGroup>
         </Stack>
         <Stack gap={2}>
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          {/* Move onSubmit to the form and ensure it's not wrapped in a fragment */}
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            autoComplete="off"
+          >
             <StyledTextField
               type="email"
               fullWidth
