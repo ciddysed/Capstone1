@@ -109,9 +109,10 @@ const ApplicantsListPage = () => {
   const paginatedData = Array.isArray(evaluations)
     ? evaluations.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
     : [];
-  const handleViewApplication = (applicantId, evaluationId) => {
+  const handleViewApplication = (applicantId) => {
+    // Pass applicantId in navigation state for ViewApplicantPage
     navigate("/evaluator/applicants/view-applicant", {
-      state: { applicantId, evaluationId }
+      state: { applicantId }
     });
   };
 
@@ -130,7 +131,7 @@ const ApplicantsListPage = () => {
               <TableCell>Applicant Name</TableCell>
               <TableCell>Course Name</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Date Forwarded</TableCell>
+              <TableCell>Date Evaluated</TableCell>
               
               <TableCell align="center">Actions</TableCell>
             </TableRow>
@@ -178,7 +179,7 @@ const ApplicantsListPage = () => {
                         color: "#800000",
                         borderColor: "#800000",
                       }}
-                      onClick={() => handleViewApplication(applicantId, evaluation.evaluationId)}
+                      onClick={() => handleViewApplication(applicantId)}
                     >
                       View Application
                     </Button>

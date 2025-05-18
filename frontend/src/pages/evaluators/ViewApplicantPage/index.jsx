@@ -5,12 +5,6 @@ import {
   IconButton,
   Paper,
   Stack,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Chip,
   List,
   ListItem,
@@ -23,7 +17,8 @@ import ListLayout from "../../../templates/ListLayout";
 const ViewApplicantPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { applicantId } = location.state || {};
+  // Fix: get applicantId from location.state or from query param if needed
+  const applicantId = location.state?.applicantId;
 
   const [applicant, setApplicant] = useState(null);
   const [coursePreferences, setCoursePreferences] = useState([]);
@@ -48,10 +43,8 @@ const ViewApplicantPage = () => {
     fetch(`http://localhost:8080/api/documents/applicant/${applicantId}`)
       .then(async (res) => {
         if (!res.ok) {
-          // If backend returns 500 or error, return empty array
           return [];
         }
-        // Defensive: try/catch for .json()
         try {
           return await res.json();
         } catch {
