@@ -18,8 +18,29 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DownloadIcon from "@mui/icons-material/Download";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import { useNavigate, useLocation } from "react-router-dom";
 import ListLayout from "../../../templates/ListLayout";
+
+const DOCUMENT_TYPE_LABELS = [
+  "APPLICANTS_EVALUATION_SHEET",
+  "INFORMATIVE_COPY_OF_TOR",
+  "PSA_AUTHENTICATED_BIRTH_CERTIFICATE",
+  "CERTIFICATE_OF_TRANSFER_CREDENTIAL",
+  "MARRIAGE_CERTIFICATE",
+  "CERTIFICATE_OF_EMPLOYMENT",
+  "EMPLOYER_CERTIFIED_DETAILED_JOB_DESCRIPTION",
+  "EVIDENCE_OF_BUSINESS_OWNERSHIP"
+];
+
+const formatDocumentType = (type) => {
+  if (!type) return "-";
+  // Convert enum to readable label
+  return type
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+};
 
 const ViewApplicantPage = () => {
   const navigate = useNavigate();
@@ -36,6 +57,7 @@ const ViewApplicantPage = () => {
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewType, setPreviewType] = useState("");
   const [previewFileName, setPreviewFileName] = useState("");
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     if (!applicantId) return;
@@ -101,10 +123,10 @@ const ViewApplicantPage = () => {
   const handlePreview = (doc) => {
     const url = `http://localhost:8080/api/documents/preview/${doc.documentId}`;
     setPreviewUrl(url);
-    // Defensive: check for fileName or name before calling toLowerCase
     const fileName = doc.fileName || doc.name || "";
     setPreviewType(typeof fileName === "string" ? fileName.toLowerCase() : "");
     setPreviewFileName(fileName);
+    setZoom(1); // Reset zoom on new preview
     setPreviewOpen(true);
   };
 
@@ -192,36 +214,43 @@ const ViewApplicantPage = () => {
               Uploaded Documents
             </Typography>
             <List dense sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}>
-              {documents.length > 0 ? (
-                documents.map((doc, idx) => (
-                  <ListItem key={idx}
+              {DOCUMENT_TYPE_LABELS.map((docType) => {
+                const doc = documents.find((d) => d.documentType === docType);
+                return (
+                  <ListItem key={docType}
                     secondaryAction={
-                      <Stack direction="row" spacing={1}>
-                        <IconButton
-                          edge="end"
-                          aria-label="preview"
-                          onClick={() => handlePreview(doc)}
-                        >
-                          <VisibilityIcon />
-                        </IconButton>
-                        <IconButton
-                          edge="end"
-                          aria-label="download"
-                          onClick={() => handleDownload(doc.documentId)}
-                        >
-                          <DownloadIcon />
-                        </IconButton>
-                      </Stack>
+                      doc ? (
+                        <Stack direction="row" spacing={1}>
+                          <IconButton
+                            edge="end"
+                            aria-label="preview"
+                            onClick={() => handlePreview(doc)}
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                          <IconButton
+                            edge="end"
+                            aria-label="download"
+                            onClick={() => handleDownload(doc.documentId)}
+                          >
+                            <DownloadIcon />
+                          </IconButton>
+                        </Stack>
+                      ) : null
                     }
                   >
-                    <ListItemText primary={doc.fileName || doc.name} />
+                    {/* Show documentType on the left */}
+                    <Box sx={{ minWidth: 120, mr: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {formatDocumentType(docType)}
+                      </Typography>
+                    </Box>
+                    <ListItemText
+                      primary={doc ? (doc.fileName || doc.name) : <span style={{ color: "#aaa" }}>Not uploaded</span>}
+                    />
                   </ListItem>
-                ))
-              ) : (
-                <ListItem>
-                  <ListItemText primary="No documents uploaded yet." />
-                </ListItem>
-              )}
+                );
+              })}
             </List>
           </Paper>
         </Stack>
@@ -231,38 +260,105 @@ const ViewApplicantPage = () => {
       <Dialog
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
-        maxWidth="md"
-        fullWidth
+        fullScreen
+        // Remove maxWidth/fullWidth for fullscreen
       >
         <DialogTitle>
           Preview: {previewFileName}
         </DialogTitle>
-        <DialogContent dividers sx={{ minHeight: 400 }}>
-          {previewType.endsWith(".pdf") ? (
-            <iframe
-              src={previewUrl}
-              title="PDF Preview"
-              width="100%"
-              height="500px"
-              style={{ border: "none" }}
-            />
-          ) : previewType.endsWith(".jpg") ||
-            previewType.endsWith(".jpeg") ||
-            previewType.endsWith(".png") ||
-            previewType.endsWith(".gif") ? (
-            <img
-              src={previewUrl}
-              alt="Document Preview"
-              style={{ maxWidth: "100%", maxHeight: 500, display: "block", margin: "0 auto" }}
-            />
-          ) : (
-            <Typography>
-              Preview not available for this file type.
+        <DialogContent
+          dividers
+          sx={{
+            minHeight: "100vh",
+            maxHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            bgcolor: "#f5f5f5",
+            p: 0,
+          }}
+        >
+          <Stack direction="row" spacing={1} sx={{ mb: 2, mt: 2 }}>
+            <IconButton
+              onClick={() => setZoom((z) => Math.max(z - 0.2, 0.2))}
+              disabled={zoom <= 0.2}
+              size="large"
+            >
+              <ZoomOutIcon />
+            </IconButton>
+            <Typography variant="body2" sx={{ minWidth: 40, textAlign: "center" }}>
+              {Math.round(zoom * 100)}%
             </Typography>
-          )}
+            <IconButton
+              onClick={() => setZoom((z) => Math.min(z + 0.2, 5))}
+              disabled={zoom >= 5}
+              size="large"
+            >
+              <ZoomInIcon />
+            </IconButton>
+          </Stack>
+          <Box
+            sx={{
+              width: "100%",
+              height: "100%",
+              flex: 1,
+              overflow: "auto",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            {previewType.endsWith(".pdf") ? (
+              <Box sx={{ width: "100%", height: "100%", overflow: "auto" }}>
+                <iframe
+                  src={previewUrl}
+                  title="PDF Preview"
+                  width={Math.round(window.innerWidth * 0.9 * zoom)}
+                  height={Math.round(window.innerHeight * 0.8 * zoom)}
+                  style={{
+                    border: "none",
+                    transform: `scale(${zoom})`,
+                    transformOrigin: "top left",
+                    display: "block",
+                  }}
+                />
+              </Box>
+            ) : previewType.endsWith(".jpg") ||
+              previewType.endsWith(".jpeg") ||
+              previewType.endsWith(".png") ||
+              previewType.endsWith(".gif") ? (
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  overflow: "auto",
+                  textAlign: "center",
+                }}
+              >
+                <img
+                  src={previewUrl}
+                  alt="Document Preview"
+                  style={{
+                    maxWidth: `${window.innerWidth * 0.9 * zoom}px`,
+                    maxHeight: `${window.innerHeight * 0.8 * zoom}px`,
+                    width: "auto",
+                    height: "auto",
+                    display: "block",
+                    margin: "0 auto",
+                    transform: `scale(${zoom})`,
+                    transformOrigin: "top left",
+                  }}
+                />
+              </Box>
+            ) : (
+              <Typography>
+                Preview not available for this file type.
+              </Typography>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPreviewOpen(false)}>Close</Button>
+          <Button onClick={() => setPreviewOpen(false)} size="large">Close</Button>
         </DialogActions>
       </Dialog>
     </ListLayout>
