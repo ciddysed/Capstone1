@@ -8,27 +8,27 @@ import {
   List,
   ListItem,
   ListItemText,
+  Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   TextField,
-  Divider,
   Alert,
   CircularProgress,
-  Chip, // Added missing import
+  Divider,
+  Chip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DownloadIcon from "@mui/icons-material/Download";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'; // Added missing import
+import SendIcon from "@mui/icons-material/Send";
 import { useNavigate, useLocation } from "react-router-dom";
 import ListLayout from "../../../templates/ListLayout";
 
@@ -45,69 +45,61 @@ const DOCUMENT_TYPE_LABELS = [
 
 const formatDocumentType = (type) => {
   if (!type) return "-";
-  // Convert enum to readable label
   return type
     .replace(/_/g, " ")
     .replace(/\b\w/g, (l) => l.toUpperCase());
 };
 
-const ViewApplicantPage = () => {
+const ApplicantDetailsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // Fix: get applicantId from location.state or from query param if needed
   const applicantId = location.state?.applicantId;
-  const evaluatorId = localStorage.getItem("evaluatorId");
 
   const [applicant, setApplicant] = useState(null);
   const [documents, setDocuments] = useState([]);
-  const [courses, setCourses] = useState([]);
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [coursePreferences, setCoursePreferences] = useState([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewType, setPreviewType] = useState("");
   const [previewFileName, setPreviewFileName] = useState("");
   const [zoom, setZoom] = useState(1);
-  const [coursePreferences, setCoursePreferences] = useState([]);
   
-  // New evaluation states
-  const [evaluationStatus, setEvaluationStatus] = useState("");
-  const [remarks, setRemarks] = useState("");
+  // Application status management
+  const [applicationStatus, setApplicationStatus] = useState("");
+  const [statusRemarks, setStatusRemarks] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submissionMessage, setSubmissionMessage] = useState({ type: "", text: "" });
-  const [existingEvaluation, setExistingEvaluation] = useState(null);
-  const [adminInfo, setAdminInfo] = useState(null);
-  const [forwardedAt, setForwardedAt] = useState(null);
+  const [statusMessage, setStatusMessage] = useState({ type: "", text: "" });
+  
+  // Forwarding to evaluator
+  const [evaluators, setEvaluators] = useState([]);
+  const [selectedEvaluator, setSelectedEvaluator] = useState("");
+  const [forwardDialogOpen, setForwardDialogOpen] = useState(false);
+  const [forwarding, setForwarding] = useState(false);
+  const [forwardMessage, setForwardMessage] = useState({ type: "", text: "" });
 
   useEffect(() => {
     if (!applicantId) return;
+    
     // Fetch applicant profile
     fetch(`http://localhost:8080/api/applicants/${applicantId}`)
       .then((res) => res.json())
-      .then(setApplicant)
+      .then((data) => {
+        setApplicant(data);
+        setApplicationStatus(data.applicationStatus || "PENDING");
+        setStatusRemarks(data.statusRemarks || "");
+      })
       .catch(() => setApplicant(null));
 
-    // Fetch course preferences and set selectedCourse to the first course (if any)
+    // Fetch course preferences
     fetch(`http://localhost:8080/api/preferences/applicant/${applicantId}`)
       .then((res) => res.json())
-      .then((prefs) => {
-        setCoursePreferences(prefs);
-        if (prefs && prefs.length > 0 && prefs[0].course) {
-          setSelectedCourse(prefs[0].course);
-        } else {
-          setSelectedCourse(null);
-        }
-      })
-      .catch(() => {
-        setCoursePreferences([]);
-        setSelectedCourse(null);
-      });
+      .then(setCoursePreferences)
+      .catch(() => setCoursePreferences([]));
 
-    // Fetch documents with error handling for 500
+    // Fetch documents
     fetch(`http://localhost:8080/api/documents/applicant/${applicantId}`)
       .then(async (res) => {
-        if (!res.ok) {
-          return [];
-        }
+        if (!res.ok) return [];
         try {
           return await res.json();
         } catch {
@@ -116,160 +108,147 @@ const ViewApplicantPage = () => {
       })
       .then(setDocuments)
       .catch(() => setDocuments([]));
-
-    // Fetch all courses for mapping courseId to courseName
-    fetch("http://localhost:8080/api/courses")
+      
+    // Fetch evaluators
+    fetch(`http://localhost:8080/api/evaluators/active`)
       .then((res) => res.json())
-      .then(setCourses)
-      .catch(() => setCourses([]));
-
-    // Fetch forwarding information to display which admin forwarded this application
-    fetch(`http://localhost:8080/api/applicants/${applicantId}/forward-info`)
-      .then(async (res) => {
-        if (!res.ok) return null;
-        return await res.json();
-      })
-      .then((data) => {
-        if (data) {
-          setAdminInfo(data.admin || null);
-          setForwardedAt(data.forwardedAt || null);
-        }
-      })
-      .catch(() => {
-        setAdminInfo(null);
-        setForwardedAt(null);
-      });
+      .then(setEvaluators)
+      .catch(() => setEvaluators([]));
   }, [applicantId]);
 
-  useEffect(() => {
-    if (!applicantId || !selectedCourse) return;
-
-    // Check if there's an existing evaluation
-    if (evaluatorId && selectedCourse) {
-      fetch(`http://localhost:8080/api/evaluations/check?applicantId=${applicantId}&courseId=${selectedCourse.courseId}&evaluatorId=${evaluatorId}`)
-        .then(async (res) => {
-          if (!res.ok) return null;
-          return await res.json();
-        })
-        .then((data) => {
-          if (data) {
-            setExistingEvaluation(data);
-            setEvaluationStatus(data.evaluationStatus || "");
-            setRemarks(data.remarks || "");
-          }
-        })
-        .catch(() => {
-          setExistingEvaluation(null);
-        });
-    }
-  }, [applicantId, evaluatorId, selectedCourse]);
-
-  // Handle course selection change
-  const handleCourseChange = (e) => {
-    const courseId = e.target.value;
-    const course = courses.find(c => c.courseId === courseId);
-    setSelectedCourse(course);
-    
-    // Reset evaluation form when changing course
-    setEvaluationStatus("");
-    setRemarks("");
-    setExistingEvaluation(null);
-    
-    // Check if there's an existing evaluation for this course
-    if (evaluatorId && course) {
-      fetch(`http://localhost:8080/api/evaluations/check?applicantId=${applicantId}&courseId=${course.courseId}&evaluatorId=${evaluatorId}`)
-        .then(async (res) => {
-          if (!res.ok) return null;
-          return await res.json();
-        })
-        .then((data) => {
-          if (data) {
-            setExistingEvaluation(data);
-            setEvaluationStatus(data.evaluationStatus || "");
-            setRemarks(data.remarks || "");
-          }
-        })
-        .catch(() => {
-          setExistingEvaluation(null);
-        });
-    }
-  };
-
-  // Submit evaluation
-  const handleSubmitEvaluation = async () => {
-    if (!selectedCourse || !evaluationStatus) {
-      setSubmissionMessage({ 
+  // Update application status
+  const updateApplicationStatus = async () => {
+    if (!applicationStatus) {
+      setStatusMessage({ 
         type: "error", 
-        text: "Please complete all required fields" 
+        text: "Please select an application status" 
       });
       return;
     }
 
     setSubmitting(true);
-    setSubmissionMessage({ type: "", text: "" });
+    setStatusMessage({ type: "", text: "" });
 
     try {
-      const evaluationData = {
-        applicantId,
-        courseId: selectedCourse.courseId,
-        evaluatorId,
-        evaluationStatus,
-        remarks,
-        dateEvaluated: new Date().toISOString()
+      const statusData = {
+        applicationStatus,
+        statusRemarks,
+        statusUpdatedAt: new Date().toISOString()
       };
 
-      // If there's an existing evaluation, update it
-      const url = existingEvaluation 
-        ? `http://localhost:8080/api/evaluations/${existingEvaluation.evaluationId}`
-        : "http://localhost:8080/api/evaluations";
-
-      const method = existingEvaluation ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch(`http://localhost:8080/api/applicants/${applicantId}/status`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(evaluationData),
+        body: JSON.stringify(statusData),
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setExistingEvaluation(data);
-        setSubmissionMessage({ 
+        const updatedApplicant = await response.json();
+        setApplicant(updatedApplicant);
+        setStatusMessage({ 
           type: "success", 
-          text: `Evaluation ${existingEvaluation ? "updated" : "submitted"} successfully` 
+          text: "Application status updated successfully" 
         });
       } else {
-        setSubmissionMessage({ 
+        setStatusMessage({ 
           type: "error", 
-          text: "Failed to submit evaluation. Please try again." 
+          text: "Failed to update application status" 
         });
       }
     } catch (error) {
-      setSubmissionMessage({ 
+      setStatusMessage({ 
         type: "error", 
-        text: "An error occurred while submitting evaluation" 
+        text: "An error occurred while updating status" 
       });
     } finally {
       setSubmitting(false);
     }
   };
 
-  // eslint-disable-next-line no-unused-vars
-  const getCourseName = (courseId) => {
-    const course = courses.find((c) => c.courseId === courseId);
-    return course ? course.courseName : "-";
+  // Open forward dialog
+  const openForwardDialog = () => {
+    if (applicationStatus !== "APPROVED") {
+      setStatusMessage({
+        type: "error",
+        text: "Only approved applications can be forwarded to evaluators"
+      });
+      return;
+    }
+    
+    // Make sure we have evaluators
+    if (evaluators.length === 0) {
+      setStatusMessage({
+        type: "error",
+        text: "No active evaluators found to forward this application to"
+      });
+      return;
+    }
+    
+    setForwardDialogOpen(true);
   };
 
-  // eslint-disable-next-line no-unused-vars
-  const formatPriority = (priority) => {
-    const formats = {
-      FIRST: "Course 1",
-      SECOND: "Course 2",
-      THIRD: "Course 3",
-    };
-    return formats[priority] || priority;
+  // Forward application to evaluator
+  const forwardToEvaluator = async () => {
+    if (!selectedEvaluator) {
+      setForwardMessage({
+        type: "error",
+        text: "Please select an evaluator"
+      });
+      return;
+    }
+
+    setForwarding(true);
+    setForwardMessage({ type: "", text: "" });
+
+    try {
+      const forwardData = {
+        applicantId,
+        evaluatorId: selectedEvaluator,
+        forwardedAt: new Date().toISOString(),
+        forwardedForEvaluation: true
+      };
+
+      const response = await fetch(`http://localhost:8080/api/applicants/${applicantId}/forward`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(forwardData),
+      });
+
+      if (response.ok) {
+        const updatedApplicant = await response.json();
+        setApplicant(updatedApplicant);
+        setForwardMessage({ 
+          type: "success", 
+          text: "Application forwarded to evaluator successfully" 
+        });
+        
+        // Close dialog after a short delay
+        setTimeout(() => {
+          setForwardDialogOpen(false);
+          // Update the main status message as well
+          setStatusMessage({
+            type: "success",
+            text: "Application forwarded to evaluator successfully"
+          });
+        }, 1500);
+      } else {
+        setForwardMessage({ 
+          type: "error", 
+          text: "Failed to forward application" 
+        });
+      }
+    } catch (error) {
+      setForwardMessage({ 
+        type: "error", 
+        text: "An error occurred while forwarding application" 
+      });
+    } finally {
+      setForwarding(false);
+    }
   };
 
   // Helper to preview document in modal
@@ -288,58 +267,47 @@ const ViewApplicantPage = () => {
     window.open(`http://localhost:8080/api/documents/download/${docId}`, "_blank");
   };
 
-  // Helper to get available courses for the applicant
-  const getAvailableCoursesForEvaluation = () => {
-    return coursePreferences.map(preference => preference.course);
-  };
-
-  // Add a helper function to check if the applicant has been forwarded for evaluation
-  const checkForwardStatus = () => {
-    return applicant?.forwardedForEvaluation === true;
-  };
-
   return (
     <ListLayout>
       {/* Header */}
       <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
         <IconButton
-          onClick={() => navigate("/evaluator/applicants")}
+          onClick={() => navigate("/admin/applicants")}
           sx={{ mr: 1 }}
         >
           <ArrowBackIcon />
         </IconButton>
-        <Typography fontWeight={600}>View Details</Typography>
+        <Typography fontWeight={600}>Applicant Details</Typography>
       </Box>
 
-      {/* Admin Forwarding Information */}
-      {checkForwardStatus() && (
-        <Paper elevation={4} sx={{ p: 2, mb: 3, bgcolor: '#f9f9f9', border: '1px solid #e0e0e0', borderLeft: '4px solid #1976d2' }}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems="center">
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                Forwarded for Evaluation
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {adminInfo ? (
-                  `Forwarded by ${adminInfo.firstName} ${adminInfo.lastName}`
-                ) : (
-                  'Forwarded by a program administrator'
-                )}
-                {forwardedAt && (
-                  ` on ${new Date(forwardedAt).toLocaleString()}`
-                )}
-              </Typography>
-            </Box>
-            <Chip 
-              label="Ready for Evaluation" 
-              color="primary" 
-              variant="outlined" 
-              size="small"
-              icon={<CheckCircleIcon fontSize="small" />} 
-            />
-          </Stack>
-        </Paper>
-      )}
+      {/* Status and Actions Bar */}
+      <Paper elevation={4} sx={{ p: 2, mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="subtitle2">Status:</Typography>
+          <Chip 
+            label={applicant?.applicationStatus || "PENDING"} 
+            color={
+              applicant?.applicationStatus === "APPROVED" ? "success" :
+              applicant?.applicationStatus === "REJECTED" ? "error" :
+              "default"
+            }
+            variant="outlined"
+          />
+        </Box>
+        
+        <Box>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<SendIcon />}
+            onClick={openForwardDialog}
+            disabled={applicationStatus !== "APPROVED" || applicant?.forwardedForEvaluation}
+            sx={{ borderRadius: "20px", ml: 1 }}
+          >
+            Forward to Evaluator
+          </Button>
+        </Box>
+      </Paper>
 
       <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ mb: 3 }}>
         {/* Left: Applicant Profile */}
@@ -382,22 +350,35 @@ const ViewApplicantPage = () => {
           </Stack>
         </Paper>
 
-        {/* Right: Applied For and Uploaded Documents */}
+        {/* Right: Course Preferences and Uploaded Documents */}
         <Stack flex={1} spacing={2}>
-          {/* Applied For Paper */}
+          {/* Course Preferences */}
           <Paper elevation={4} sx={{ p: 3 }}>
             <Typography
               variant="subtitle1"
               fontWeight={600}
               sx={{ mb: 2, borderBottom: "2px solid #ddd", pb: 1 }}
             >
-              Applied for
+              Course Preferences
             </Typography>
-            <Typography variant="body1" fontWeight={500}>
-              {selectedCourse ? selectedCourse.courseName : "-"}
-            </Typography>
+            <List dense sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}>
+              {coursePreferences.length > 0 ? (
+                coursePreferences.map((pref, idx) => (
+                  <ListItem key={idx}>
+                    <ListItemText
+                      primary={`${idx + 1}. ${pref.course?.courseName || "-"}`}
+                    />
+                  </ListItem>
+                ))
+              ) : (
+                <ListItem>
+                  <ListItemText primary="No course preferences found" />
+                </ListItem>
+              )}
+            </List>
           </Paper>
-          {/* Uploaded Documents Paper */}
+
+          {/* Uploaded Documents */}
           <Paper elevation={4} sx={{ p: 3 }}>
             <Typography
               variant="subtitle1"
@@ -432,7 +413,6 @@ const ViewApplicantPage = () => {
                       ) : null
                     }
                   >
-                    {/* Show documentType on the left */}
                     <Box sx={{ minWidth: 120, mr: 2 }}>
                       <Typography variant="body2" color="text.secondary">
                         {formatDocumentType(docType)}
@@ -449,128 +429,144 @@ const ViewApplicantPage = () => {
         </Stack>
       </Stack>
 
-      {/* Evaluation Section */}
+      {/* Application Status Update */}
       <Paper elevation={4} sx={{ p: 3, mb: 3 }}>
         <Typography
           variant="subtitle1"
           fontWeight={600}
           sx={{ mb: 2, borderBottom: "2px solid #ddd", pb: 1 }}
         >
-          Evaluation Form
+          Update Application Status
         </Typography>
 
-        {applicant && !checkForwardStatus() && (
+        {statusMessage.text && (
           <Alert 
-            severity="info" 
+            severity={statusMessage.type} 
             sx={{ mb: 2 }}
-            action={
-              <Button color="inherit" size="small" onClick={() => navigate("/evaluator/applicants")}>
-                View Other Applications
-              </Button>
-            }
+            onClose={() => setStatusMessage({ type: "", text: "" })}
           >
-            This application has not yet been forwarded for evaluation by an administrator. You cannot evaluate it until it's forwarded to you.
+            {statusMessage.text}
           </Alert>
         )}
 
-        {submissionMessage.text && (
+        {applicant?.forwardedForEvaluation && (
           <Alert 
-            severity={submissionMessage.type} 
+            severity="info" 
             sx={{ mb: 2 }}
-            onClose={() => setSubmissionMessage({ type: "", text: "" })}
           >
-            {submissionMessage.text}
+            This application has been forwarded to an evaluator for review.
           </Alert>
         )}
 
         <Stack spacing={2}>
-          {/* Course Selection */}
           <FormControl fullWidth>
-            <InputLabel>Select Course to Evaluate</InputLabel>
+            <InputLabel>Application Status</InputLabel>
             <Select
-              value={selectedCourse?.courseId || ""}
-              onChange={handleCourseChange}
-              label="Select Course to Evaluate"
+              value={applicationStatus}
+              onChange={(e) => setApplicationStatus(e.target.value)}
+              label="Application Status"
+              disabled={submitting || applicant?.forwardedForEvaluation}
             >
-              {getAvailableCoursesForEvaluation().map((course) => (
-                <MenuItem key={course.courseId} value={course.courseId}>
-                  {course.courseName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Evaluation Status */}
-          <FormControl fullWidth>
-            <InputLabel>Evaluation Status</InputLabel>
-            <Select
-              value={evaluationStatus}
-              onChange={(e) => setEvaluationStatus(e.target.value)}
-              label="Evaluation Status"
-              disabled={!selectedCourse || submitting || !checkForwardStatus()}
-            >
+              <MenuItem value="PENDING">Pending</MenuItem>
               <MenuItem value="APPROVED">Approved</MenuItem>
               <MenuItem value="REJECTED">Rejected</MenuItem>
-              <MenuItem value="PENDING">Pending</MenuItem>
+              <MenuItem value="INCOMPLETE">Incomplete</MenuItem>
             </Select>
           </FormControl>
 
-          {/* Remarks */}
           <TextField
             label="Remarks"
             multiline
-            rows={4}
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
+            rows={3}
+            value={statusRemarks}
+            onChange={(e) => setStatusRemarks(e.target.value)}
             fullWidth
-            variant="outlined"
-            disabled={!selectedCourse || submitting || !checkForwardStatus()}
+            disabled={submitting || applicant?.forwardedForEvaluation}
           />
 
-          {/* Submit Button */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
             <Button
               variant="contained"
               color="primary"
-              onClick={handleSubmitEvaluation}
-              disabled={!selectedCourse || !evaluationStatus || submitting || !checkForwardStatus()}
+              onClick={updateApplicationStatus}
+              disabled={submitting || !applicationStatus || applicant?.forwardedForEvaluation}
               sx={{ borderRadius: "20px", bgcolor: "#800000" }}
             >
               {submitting ? (
                 <CircularProgress size={24} color="inherit" />
-              ) : existingEvaluation ? (
-                "Update Evaluation"
               ) : (
-                "Submit Evaluation"
+                "Update Status"
               )}
             </Button>
           </Box>
-          
-          {/* Evaluation History */}
-          {existingEvaluation && (
-            <Box sx={{ mt: 3 }}>
-              <Divider sx={{ mb: 2 }} />
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Evaluation History
-              </Typography>
-              <DetailRow label="Status" value={existingEvaluation.evaluationStatus} />
-              <DetailRow 
-                label="Date" 
-                value={existingEvaluation.dateEvaluated ? 
-                  new Date(existingEvaluation.dateEvaluated).toLocaleString() : 
-                  "-"} 
-              />
-            </Box>
-          )}
         </Stack>
       </Paper>
-      
-      {/* Preview Modal */}
+
+      {/* Forward to Evaluator Dialog */}
+      <Dialog 
+        open={forwardDialogOpen} 
+        onClose={() => !forwarding && setForwardDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Forward Application to Evaluator</DialogTitle>
+        <DialogContent>
+          {forwardMessage.text && (
+            <Alert 
+              severity={forwardMessage.type} 
+              sx={{ mb: 2, mt: 1 }}
+              onClose={() => setForwardMessage({ type: "", text: "" })}
+            >
+              {forwardMessage.text}
+            </Alert>
+          )}
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 1 }}>
+            Select an evaluator to review this application. The evaluator will determine
+            which of the applicant's course preferences will be approved.
+          </Typography>
+
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel>Select Evaluator</InputLabel>
+            <Select
+              value={selectedEvaluator}
+              onChange={(e) => setSelectedEvaluator(e.target.value)}
+              label="Select Evaluator"
+              disabled={forwarding}
+            >
+              {evaluators.map((evaluator) => (
+                <MenuItem key={evaluator.evaluatorId} value={evaluator.evaluatorId}>
+                  {evaluator.firstName} {evaluator.lastName} ({evaluator.email})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setForwardDialogOpen(false)} 
+            disabled={forwarding}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={forwardToEvaluator}
+            variant="contained"
+            color="primary"
+            disabled={!selectedEvaluator || forwarding}
+            startIcon={forwarding ? <CircularProgress size={20} /> : <SendIcon />}
+            sx={{ bgcolor: "#800000" }}
+          >
+            {forwarding ? "Forwarding..." : "Forward Application"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Document Preview Modal */}
       <Dialog
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
         fullScreen
-        // Remove maxWidth/fullWidth for fullscreen
       >
         <DialogTitle>
           Preview: {previewFileName}
@@ -683,4 +679,4 @@ const DetailRow = ({ label, value }) => (
   </Stack>
 );
 
-export default ViewApplicantPage;
+export default ApplicantDetailsPage;

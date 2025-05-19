@@ -5,8 +5,8 @@ import LoginPage from "../pages/applicants/LoginPage";
 import SetUpProfilePage from "../pages/applicants/SetUpProfile";
 import Homepage from "../pages/applicants/HomePage";
 import ProtectedRoute from "./ProtectedRoutes";
-import ApplicationTrack from "../pages/ApplicationTrack";
-import ApplicationForm from "../pages/AppCoursePreference";
+import ApplicationTrack from "../pages/applicants/ApplicationTrack";
+import AppCoursePreference from "../pages/applicants/AppCoursePreference";
 import ProgramShowcase from "../pages/ProgramShowcase";
 import EvaluatorsLoginPage from "../pages/evaluators/LoginPage";
 import EvaluatorHomePage from "../pages/evaluators/HomePage";
@@ -51,7 +51,7 @@ const AppRoutes = () => {
       path: "/AppCoursePreference",
       element: (
         <ProtectedRoute>
-          <ApplicationForm />
+          <AppCoursePreference />
         </ProtectedRoute>
       ),
     },

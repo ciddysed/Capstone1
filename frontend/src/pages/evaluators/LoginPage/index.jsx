@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import logo from "../../../assets/logo.png";
 
 import backgroundImage from "../../../assets/login-bg.png";
+import logo from "../../../assets/logo.png";
 import MinimalLayout from "../../../templates/MinimalLayout";
 import useResponseHandler from "../../../utils/useResponseHandler";
 import { Stack } from "@mui/material";
