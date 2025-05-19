@@ -13,6 +13,7 @@ import EvaluatorHomePage from "../pages/evaluators/HomePage";
 import ApplicantsListPage from "../pages/evaluators/ApplicantsListPage";
 import ViewApplicantPage from "../pages/evaluators/ViewApplicantPage";
 import OrganizedCourseDialog from "../components/OrganizedCourseDialog";
+import ProgramAdminHomePage from "../pages/ProgramAdmin/HomePage";
 
 
 const AppRoutes = () => {
@@ -101,6 +102,15 @@ const AppRoutes = () => {
       element: (
         // <ProtectedRoute>
         <EvaluatorHomePage />
+        // </ProtectedRoute>
+      ),
+    },
+
+    {
+      path: "/program-admin/homepage",
+      element: (
+        // <ProtectedRoute>
+        <ProgramAdminHomePage />
         // </ProtectedRoute>
       ),
     },
