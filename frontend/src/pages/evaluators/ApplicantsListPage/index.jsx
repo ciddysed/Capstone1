@@ -10,8 +10,6 @@ import {
   TablePagination,
   Chip,
   Typography,
-  Tabs,
-  Tab,
   Box,
   Tooltip,
 } from "@mui/material";
@@ -55,140 +53,131 @@ const ApplicantsListPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const navigate = useNavigate();
   
-  // New state for forwarded applications that aren't evaluated yet
-  const [forwardedApplications, setForwardedApplications] = useState([]);
-  
-  // Tab state for switching between all and pending applications
-  const [tabValue, setTabValue] = useState(0);
-
   useEffect(() => {
-    if (evaluatorId) {
-      // Fetch evaluations that this evaluator has already worked on
-      fetch(`http://localhost:8080/api/evaluations/evaluator/${evaluatorId}`)
-        .then((res) => res.json())
-        .then(async (data) => {
-          if (Array.isArray(data)) {
-            setEvaluations(data);
-            
-            // Fetch all unique applicantIds and courseIds
-            const applicantIds = [
-              ...new Set(
-                data
-                  .map((ev) => ev.applicant?.applicantId || ev.applicantId)
-                  .filter(Boolean)
-              ),
-            ];
-            const courseIds = [
-              ...new Set(
-                data.map((ev) => ev.course?.courseId || ev.courseId).filter(Boolean)
-              ),
-            ];
-
-            // Fetch applicants
-            const applicantEntries = await Promise.all(
-              applicantIds.map(async (id) => [id, await fetchApplicant(id)])
+    // Simplified approach: just fetch ALL evaluations
+    fetch(`http://localhost:8080/api/evaluations/all`)
+      .then((res) => {
+        if (!res.ok) {
+          console.error(`Error fetching evaluations: HTTP ${res.status}`);
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(async (data) => {
+        console.log("All evaluations:", data);
+        if (Array.isArray(data)) {
+          // Process evaluations to ensure all have required fields
+          const processedEvaluations = data.map(ev => ({
+            ...ev,
+            applicantId: ev.applicant?.applicantId || ev.applicantId,
+            courseId: ev.course?.courseId || ev.courseId
+          }));
+          
+          setEvaluations(processedEvaluations);
+          
+          // Extract applicant and course IDs for fetching additional data
+          const applicantIds = [...new Set(
+            processedEvaluations
+              .map((ev) => ev.applicant?.applicantId || ev.applicantId)
+              .filter(Boolean)
+          )];
+          
+          const courseIds = [...new Set(
+            processedEvaluations
+              .map((ev) => ev.course?.courseId || ev.courseId)
+              .filter(Boolean)
+          )];
+          
+          console.log("Applicant IDs to fetch:", applicantIds);
+          console.log("Course IDs to fetch:", courseIds);
+          
+          // Fetch applicants
+          if (applicantIds.length > 0) {
+            const applicantPromises = applicantIds.map(async id => {
+              const applicant = await fetchApplicant(id);
+              return [id, applicant];
+            });
+            const applicantObj = Object.fromEntries(
+              (await Promise.all(applicantPromises)).filter(([_, value]) => value !== null)
             );
-            const applicantObj = Object.fromEntries(applicantEntries);
-
-            // Fetch courses
-            const courseEntries = await Promise.all(
-              courseIds.map(async (id) => [id, await fetchCourse(id)])
-            );
-            const courseObj = Object.fromEntries(courseEntries);
-
             setApplicantMap(applicantObj);
+          }
+          
+          // Fetch courses
+          if (courseIds.length > 0) {
+            const coursePromises = courseIds.map(async id => {
+              const course = await fetchCourse(id);
+              return [id, course];
+            });
+            const courseObj = Object.fromEntries(
+              (await Promise.all(coursePromises)).filter(([_, value]) => value !== null)
+            );
             setCourseMap(courseObj);
-          } else {
-            setEvaluations([]);
-            setApplicantMap({});
-            setCourseMap({});
-            console.error("Backend did not return an array:", data);
           }
-        })
-        .catch((err) => {
+        } else {
+          console.error("Backend returned non-array data:", data);
           setEvaluations([]);
-          setApplicantMap({});
-          setCourseMap({});
-          console.error("Failed to fetch evaluations:", err);
-        });
-        
-      // Fetch applications that were forwarded to this evaluator but not yet evaluated
-      fetch(`http://localhost:8080/api/applicants/forwarded/${evaluatorId}`)
-        .then((res) => res.json())
-        .then(async (data) => {
-          if (Array.isArray(data)) {
-            setForwardedApplications(data);
-            
-            // Fetch applicant info and add to applicant map
-            const applicantPromises = data.map(async (app) => [
-              app.applicantId, 
-              await fetchApplicant(app.applicantId)
-            ]);
-            
-            const newApplicants = Object.fromEntries(await Promise.all(applicantPromises));
-            
-            setApplicantMap(prev => ({...prev, ...newApplicants}));
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to fetch forwarded applications:", err);
-          setForwardedApplications([]);
-        });
-    }
-  }, [evaluatorId]);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch evaluations:", err);
+        setEvaluations([]);
+      });
+  }, []);
   
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-    setPage(0); // Reset to first page when switching tabs
-  };
+  // Simplified data source - just return all evaluations
+  const paginatedData = evaluations.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
-  const handleChangePage = (event, newPage) => setPage(newPage);
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  // Get correct data source based on active tab
-  const getDataSource = () => {
-    return tabValue === 0 ? 
-      // Combined list: applications specifically forwarded to this evaluator first
-      [...forwardedApplications.filter(app => 
-        !evaluations.some(ev => ev.applicantId === app.applicantId)
-      ), ...evaluations] : 
-      // Just pending applications from admin
-      forwardedApplications.filter(app => 
-        !evaluations.some(ev => ev.applicantId === app.applicantId)
-      );
-  };
-
-  // Always use an array for paginatedData
-  const filteredData = getDataSource();
-  const paginatedData = Array.isArray(filteredData)
-    ? filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-    : [];
-
-  const handleViewApplication = (applicantId) => {
-    // Pass applicantId in navigation state for ViewApplicantPage
+  // Improved ViewApplication function to handle both applicantId and evaluationId
+  const handleViewApplication = (item) => {
+    console.log("Viewing application item details:", item);
+    const applicantId = item.applicant?.applicantId || item.applicantId;
+    const courseId = item.course?.courseId || item.courseId;
+    const evaluationId = item.evaluationId;
+    
+    if (!applicantId) {
+      console.error("Missing applicantId in selected item:", item);
+      return; // Prevent navigation with missing ID
+    }
+    
     navigate("/evaluator/applicants/view-applicant", {
-      state: { applicantId }
+      state: { 
+        applicantId,
+        evaluationId,
+        courseId
+      }
     });
   };
 
+  // Improved status chip display with better conditional checks
   const getStatusChip = (item) => {
-    // If it's an evaluation
-    if (item.evaluationId) {
+    // Check if this item has an evaluation status and has been explicitly evaluated
+    if (item && item.evaluationStatus && item.evaluationStatus !== "PENDING") {
       return (
         <Chip
-          label={item.evaluationStatus || "PENDING"}
+          icon={item.evaluationStatus === "APPROVED" ? <CheckCircleIcon fontSize="small" /> : null}
+          label={item.evaluationStatus}
           color={
             item.evaluationStatus === "APPROVED" ? "success" : 
-            item.evaluationStatus === "REJECTED" ? "error" : "default"
+            item.evaluationStatus === "REJECTED" ? "error" : 
+            "default"
           }
           size="small"
         />
       );
     } 
-    // If it's a forwarded application not yet evaluated
+    // For pending evaluations that haven't been started yet
+    else if (item && item.evaluationStatus === "PENDING") {
+      return (
+        <Chip
+          icon={<PendingIcon fontSize="small" />}
+          label="In Progress"
+          color="warning"
+          size="small"
+        />
+      );
+    }
+    // For evaluations not yet started
     else {
       return (
         <Chip
@@ -201,38 +190,27 @@ const ApplicantsListPage = () => {
       );
     }
   };
+  
+  // Simplified pagination handlers
+  const handleChangePage = (event, newPage) => setPage(newPage);
+  
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   return (
     <ListLayoutWithFilters>
       <Paper elevation={3} sx={{ p: 2 }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-          <Tabs value={tabValue} onChange={handleTabChange}>
-            <Tab label={
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <span>All Applications</span>
-                <Chip 
-                  label={evaluations.length + forwardedApplications.filter(app => 
-                    !evaluations.some(ev => ev.applicantId === app.applicantId)
-                  ).length} 
-                  size="small" 
-                  sx={{ ml: 1 }}
-                />
-              </Box>
-            } />
-            <Tab label={
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <span>Needs Evaluation</span>
-                <Chip 
-                  label={forwardedApplications.filter(app => 
-                    !evaluations.some(ev => ev.applicantId === app.applicantId)
-                  ).length} 
-                  color="warning"
-                  size="small" 
-                  sx={{ ml: 1 }}
-                />
-              </Box>
-            } />
-          </Tabs>
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" component="h2">
+            All Evaluations
+          </Typography>
+          <Chip 
+            label={`${evaluations.length} Records`}
+            color="primary"
+            size="medium"
+          />
         </Box>
 
         {paginatedData.length > 0 ? (
@@ -249,17 +227,16 @@ const ApplicantsListPage = () => {
             </TableHead>
             <TableBody>
               {paginatedData.map((item, index) => {
-                // Determine if this is an evaluation or just a forwarded application
-                const isEvaluation = Boolean(item.evaluationId);
+                // Properly check if the item has been evaluated
+                const isEvaluated = Boolean(
+                  item.evaluationStatus && 
+                  item.evaluationStatus !== "PENDING" && 
+                  item.dateEvaluated
+                );
                 
-                const applicantId = isEvaluation 
-                  ? (item.applicant?.applicantId || item.applicantId)
-                  : item.applicantId;
-                  
-                const courseId = isEvaluation
-                  ? (item.course?.courseId || item.courseId)
-                  : (item.courseId || (item.preferences && item.preferences[0]?.courseId));
-                  
+                const applicantId = item.applicant?.applicantId;
+                const courseId = item.course?.courseId;
+                
                 const applicant = applicantMap[applicantId];
                 const course = courseMap[courseId];
                 
@@ -276,32 +253,28 @@ const ApplicantsListPage = () => {
                   : "-";
                   
                 return (
-                  <TableRow key={index} 
-                    sx={!isEvaluation ? { backgroundColor: 'rgba(255, 244, 229, 0.3)' } : {}}
+                  <TableRow key={`${item.evaluationId || index}`} 
+                    sx={!isEvaluated ? { backgroundColor: 'rgba(255, 244, 229, 0.3)' } : {}}
                   >
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {!isEvaluation && (
-                          <Tooltip title="New application forwarded by admin">
+                        {!isEvaluated && (
+                          <Tooltip title="Needs evaluation">
                             <PendingIcon fontSize="small" color="warning" sx={{ mr: 1 }} />
                           </Tooltip>
                         )}
                         {fullName}
                       </Box>
                     </TableCell>
-                    <TableCell>
-                      {course?.courseName || "-"}
-                    </TableCell>
-                    <TableCell>
-                      {getStatusChip(item)}
-                    </TableCell>
+                    <TableCell>{course?.courseName || "-"}</TableCell>
+                    <TableCell>{getStatusChip(item)}</TableCell>
                     <TableCell>
                       {item.forwardedAt
                         ? new Date(item.forwardedAt).toLocaleString()
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      {isEvaluation && item.dateEvaluated
+                      {item.dateEvaluated && item.evaluationStatus
                         ? new Date(item.dateEvaluated).toLocaleString()
                         : "-"}
                     </TableCell>
@@ -311,13 +284,13 @@ const ApplicantsListPage = () => {
                         size="small"
                         sx={{
                           borderRadius: "20px",
-                          color: !isEvaluation ? "#ff6d00" : "#800000",
-                          borderColor: !isEvaluation ? "#ff6d00" : "#800000",
-                          fontWeight: !isEvaluation ? 600 : 400,
+                          color: !isEvaluated ? "#ff6d00" : "#800000",
+                          borderColor: !isEvaluated ? "#ff6d00" : "#800000",
+                          fontWeight: !isEvaluated ? 600 : 400,
                         }}
-                        onClick={() => handleViewApplication(applicantId)}
+                        onClick={() => handleViewApplication(item)}
                       >
-                        {!isEvaluation ? "Evaluate Now" : "View Application"}
+                        {!isEvaluated ? "Evaluate Now" : "View Application"}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -328,9 +301,7 @@ const ApplicantsListPage = () => {
         ) : (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="body1" color="text.secondary">
-              {tabValue === 0 
-                ? "No applications available for evaluation" 
-                : "No new applications forwarded for evaluation"}
+              No evaluation records found
             </Typography>
           </Box>
         )}
@@ -338,7 +309,7 @@ const ApplicantsListPage = () => {
         {/* Pagination Controls */}
         <TablePagination
           component="div"
-          count={filteredData.length}
+          count={evaluations.length}
           page={page}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}

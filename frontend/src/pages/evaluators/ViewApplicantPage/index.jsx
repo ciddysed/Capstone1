@@ -54,8 +54,10 @@ const formatDocumentType = (type) => {
 const ViewApplicantPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // Fix: get applicantId from location.state or from query param if needed
+  // Get all necessary IDs from location state
   const applicantId = location.state?.applicantId;
+  const evaluationId = location.state?.evaluationId;
+  const specificCourseId = location.state?.courseId;
   const evaluatorId = localStorage.getItem("evaluatorId");
 
   const [applicant, setApplicant] = useState(null);
@@ -75,34 +77,131 @@ const ViewApplicantPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submissionMessage, setSubmissionMessage] = useState({ type: "", text: "" });
   const [existingEvaluation, setExistingEvaluation] = useState(null);
+  const [currentEvaluation, setCurrentEvaluation] = useState(null);
   const [adminInfo, setAdminInfo] = useState(null);
   const [forwardedAt, setForwardedAt] = useState(null);
 
   useEffect(() => {
-    if (!applicantId) return;
+    if (!applicantId) {
+      console.error("No applicantId provided in location state");
+      return;
+    }
+    
+    console.log("Loading applicant details with:", { 
+      applicantId, evaluationId, specificCourseId, evaluatorId
+    });
+    
     // Fetch applicant profile
     fetch(`http://localhost:8080/api/applicants/${applicantId}`)
-      .then((res) => res.json())
-      .then(setApplicant)
-      .catch(() => setApplicant(null));
-
-    // Fetch course preferences and set selectedCourse to the first course (if any)
-    fetch(`http://localhost:8080/api/preferences/applicant/${applicantId}`)
-      .then((res) => res.json())
-      .then((prefs) => {
-        setCoursePreferences(prefs);
-        if (prefs && prefs.length > 0 && prefs[0].course) {
-          setSelectedCourse(prefs[0].course);
-        } else {
-          setSelectedCourse(null);
+      .then((res) => {
+        if (!res.ok) {
+          console.error(`Error fetching applicant: HTTP ${res.status}`);
+          throw new Error(`HTTP error! status: ${res.status}`);
         }
+        return res.json();
       })
-      .catch(() => {
-        setCoursePreferences([]);
-        setSelectedCourse(null);
+      .then(data => {
+        console.log("Loaded applicant data:", data);
+        setApplicant(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching applicant:", error);
+        setApplicant(null);
       });
 
-    // Fetch documents with error handling for 500
+    // If we have an evaluationId, fetch that specific evaluation
+    if (evaluationId) {
+      console.log(`Fetching specific evaluation: ${evaluationId}`);
+      fetch(`http://localhost:8080/api/evaluations/${evaluationId}`)
+        .then((res) => {
+          if (!res.ok) {
+            console.error(`Error fetching evaluation: HTTP ${res.status}`);
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then((data) => {
+          console.log("Loaded specific evaluation:", data);
+          setCurrentEvaluation(data);
+          
+          // Set the form values from the evaluation
+          if (data) {
+            setEvaluationStatus(data.evaluationStatus || "");
+            setRemarks(data.comments || "");
+            
+            // Set the selected course from the evaluation
+            if (data.course) {
+              console.log("Setting selected course from evaluation:", data.course);
+              setSelectedCourse(data.course);
+            }
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching evaluation:", err);
+          setCurrentEvaluation(null);
+        });
+    }
+
+    // Get all evaluations for this applicant
+    console.log(`Fetching all evaluations for applicant: ${applicantId}`);
+    fetch(`http://localhost:8080/api/evaluations/applicant/${applicantId}`)
+      .then((res) => {
+        if (!res.ok) {
+          console.error(`Error fetching applicant evaluations: HTTP ${res.status}`);
+          return []; // Return empty array to avoid breaking
+        }
+        return res.json();
+      })
+      .then((evaluations) => {
+        console.log("All evaluations for applicant:", evaluations);
+        
+        if (Array.isArray(evaluations) && evaluations.length > 0) {
+          // Extract course info from evaluations
+          const coursesList = evaluations
+            .map(ev => ev.course)
+            .filter(Boolean);
+            
+          console.log("Available courses:", coursesList);
+          setCoursePreferences(coursesList.map(course => ({ course })));
+          
+          // Select course based on provided ID or default to first
+          if (specificCourseId) {
+            const specificCourse = coursesList.find(c => c.courseId === Number(specificCourseId));
+            if (specificCourse) {
+              console.log("Setting specific course:", specificCourse);
+              setSelectedCourse(specificCourse);
+            } else if (coursesList.length > 0) {
+              setSelectedCourse(coursesList[0]);
+            }
+          } else if (!selectedCourse && coursesList.length > 0) {
+            setSelectedCourse(coursesList[0]);
+          }
+          
+          // Find existing evaluations for this evaluator
+          if (evaluatorId) {
+            const existingEval = evaluations.find(ev => {
+              const matchesEvaluator = ev.evaluator?.evaluatorId === Number(evaluatorId);
+              const matchesCourse = selectedCourse && ev.course?.courseId === selectedCourse.courseId;
+              return matchesEvaluator && matchesCourse;
+            });
+            
+            if (existingEval) {
+              console.log("Found existing evaluation:", existingEval);
+              setExistingEvaluation(existingEval);
+              setEvaluationStatus(existingEval.evaluationStatus || "");
+              setRemarks(existingEval.comments || "");
+            }
+          }
+        } else {
+          console.warn("No evaluations found for this applicant");
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching evaluations:", err);
+        setCoursePreferences([]);
+      });
+
+    // Fetch documents with error handling
     fetch(`http://localhost:8080/api/documents/applicant/${applicantId}`)
       .then(async (res) => {
         if (!res.ok) {
@@ -139,65 +238,65 @@ const ViewApplicantPage = () => {
         setAdminInfo(null);
         setForwardedAt(null);
       });
-  }, [applicantId]);
+  }, [applicantId, evaluationId, specificCourseId, evaluatorId]);
 
+  // Second effect that runs when selectedCourse changes
   useEffect(() => {
-    if (!applicantId || !selectedCourse) return;
+    if (!applicantId || !selectedCourse || !evaluatorId) return;
+
+    console.log("Checking for evaluation with:", {
+      applicantId,
+      courseId: selectedCourse.courseId,
+      evaluatorId
+    });
 
     // Check if there's an existing evaluation
-    if (evaluatorId && selectedCourse) {
-      fetch(`http://localhost:8080/api/evaluations/check?applicantId=${applicantId}&courseId=${selectedCourse.courseId}&evaluatorId=${evaluatorId}`)
-        .then(async (res) => {
-          if (!res.ok) return null;
-          return await res.json();
-        })
-        .then((data) => {
-          if (data) {
-            setExistingEvaluation(data);
-            setEvaluationStatus(data.evaluationStatus || "");
-            setRemarks(data.remarks || "");
-          }
-        })
-        .catch(() => {
+    fetch(`http://localhost:8080/api/evaluations/check?applicantId=${applicantId}&courseId=${selectedCourse.courseId}&evaluatorId=${evaluatorId}`)
+      .then(async (res) => {
+        if (!res.ok) return null;
+        return await res.json();
+      })
+      .then((data) => {
+        if (data) {
+          console.log("Found evaluation for selected course:", data);
+          setExistingEvaluation(data);
+          setEvaluationStatus(data.evaluationStatus || "");
+          setRemarks(data.comments || "");
+        } else {
+          // Clear existing evaluation if none found for this course
           setExistingEvaluation(null);
-        });
-    }
-  }, [applicantId, evaluatorId, selectedCourse]);
+          // Keep current status if we're viewing a specific evaluation
+          if (!currentEvaluation) {
+            setEvaluationStatus("");
+            setRemarks("");
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("Error checking for evaluation:", err);
+        setExistingEvaluation(null);
+      });
+  }, [selectedCourse, applicantId, evaluatorId, currentEvaluation]);
 
   // Handle course selection change
   const handleCourseChange = (e) => {
-    const courseId = e.target.value;
-    const course = courses.find(c => c.courseId === courseId);
-    setSelectedCourse(course);
+    const courseId = Number(e.target.value);
+    console.log("Course selection changed to:", courseId);
     
-    // Reset evaluation form when changing course
-    setEvaluationStatus("");
-    setRemarks("");
-    setExistingEvaluation(null);
-    
-    // Check if there's an existing evaluation for this course
-    if (evaluatorId && course) {
-      fetch(`http://localhost:8080/api/evaluations/check?applicantId=${applicantId}&courseId=${course.courseId}&evaluatorId=${evaluatorId}`)
-        .then(async (res) => {
-          if (!res.ok) return null;
-          return await res.json();
-        })
-        .then((data) => {
-          if (data) {
-            setExistingEvaluation(data);
-            setEvaluationStatus(data.evaluationStatus || "");
-            setRemarks(data.remarks || "");
-          }
-        })
-        .catch(() => {
-          setExistingEvaluation(null);
-        });
+    const course = getAvailableCoursesForEvaluation().find(c => c.courseId === courseId);
+    if (course) {
+      setSelectedCourse(course);
     }
   };
 
   // Submit evaluation
   const handleSubmitEvaluation = async () => {
     if (!selectedCourse || !evaluationStatus) {
+      console.error("Missing required fields:", { 
+        courseSelected: Boolean(selectedCourse), 
+        statusSelected: Boolean(evaluationStatus) 
+      });
+      
       setSubmissionMessage({ 
         type: "error", 
         text: "Please complete all required fields" 
@@ -209,22 +308,29 @@ const ViewApplicantPage = () => {
     setSubmissionMessage({ type: "", text: "" });
 
     try {
+      // Prepare evaluation data
       const evaluationData = {
-        applicantId,
+        applicantId: Number(applicantId),
         courseId: selectedCourse.courseId,
-        evaluatorId,
+        evaluatorId: Number(evaluatorId),
         evaluationStatus,
-        remarks,
+        comments: remarks,
         dateEvaluated: new Date().toISOString()
       };
 
-      // If there's an existing evaluation, update it
+      console.log("Submitting evaluation data:", evaluationData);
+
+      // Determine correct URL based on whether updating or creating
       const url = existingEvaluation 
         ? `http://localhost:8080/api/evaluations/${existingEvaluation.evaluationId}`
-        : "http://localhost:8080/api/evaluations";
+        : currentEvaluation
+          ? `http://localhost:8080/api/evaluations/${currentEvaluation.evaluationId}`
+          : "http://localhost:8080/api/evaluations";
 
-      const method = existingEvaluation ? "PUT" : "POST";
+      const method = (existingEvaluation || currentEvaluation) ? "PUT" : "POST";
+      console.log(`Making ${method} request to: ${url}`);
 
+      // Send request
       const response = await fetch(url, {
         method,
         headers: {
@@ -233,23 +339,28 @@ const ViewApplicantPage = () => {
         body: JSON.stringify(evaluationData),
       });
 
+      // Handle response
       if (response.ok) {
         const data = await response.json();
+        console.log("Evaluation saved successfully:", data);
         setExistingEvaluation(data);
+        setCurrentEvaluation(data);
+        
         setSubmissionMessage({ 
           type: "success", 
-          text: `Evaluation ${existingEvaluation ? "updated" : "submitted"} successfully` 
+          text: `Evaluation ${(existingEvaluation || currentEvaluation) ? "updated" : "submitted"} successfully` 
         });
       } else {
-        setSubmissionMessage({ 
-          type: "error", 
-          text: "Failed to submit evaluation. Please try again." 
-        });
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        console.error("Response status:", response.status);
+        throw new Error(`Server responded with status: ${response.status}`);
       }
     } catch (error) {
+      console.error("Submission error:", error, error.stack);
       setSubmissionMessage({ 
         type: "error", 
-        text: "An error occurred while submitting evaluation" 
+        text: `An error occurred: ${error.message}` 
       });
     } finally {
       setSubmitting(false);
@@ -288,14 +399,32 @@ const ViewApplicantPage = () => {
     window.open(`http://localhost:8080/api/documents/download/${docId}`, "_blank");
   };
 
-  // Helper to get available courses for the applicant
+  // Helper to get available courses for the applicant - improved
   const getAvailableCoursesForEvaluation = () => {
-    return coursePreferences.map(preference => preference.course);
+    // Start with courses from preferences
+    const courses = coursePreferences
+      .map(preference => preference.course)
+      .filter(Boolean);
+      
+    // If we have a specific course from location state, make sure it's included
+    if (specificCourseId && courses.length > 0) {
+      const courseIdNum = Number(specificCourseId);
+      if (!courses.some(c => c.courseId === courseIdNum)) {
+        // Find it in all available courses
+        const specificCourse = courses.find(c => c.courseId === courseIdNum);
+        if (specificCourse) {
+          return [...courses, specificCourse];
+        }
+      }
+    }
+    
+    return courses;
   };
 
   // Add a helper function to check if the applicant has been forwarded for evaluation
   const checkForwardStatus = () => {
-    return applicant?.forwardedForEvaluation === true;
+    // If we have an evaluationId or currentEvaluation, then it's been forwarded
+    return Boolean(evaluationId || currentEvaluation || (applicant && applicant.forwardedForEvaluation === true));
   };
 
   return (
@@ -456,7 +585,7 @@ const ViewApplicantPage = () => {
           fontWeight={600}
           sx={{ mb: 2, borderBottom: "2px solid #ddd", pb: 1 }}
         >
-          Evaluation Form
+          Evaluation Form {currentEvaluation && `- Evaluation #${currentEvaluation.evaluationId}`}
         </Typography>
 
         {applicant && !checkForwardStatus() && (
@@ -491,6 +620,7 @@ const ViewApplicantPage = () => {
               value={selectedCourse?.courseId || ""}
               onChange={handleCourseChange}
               label="Select Course to Evaluate"
+              disabled={Boolean(currentEvaluation || evaluationId)} // Disable if viewing specific evaluation
             >
               {getAvailableCoursesForEvaluation().map((course) => (
                 <MenuItem key={course.courseId} value={course.courseId}>
@@ -512,6 +642,7 @@ const ViewApplicantPage = () => {
               <MenuItem value="APPROVED">Approved</MenuItem>
               <MenuItem value="REJECTED">Rejected</MenuItem>
               <MenuItem value="PENDING">Pending</MenuItem>
+              <MenuItem value="UNDER_REVIEW">Under Review</MenuItem>
             </Select>
           </FormControl>
 
@@ -527,7 +658,7 @@ const ViewApplicantPage = () => {
             disabled={!selectedCourse || submitting || !checkForwardStatus()}
           />
 
-          {/* Submit Button */}
+          {/* Submit Button - change wording based on context */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
             <Button
               variant="contained"
@@ -538,7 +669,7 @@ const ViewApplicantPage = () => {
             >
               {submitting ? (
                 <CircularProgress size={24} color="inherit" />
-              ) : existingEvaluation ? (
+              ) : existingEvaluation || currentEvaluation ? (
                 "Update Evaluation"
               ) : (
                 "Submit Evaluation"

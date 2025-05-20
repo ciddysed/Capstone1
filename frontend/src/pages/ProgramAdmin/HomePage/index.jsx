@@ -43,12 +43,15 @@ import PersonIcon from '@mui/icons-material/Person';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import EmailIcon from '@mui/icons-material/Email';
 import SchoolIcon from '@mui/icons-material/School';
+import SendIcon from '@mui/icons-material/Send';
 import MainLayout from "../../../templates/MainLayout";
 import backgroundImage from "../../../assets/login-bg.png";
 import axios from "axios";
 import { styled } from "@mui/material/styles";
 
 const API_URL = "http://localhost:8080/api/program-admins";
+const DEPARTMENTS_API_URL = "http://localhost:8080/api/departments";
+const EVALUATIONS_API_URL = "http://localhost:8080/api/evaluations";
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -188,6 +191,18 @@ const getOrdinalSuffix = (num) => {
   }
 };
 
+// Status color mapping
+const getStatusChipColor = (status) => {
+  const statusMap = {
+    PENDING: "warning",
+    APPROVED: "success",
+    REJECTED: "error",
+    WAITLISTED: "info",
+    UNDER_REVIEW: "secondary",
+  };
+  return statusMap[status] || "default";
+};
+
 const ProgramAdminHomePage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -199,22 +214,13 @@ const ProgramAdminHomePage = () => {
   const [coursePreferences, setCoursePreferences] = useState([]);
   const [loadingPreferences, setLoadingPreferences] = useState(false);
   const [newStatus, setNewStatus] = useState("");
-  const [finalCourseId, setFinalCourseId] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [forwardingLoading, setForwardingLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  // Status color mapping
-  const getStatusChipColor = (status) => {
-    const statusMap = {
-      PENDING: "warning",
-      APPROVED: "success",
-      REJECTED: "error",
-      WAITLISTED: "info",
-      UNDER_REVIEW: "secondary",
-    };
-    return statusMap[status] || "default";
-  };
+  const [departments, setDepartments] = useState([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
 
   // Fetch all applications
   const fetchApplications = async () => {
@@ -240,6 +246,27 @@ const ProgramAdminHomePage = () => {
     }
   };
 
+  // Fetch departments from the API
+  const fetchDepartments = async () => {
+    setLoadingDepartments(true);
+    try {
+      const response = await axios.get(DEPARTMENTS_API_URL);
+      setDepartments(response.data);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      // Fallback to sample departments if API call fails
+      setDepartments([
+        { departmentId: 1, departmentName: "Computer Science" },
+        { departmentId: 2, departmentName: "Electrical Engineering" },
+        { departmentId: 3, departmentName: "Mechanical Engineering" },
+        { departmentId: 4, departmentName: "Civil Engineering" },
+        { departmentId: 5, departmentName: "Mathematics" },
+      ]);
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
+
   // Open application details dialog
   const handleOpenDialog = (application) => {
     setSelectedApplication({
@@ -250,7 +277,7 @@ const ProgramAdminHomePage = () => {
       applicantName: application.applicantName
     });
     setNewStatus(application.status);
-    setFinalCourseId(application.finalCourseId || "");
+    setSelectedDepartment("");
     // Use applicationId with fallback to id
     fetchApplicationDetails(application.applicationId || application.id);
     setOpenDialog(true);
@@ -331,20 +358,66 @@ const ProgramAdminHomePage = () => {
     setUpdateLoading(true);
     try {
       const applicationId = selectedApplication.applicationId || selectedApplication.id;
-      let url = `${API_URL}/applications/${applicationId}/update-status?status=${newStatus}`;
-      
-      if (newStatus === "APPROVED" && finalCourseId) {
-        url += `&finalCourseId=${finalCourseId}`;
-      }
+      const url = `${API_URL}/applications/${applicationId}/update-status?status=${newStatus}`;
       
       await axios.put(url);
       // Refresh applications after update
       await fetchApplications();
-      handleCloseDialog();
+      if (newStatus !== "APPROVED") {
+        handleCloseDialog();
+      } else {
+        // If approved, keep the dialog open to allow department selection
+        setSelectedApplication(prev => ({
+          ...prev,
+          status: newStatus
+        }));
+      }
     } catch (error) {
       console.error("Error updating application status:", error);
     } finally {
       setUpdateLoading(false);
+    }
+  };
+
+  // Forward application to department
+  const forwardApplicationToDepartment = async () => {
+    if (!selectedDepartment) {
+      alert("Please select a department");
+      return;
+    }
+
+    setForwardingLoading(true);
+    try {
+      // Use applicantId instead of applicationId
+      const applicantId = selectedApplication.applicant?.applicantId;
+      if (!applicantId) {
+        throw new Error("Applicant ID not found");
+      }
+      
+      // Use the forward-application endpoint with applicantId
+      const url = `${EVALUATIONS_API_URL}/forward-application/${applicantId}`;
+      
+      // Include the departmentId in the request body
+      const response = await axios.post(url, {
+        departmentId: selectedDepartment
+      });
+      
+      if (response.status === 200) {
+        // Show success message
+        alert(`Application successfully forwarded for evaluation`);
+        
+        // Refresh applications and close dialog
+        await fetchApplications();
+        handleCloseDialog();
+      } else {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Error forwarding application:", error);
+      const errorMessage = error.response?.data?.message || error.message || "";
+      alert(`Failed to forward application for evaluation. ${errorMessage}`);
+    } finally {
+      setForwardingLoading(false);
     }
   };
 
@@ -354,7 +427,7 @@ const ProgramAdminHomePage = () => {
     setSelectedApplication(null);
     setCoursePreferences([]);
     setNewStatus("");
-    setFinalCourseId("");
+    setSelectedDepartment("");
   };
 
   // Handle previewing document in a new tab - added to match DocumentHandler approach
@@ -414,6 +487,8 @@ const ProgramAdminHomePage = () => {
 
   useEffect(() => {
     fetchApplications();
+    fetchDepartments(); // Fetch departments when component mounts
+    
     // Optional: set auto-refresh interval
     const interval = setInterval(fetchApplications, 300000); // 5 minutes
     return () => clearInterval(interval);
@@ -858,29 +933,35 @@ const ProgramAdminHomePage = () => {
                             </Select>
                           </FormControl>
 
-                          {newStatus === "APPROVED" && (
-                            <FormControl fullWidth variant="outlined">
-                              <InputLabel>Assign Final Course</InputLabel>
-                              <Select
-                                value={finalCourseId}
-                                label="Assign Final Course"
-                                onChange={(e) => setFinalCourseId(e.target.value)}
-                              >
-                                {coursePreferences.map((preference) => (
-                                  <MenuItem 
-                                    key={preference.preferenceId || preference.id || `pref-${preference.courseId}-${preference.preferenceOrder}`} 
-                                    value={preference.courseId}
-                                  >
-                                    {preference.courseName} - {preference.department} (Preference: {
-                                      preference.preferenceOrder === "FIRST" ? "1st" :
-                                      preference.preferenceOrder === "SECOND" ? "2nd" :
-                                      preference.preferenceOrder === "THIRD" ? "3rd" :
-                                      preference.preferenceOrder
-                                    })
-                                  </MenuItem>
-                                ))}
-                              </Select>
-                            </FormControl>
+                          {(newStatus === "APPROVED" || selectedApplication.status === "APPROVED") && (
+                            <Box>
+                              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                                Forward to Department for Evaluation
+                              </Typography>
+                              <FormControl fullWidth variant="outlined">
+                                <InputLabel>Select Department</InputLabel>
+                                <Select
+                                  value={selectedDepartment}
+                                  label="Select Department"
+                                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                                  disabled={loadingDepartments}
+                                  startAdornment={
+                                    loadingDepartments ? (
+                                      <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                                    ) : null
+                                  }
+                                >
+                                  {departments.map((department) => (
+                                    <MenuItem 
+                                      key={department.departmentId} 
+                                      value={department.departmentId}
+                                    >
+                                      {department.departmentName}
+                                    </MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                            </Box>
                           )}
                         </Box>
                       </CardContent>
@@ -909,12 +990,32 @@ const ProgramAdminHomePage = () => {
                 <ActionButton 
                   variant="contained"
                   onClick={updateApplicationStatus}
-                  disabled={updateLoading || (newStatus === selectedApplication.status && finalCourseId === (selectedApplication.finalCourseId || ""))}
+                  disabled={updateLoading || newStatus === selectedApplication.status}
                   startIcon={updateLoading ? <CircularProgress size={20} /> : null}
                   sx={{ borderRadius: 2, px: 3 }}
                 >
                   {updateLoading ? "Updating..." : "Update Status"}
                 </ActionButton>
+                
+                {(newStatus === "APPROVED" || selectedApplication.status === "APPROVED") && (
+                  <ActionButton 
+                    variant="contained"
+                    onClick={forwardApplicationToDepartment}
+                    disabled={forwardingLoading || !selectedDepartment}
+                    startIcon={forwardingLoading ? <CircularProgress size={20} /> : <SendIcon />}
+                    sx={{ 
+                      borderRadius: 2, 
+                      px: 3, 
+                      bgcolor: gold.main,
+                      color: gold.contrastText,
+                      '&:hover': {
+                        bgcolor: gold.dark,
+                      }
+                    }}
+                  >
+                    {forwardingLoading ? "Forwarding..." : "Forward Application"}
+                  </ActionButton>
+                )}
               </DialogActions>
             </>
           )}
