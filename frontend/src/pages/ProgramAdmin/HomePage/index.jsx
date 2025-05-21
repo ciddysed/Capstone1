@@ -215,6 +215,7 @@ const ProgramAdminHomePage = () => {
   const [loadingPreferences, setLoadingPreferences] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
   const [updateLoading, setUpdateLoading] = useState(false);
   const [forwardingLoading, setForwardingLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -278,6 +279,7 @@ const ProgramAdminHomePage = () => {
     });
     setNewStatus(application.status);
     setSelectedDepartment("");
+    setSelectedCourse(""); // Reset selected course
     // Use applicationId with fallback to id
     fetchApplicationDetails(application.applicationId || application.id);
     setOpenDialog(true);
@@ -361,6 +363,26 @@ const ProgramAdminHomePage = () => {
       const url = `${API_URL}/applications/${applicationId}/update-status?status=${newStatus}`;
       
       await axios.put(url);
+      
+      // If approved and a course is selected, assign the course
+      if (newStatus === "APPROVED" && selectedCourse) {
+        try {
+          const applicantId = selectedApplication.applicant?.applicantId;
+          if (applicantId) {
+            // Assign the selected course to the applicant
+            await axios.post(`${API_URL}/applications/${applicationId}/assign-course`, {
+              applicantId: applicantId,
+              courseId: selectedCourse
+            });
+            
+            alert("Course successfully assigned to applicant");
+          }
+        } catch (courseError) {
+          console.error("Error assigning course:", courseError);
+          alert(`Status updated but course assignment failed: ${courseError.response?.data?.message || courseError.message}`);
+        }
+      }
+      
       // Refresh applications after update
       await fetchApplications();
       if (newStatus !== "APPROVED") {
@@ -374,6 +396,7 @@ const ProgramAdminHomePage = () => {
       }
     } catch (error) {
       console.error("Error updating application status:", error);
+      alert(`Failed to update application status: ${error.response?.data?.message || error.message}`);
     } finally {
       setUpdateLoading(false);
     }
@@ -428,6 +451,7 @@ const ProgramAdminHomePage = () => {
     setCoursePreferences([]);
     setNewStatus("");
     setSelectedDepartment("");
+    setSelectedCourse("");
   };
 
   // Handle previewing document in a new tab - added to match DocumentHandler approach
@@ -936,6 +960,58 @@ const ProgramAdminHomePage = () => {
                           {(newStatus === "APPROVED" || selectedApplication.status === "APPROVED") && (
                             <Box>
                               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                                Assign Course Based on Preferences
+                              </Typography>
+                              <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
+                                <InputLabel>Assign Course</InputLabel>
+                                <Select
+                                  value={selectedCourse}
+                                  label="Assign Course"
+                                  onChange={(e) => setSelectedCourse(e.target.value)}
+                                  disabled={loadingPreferences}
+                                >
+                                  {coursePreferences.sort((a, b) => {
+                                    // Handle different priority order formats
+                                    const priorityMap = { "FIRST": 1, "SECOND": 2, "THIRD": 3 };
+                                    const orderA = typeof a.preferenceOrder === 'string' && isNaN(a.preferenceOrder) 
+                                      ? priorityMap[a.preferenceOrder] || 999 
+                                      : a.preferenceOrder;
+                                    const orderB = typeof b.preferenceOrder === 'string' && isNaN(b.preferenceOrder) 
+                                      ? priorityMap[b.preferenceOrder] || 999 
+                                      : b.preferenceOrder;
+                                    return orderA - orderB;
+                                  }).map((pref) => (
+                                    <MenuItem key={pref.courseId} value={pref.courseId}>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Chip
+                                          size="small"
+                                          label={
+                                            pref.preferenceOrder === "FIRST" ? "1st" :
+                                            pref.preferenceOrder === "SECOND" ? "2nd" :
+                                            pref.preferenceOrder === "THIRD" ? "3rd" :
+                                            `${pref.preferenceOrder}${getOrdinalSuffix(pref.preferenceOrder)}`
+                                          }
+                                          color={
+                                            pref.preferenceOrder === "FIRST" || pref.preferenceOrder === 1 ? "primary" :
+                                            pref.preferenceOrder === "SECOND" || pref.preferenceOrder === 2 ? "secondary" : 
+                                            "default"
+                                          }
+                                          variant="outlined"
+                                          sx={{ minWidth: 40 }}
+                                        />
+                                        {pref.courseName} ({pref.department})
+                                      </Box>
+                                    </MenuItem>
+                                  ))}
+                                  {coursePreferences.length === 0 && (
+                                    <MenuItem disabled value="">
+                                      No course preferences available
+                                    </MenuItem>
+                                  )}
+                                </Select>
+                              </FormControl>
+
+                              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                                 Forward to Department for Evaluation
                               </Typography>
                               <FormControl fullWidth variant="outlined">
@@ -994,7 +1070,7 @@ const ProgramAdminHomePage = () => {
                   startIcon={updateLoading ? <CircularProgress size={20} /> : null}
                   sx={{ borderRadius: 2, px: 3 }}
                 >
-                  {updateLoading ? "Updating..." : "Update Status"}
+                  {updateLoading ? "Updating..." : (newStatus === "APPROVED" && selectedCourse ? "Update & Assign Course" : "Update Status")}
                 </ActionButton>
                 
                 {(newStatus === "APPROVED" || selectedApplication.status === "APPROVED") && (
