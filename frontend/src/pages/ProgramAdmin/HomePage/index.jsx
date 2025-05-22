@@ -213,6 +213,8 @@ const ProgramAdminHomePage = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [coursePreferences, setCoursePreferences] = useState([]);
   const [loadingPreferences, setLoadingPreferences] = useState(false);
+  const [preferenceEvaluations, setPreferenceEvaluations] = useState({});
+  const [loadingEvaluations, setLoadingEvaluations] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
@@ -310,9 +312,10 @@ const ProgramAdminHomePage = () => {
       }));
       
       // Set course preferences from the response
+      let prefsToUse = [];
       if (application.coursePreferences) {
         // Normalize course preference data
-        const normalizedPreferences = application.coursePreferences.map(pref => ({
+        prefsToUse = application.coursePreferences.map(pref => ({
           id: pref.preferenceId || pref.id || Math.random().toString(36).substr(2, 9),
           preferenceId: pref.preferenceId || pref.id,
           preferenceOrder: pref.priorityOrder || pref.preferenceOrder,
@@ -321,13 +324,13 @@ const ProgramAdminHomePage = () => {
           department: pref.course?.department?.departmentName || 'Department not specified',
           // Add any other fields needed
         }));
-        setCoursePreferences(normalizedPreferences);
+        setCoursePreferences(prefsToUse);
       } else {
         // Fallback to separate API call if not included
         try {
           const preferencesResponse = await axios.get(`${API_URL}/applications/${applicationId}/preferences`);
           // Normalize preferences from separate call
-          const normalizedPreferences = preferencesResponse.data.map(pref => ({
+          prefsToUse = preferencesResponse.data.map(pref => ({
             id: pref.preferenceId || pref.id || Math.random().toString(36).substr(2, 9),
             preferenceId: pref.preferenceId || pref.id,
             preferenceOrder: pref.priorityOrder || pref.preferenceOrder,
@@ -335,12 +338,19 @@ const ProgramAdminHomePage = () => {
             courseName: pref.course?.courseName || pref.courseName || `Course ${pref.course?.courseId || pref.courseId}`,
             department: pref.course?.department?.departmentName || 'Department not specified',
           }));
-          setCoursePreferences(normalizedPreferences);
+          setCoursePreferences(prefsToUse);
         } catch (error) {
           console.error("Error fetching preferences:", error);
           setCoursePreferences([]);
+          prefsToUse = [];
         }
       }
+
+      // After getting preferences, fetch evaluation statuses for each course
+      if (prefsToUse.length > 0 && application.applicant?.applicantId) {
+        await fetchEvaluationStatusesForPreferences(application.applicant.applicantId, prefsToUse);
+      }
+
     } catch (error) {
       console.error("Error fetching application details:", error);
       // Set defaults to prevent null reference errors
@@ -352,6 +362,42 @@ const ProgramAdminHomePage = () => {
       setCoursePreferences([]);
     } finally {
       setLoadingPreferences(false);
+    }
+  };
+
+  // New function to fetch evaluation statuses for course preferences
+  const fetchEvaluationStatusesForPreferences = async (applicantId, preferences) => {
+    setLoadingEvaluations(true);
+    try {
+      // Fetch all evaluations for this applicant
+      const response = await axios.get(`${EVALUATIONS_API_URL}/applicant/${applicantId}`);
+      const evaluations = response.data;
+      
+      // Create a map of courseId -> evaluation status
+      const evaluationMap = {};
+      
+      if (Array.isArray(evaluations) && evaluations.length > 0) {
+        evaluations.forEach(evaluation => {
+          if (evaluation.course && evaluation.course.courseId) {
+            evaluationMap[evaluation.course.courseId] = {
+              status: evaluation.evaluationStatus || 'PENDING',
+              evaluatorName: evaluation.evaluator ? 
+                `${evaluation.evaluator.firstName || ''} ${evaluation.evaluator.lastName || ''}`.trim() : 
+                'Unknown Evaluator',
+              dateEvaluated: evaluation.dateEvaluated || null,
+              comments: evaluation.comments || '',
+              evaluationId: evaluation.evaluationId
+            };
+          }
+        });
+      }
+      
+      setPreferenceEvaluations(evaluationMap);
+    } catch (error) {
+      console.error("Error fetching evaluation statuses:", error);
+      setPreferenceEvaluations({});
+    } finally {
+      setLoadingEvaluations(false);
     }
   };
 
@@ -409,6 +455,12 @@ const ProgramAdminHomePage = () => {
       return;
     }
 
+    // Check if a course has been selected
+    if (!selectedCourse) {
+      alert("Please select a course to forward for evaluation");
+      return;
+    }
+
     setForwardingLoading(true);
     try {
       // Use applicantId instead of applicationId
@@ -420,9 +472,10 @@ const ProgramAdminHomePage = () => {
       // Use the forward-application endpoint with applicantId
       const url = `${EVALUATIONS_API_URL}/forward-application/${applicantId}`;
       
-      // Include the departmentId in the request body
+      // Include both the departmentId and courseId in the request body
       const response = await axios.post(url, {
-        departmentId: selectedDepartment
+        departmentId: selectedDepartment,
+        courseId: selectedCourse  // Send the selected course ID to the backend
       });
       
       if (response.status === 200) {
@@ -507,6 +560,51 @@ const ProgramAdminHomePage = () => {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  // Helper function to get evaluation status for a course
+  const getEvaluationStatusForCourse = (courseId) => {
+    return preferenceEvaluations[courseId] || null;
+  };
+
+  // Helper function to get status chip for evaluation
+  const getEvaluationStatusChip = (courseId) => {
+    const evaluation = getEvaluationStatusForCourse(courseId);
+    
+    if (!evaluation) {
+      return (
+        <StyledChip 
+          label="Not Evaluated" 
+          color="default" 
+          variant="outlined"
+          size="small"
+        />
+      );
+    }
+    
+    return (
+      <StyledChip 
+        label={evaluation.status} 
+        color={getStatusChipColor(evaluation.status)} 
+        variant="outlined"
+        size="small"
+      />
+    );
+  };
+
+  // Helper function to get tooltip text for evaluation
+  const getEvaluationTooltipText = (courseId) => {
+    const evaluation = getEvaluationStatusForCourse(courseId);
+    
+    if (!evaluation) {
+      return "No evaluation data available";
+    }
+    
+    const dateText = evaluation.dateEvaluated ? 
+      `Evaluated on ${new Date(evaluation.dateEvaluated).toLocaleDateString()}` : 
+      "Date not available";
+    
+    return `${evaluation.status} by ${evaluation.evaluatorName}\n${dateText}${evaluation.comments ? `\nComments: ${evaluation.comments}` : ''}`;
   };
 
   useEffect(() => {
@@ -792,6 +890,7 @@ const ProgramAdminHomePage = () => {
                                   <StyledTableCell>Preference</StyledTableCell>
                                   <StyledTableCell>Course</StyledTableCell>
                                   <StyledTableCell>Department</StyledTableCell>
+                                  <StyledTableCell>Evaluation Status</StyledTableCell>
                                 </TableRow>
                               </TableHead>
                               <TableBody>
@@ -809,7 +908,7 @@ const ProgramAdminHomePage = () => {
                                   })
                                   .map((preference) => (
                                     <StyledTableRow key={preference.id || preference.preferenceId || `pref-${Math.random()}`}>
-                                      <StyledTableCell sx={{ width: '25%' }}>
+                                      <StyledTableCell sx={{ width: '20%' }}>
                                         <Chip
                                           label={
                                             preference.preferenceOrder === "FIRST" ? "1st Choice" :
@@ -828,6 +927,21 @@ const ProgramAdminHomePage = () => {
                                       </StyledTableCell>
                                       <StyledTableCell sx={{ fontWeight: 'medium' }}>{preference.courseName}</StyledTableCell>
                                       <StyledTableCell>{preference.department}</StyledTableCell>
+                                      <StyledTableCell>
+                                        <Tooltip 
+                                          title={getEvaluationTooltipText(preference.courseId)}
+                                          arrow
+                                          placement="top"
+                                        >
+                                          <Box sx={{ display: 'inline-block' }}>
+                                            {loadingEvaluations ? (
+                                              <CircularProgress size={20} thickness={5} />
+                                            ) : (
+                                              getEvaluationStatusChip(preference.courseId)
+                                            )}
+                                          </Box>
+                                        </Tooltip>
+                                      </StyledTableCell>
                                     </StyledTableRow>
                                   ))}
                             </TableBody>
