@@ -50,7 +50,6 @@ import axios from "axios";
 import { styled } from "@mui/material/styles";
 
 const API_URL = "http://localhost:8080/api/program-admins";
-const DEPARTMENTS_API_URL = "http://localhost:8080/api/departments";
 const EVALUATIONS_API_URL = "http://localhost:8080/api/evaluations";
 
 // Custom maroon and gold color palette
@@ -216,14 +215,11 @@ const ProgramAdminHomePage = () => {
   const [preferenceEvaluations, setPreferenceEvaluations] = useState({});
   const [loadingEvaluations, setLoadingEvaluations] = useState(false);
   const [newStatus, setNewStatus] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
   const [updateLoading, setUpdateLoading] = useState(false);
   const [forwardingLoading, setForwardingLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [departments, setDepartments] = useState([]);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
 
   // Fetch all applications
   const fetchApplications = async () => {
@@ -249,27 +245,6 @@ const ProgramAdminHomePage = () => {
     }
   };
 
-  // Fetch departments from the API
-  const fetchDepartments = async () => {
-    setLoadingDepartments(true);
-    try {
-      const response = await axios.get(DEPARTMENTS_API_URL);
-      setDepartments(response.data);
-    } catch (error) {
-      console.error("Error fetching departments:", error);
-      // Fallback to sample departments if API call fails
-      setDepartments([
-        { departmentId: 1, departmentName: "Computer Science" },
-        { departmentId: 2, departmentName: "Electrical Engineering" },
-        { departmentId: 3, departmentName: "Mechanical Engineering" },
-        { departmentId: 4, departmentName: "Civil Engineering" },
-        { departmentId: 5, departmentName: "Mathematics" },
-      ]);
-    } finally {
-      setLoadingDepartments(false);
-    }
-  };
-
   // Open application details dialog
   const handleOpenDialog = (application) => {
     setSelectedApplication({
@@ -280,7 +255,6 @@ const ProgramAdminHomePage = () => {
       applicantName: application.applicantName
     });
     setNewStatus(application.status);
-    setSelectedDepartment("");
     setSelectedCourse(""); // Reset selected course
     // Use applicationId with fallback to id
     fetchApplicationDetails(application.applicationId || application.id);
@@ -450,11 +424,6 @@ const ProgramAdminHomePage = () => {
 
   // Forward application to department
   const forwardApplicationToDepartment = async () => {
-    if (!selectedDepartment) {
-      alert("Please select a department");
-      return;
-    }
-
     // Check if a course has been selected
     if (!selectedCourse) {
       alert("Please select a course to forward for evaluation");
@@ -472,9 +441,8 @@ const ProgramAdminHomePage = () => {
       // Use the forward-application endpoint with applicantId
       const url = `${EVALUATIONS_API_URL}/forward-application/${applicantId}`;
       
-      // Include both the departmentId and courseId in the request body
+      // Include only the courseId in the request body
       const response = await axios.post(url, {
-        departmentId: selectedDepartment,
         courseId: selectedCourse  // Send the selected course ID to the backend
       });
       
@@ -503,7 +471,6 @@ const ProgramAdminHomePage = () => {
     setSelectedApplication(null);
     setCoursePreferences([]);
     setNewStatus("");
-    setSelectedDepartment("");
     setSelectedCourse("");
   };
 
@@ -609,7 +576,6 @@ const ProgramAdminHomePage = () => {
 
   useEffect(() => {
     fetchApplications();
-    fetchDepartments(); // Fetch departments when component mounts
     
     // Optional: set auto-refresh interval
     const interval = setInterval(fetchApplications, 300000); // 5 minutes
@@ -1124,33 +1090,6 @@ const ProgramAdminHomePage = () => {
                                   )}
                                 </Select>
                               </FormControl>
-
-                              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                                Forward to Department for Evaluation
-                              </Typography>
-                              <FormControl fullWidth variant="outlined">
-                                <InputLabel>Select Department</InputLabel>
-                                <Select
-                                  value={selectedDepartment}
-                                  label="Select Department"
-                                  onChange={(e) => setSelectedDepartment(e.target.value)}
-                                  disabled={loadingDepartments}
-                                  startAdornment={
-                                    loadingDepartments ? (
-                                      <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
-                                    ) : null
-                                  }
-                                >
-                                  {departments.map((department) => (
-                                    <MenuItem 
-                                      key={department.departmentId} 
-                                      value={department.departmentId}
-                                    >
-                                      {department.departmentName}
-                                    </MenuItem>
-                                  ))}
-                                </Select>
-                              </FormControl>
                             </Box>
                           )}
                         </Box>
@@ -1191,7 +1130,7 @@ const ProgramAdminHomePage = () => {
                   <ActionButton 
                     variant="contained"
                     onClick={forwardApplicationToDepartment}
-                    disabled={forwardingLoading || !selectedDepartment}
+                    disabled={forwardingLoading || !selectedCourse}
                     startIcon={forwardingLoading ? <CircularProgress size={20} /> : <SendIcon />}
                     sx={{ 
                       borderRadius: 2, 
@@ -1203,7 +1142,7 @@ const ProgramAdminHomePage = () => {
                       }
                     }}
                   >
-                    {forwardingLoading ? "Forwarding..." : "Forward Application"}
+                    {forwardingLoading ? "Forwarding..." : "Forward for Evaluation"}
                   </ActionButton>
                 )}
               </DialogActions>

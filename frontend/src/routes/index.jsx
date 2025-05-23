@@ -14,7 +14,7 @@ import ApplicantsListPage from "../pages/evaluators/ApplicantsListPage";
 import ViewApplicantPage from "../pages/evaluators/ViewApplicantPage";
 import OrganizedCourseDialog from "../components/OrganizedCourseDialog";
 import ProgramAdminHomePage from "../pages/ProgramAdmin/HomePage";
-
+import EvaluatorManagementPage from "../pages/ProgramAdmin/EvaluatorManagement";
 
 const AppRoutes = () => {
   return useRoutes([
@@ -114,6 +114,17 @@ const AppRoutes = () => {
         // </ProtectedRoute>
       ),
     },
+
+    {
+      path: "/program-admin/evaluator-management",
+      element: (
+        // <ProtectedRoute>
+        <EvaluatorManagementPage />
+        // </ProtectedRoute>
+      ),
+    },
+
+
 
     
     //   path: "*",
