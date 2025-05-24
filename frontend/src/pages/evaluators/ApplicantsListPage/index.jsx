@@ -164,8 +164,16 @@ const ApplicantsListPage = () => {
   
   const fetchEvaluations = () => {
     setLoading(true);
-    // Simplified approach: just fetch ALL evaluations
-    fetch(`http://localhost:8080/api/evaluations/all`)
+    
+    if (!evaluatorId) {
+      console.error("No evaluator ID found in localStorage");
+      setEvaluations([]);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch evaluations specific to this evaluator
+    fetch(`http://localhost:8080/api/evaluations/evaluator/${evaluatorId}`)
       .then((res) => {
         if (!res.ok) {
           console.error(`Error fetching evaluations: HTTP ${res.status}`);
@@ -174,7 +182,7 @@ const ApplicantsListPage = () => {
         return res.json();
       })
       .then(async (data) => {
-        console.log("All evaluations:", data);
+        console.log("Evaluator specific evaluations:", data);
         if (Array.isArray(data)) {
           // Process evaluations to ensure all have required fields
           const processedEvaluations = data.map(ev => ({
@@ -343,7 +351,7 @@ const ApplicantsListPage = () => {
                 paddingBottom: 1,
                 display: 'inline-block'
               }}>
-                All Evaluations
+                My Assigned Evaluations
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Chip 
@@ -368,7 +376,7 @@ const ApplicantsListPage = () => {
               <Box sx={{ display: "flex", justifyContent: "center", my: 6, alignItems: "center" }}>
                 <CircularProgress />
                 <Typography variant="body1" sx={{ ml: 2, color: 'text.secondary' }}>
-                  Loading evaluations...
+                  Loading your assigned evaluations...
                 </Typography>
               </Box>
             ) : paginatedData.length > 0 ? (
@@ -505,10 +513,10 @@ const ApplicantsListPage = () => {
               }}>
                 <HourglassEmptyIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No evaluation records found
+                  No evaluations assigned
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  There are currently no evaluations assigned to you.
+                  You currently have no evaluations assigned to you.
                 </Typography>
               </Box>
             )}

@@ -126,7 +126,7 @@ const AppRoutes = () => {
     },
 
     {
-      path: "/program-admin/evaluator-management",
+      path: "/system-admin/evaluator-management",
       element: (
         // <ProtectedRoute>
         <EvaluatorManagementPage />

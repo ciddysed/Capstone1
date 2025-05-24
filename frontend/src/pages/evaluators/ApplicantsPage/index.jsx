@@ -333,21 +333,10 @@ const EvaluatorLoginForm = ({
                 helperText={errors.reEnterPassword?.message}
               />
             )}
+
             <Stack direction="row" justifyContent="flex-start">
               {currentFormType === "login" && (
-                <Link
-                  component="button"
-                  variant="body2"
-                  onClick={() => navigate("/forget-password")}
-                  sx={{
-                    color: "black",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                  }}
-                >
+                <Link href="#" variant="body2" sx={{ color: "black" }}>
                   Forgot password?
                 </Link>
               )}
