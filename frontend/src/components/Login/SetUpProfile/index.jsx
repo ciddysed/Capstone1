@@ -26,10 +26,10 @@ const schema = yup.object().shape({
   birthDate: yup.date().required("Date of birth is required"),
 });
 
-const SetUpProfile = () => {
+const SetUpProfile = ({ handleSuccess }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { applicantId } = location.state || {};
+  const applicantId = location.state?.applicantId || localStorage.getItem("applicantId");
   const [gender, setGender] = useState("");
 
   const {
@@ -62,7 +62,6 @@ const SetUpProfile = () => {
         contactNumber: data.contactNumber,
         dateOfBirth: formattedDate,
         gender: gender.toUpperCase(),
-        //TODO: Update THe Design, pls double check if there is profiel details input in the
         profileDetails: "Software Engineer",
       };
       console.log("payload", payload);
@@ -72,9 +71,15 @@ const SetUpProfile = () => {
         payload
       );
 
+      if (handleSuccess) {
+        handleSuccess("Profile setup completed successfully!");
+      }
       navigate("/homepage");
     } catch (error) {
       console.error("Profile setup failed:", error);
+      if (handleSuccess) {
+        handleSuccess("Profile setup failed. Please try again.");
+      }
     }
   };
 

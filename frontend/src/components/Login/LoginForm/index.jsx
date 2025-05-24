@@ -96,11 +96,32 @@ const LoginForm = ({
         if (applicantId) {
           localStorage.setItem("applicantId", applicantId);
           handleSuccess("Login successful!");
-          navigate("/setup-profile", {
-            state: {
-              applicantId,
-            },
-          });
+          
+          // Check if profile is complete by fetching user data
+          try {
+            const userResponse = await axios.get(`http://localhost:8080/api/applicants/${applicantId}`);
+            const userData = userResponse.data;
+            
+            // Check if essential profile fields are missing
+            const isProfileIncomplete = !userData.firstName || 
+                                      !userData.lastName || 
+                                      !userData.address || 
+                                      !userData.contactNumber || 
+                                      !userData.dateOfBirth || 
+                                      !userData.gender;
+            
+            if (isProfileIncomplete) {
+              // Navigate to setup profile within the same page
+              setView("setupProfile");
+            } else {
+              // Profile is complete, go to homepage
+              navigate("/homepage");
+            }
+          } catch (userError) {
+            console.error("Error fetching user data:", userError);
+            // If we can't fetch user data, assume profile is incomplete
+            setView("setupProfile");
+          }
         } else {
           throw new Error("Applicant ID missing in response");
         }

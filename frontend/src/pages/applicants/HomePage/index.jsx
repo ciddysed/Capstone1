@@ -89,10 +89,27 @@ const Homepage = () => {
           `http://localhost:8080/api/applicants/${applicantId}`
         );
         const data = response.data;
+
+        // Check if essential profile fields are missing
+        const isProfileIncomplete =
+          !data.firstName ||
+          !data.lastName ||
+          !data.address ||
+          !data.contactNumber ||
+          !data.dateOfBirth ||
+          !data.gender;
+
+        if (isProfileIncomplete) {
+          handleError("Please complete your profile first");
+          navigate("/login");
+          return;
+        }
+
         setUserFullName(`${data.firstName} ${data.lastName}`);
       } catch (error) {
         handleError("Failed to fetch user data");
         console.error("Homepage error:", error);
+        navigate("/login");
       }
     };
 

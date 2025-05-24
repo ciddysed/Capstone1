@@ -157,6 +157,7 @@ const ApplicantsListPage = () => {
   const [evaluations, setEvaluations] = useState([]);
   const [applicantMap, setApplicantMap] = useState({});
   const [courseMap, setCourseMap] = useState({});
+  const [evaluatorDepartment, setEvaluatorDepartment] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
@@ -245,6 +246,22 @@ const ApplicantsListPage = () => {
       });
   };
   
+  const fetchEvaluatorDepartment = async () => {
+    if (!evaluatorId) return;
+    
+    try {
+      const response = await fetch(`http://localhost:8080/api/evaluators/${evaluatorId}`);
+      if (response.ok) {
+        const evaluatorData = await response.json();
+        // Extract department name from the department object
+        const departmentName = evaluatorData.department?.departmentName || evaluatorData.department || "";
+        setEvaluatorDepartment(departmentName);
+      }
+    } catch (error) {
+      console.error("Error fetching evaluator department:", error);
+    }
+  };
+
   // Simplified data source - just return all evaluations
   const paginatedData = evaluations.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
@@ -334,6 +351,7 @@ const ApplicantsListPage = () => {
 
   useEffect(() => {
     fetchEvaluations();
+    fetchEvaluatorDepartment();
     
     // Optional: set auto-refresh interval
     const interval = setInterval(fetchEvaluations, 300000); // 5 minutes
@@ -346,13 +364,20 @@ const ApplicantsListPage = () => {
         <Grow in={true} timeout={500}>
           <AnimatedPaper elevation={3} sx={{ p: 3, my: 2, overflow: 'hidden' }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-              <Typography variant="h5" fontWeight="bold" color={maroon.dark} sx={{ 
-                borderBottom: `2px solid ${gold.main}`,
-                paddingBottom: 1,
-                display: 'inline-block'
-              }}>
-                My Assigned Evaluations
-              </Typography>
+              <Box>
+                <Typography variant="h5" fontWeight="bold" color={maroon.dark} sx={{ 
+                  borderBottom: `2px solid ${gold.main}`,
+                  paddingBottom: 1,
+                  display: 'inline-block'
+                }}>
+                  My Assigned Evaluations
+                </Typography>
+                {evaluatorDepartment && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
+                    Department: {evaluatorDepartment}
+                  </Typography>
+                )}
+              </Box>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Chip 
                   label={`${evaluations.length} Records`}
@@ -391,8 +416,6 @@ const ApplicantsListPage = () => {
                     <TableRow>
                       <StyledTableCell>Applicant Name</StyledTableCell>
                       <StyledTableCell>Course Name</StyledTableCell>
-                      <StyledTableCell>Status</StyledTableCell>
-                      <StyledTableCell>Forwarded At</StyledTableCell>
                       <StyledTableCell>Evaluated Date</StyledTableCell>
                       <StyledTableCell align="center">Actions</StyledTableCell>
                     </TableRow>
@@ -431,26 +454,27 @@ const ApplicantsListPage = () => {
                               <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
                                 {getInitials(fullName)}
                               </Avatar>
-                              <Typography variant="body2" fontWeight={500}>
-                                {fullName}
-                              </Typography>
-                              {!isEvaluated && (
-                                <Tooltip title="Needs evaluation">
-                                  <PendingIcon fontSize="small" color="warning" />
-                                </Tooltip>
-                              )}
+                              <Box>
+                                <Typography variant="body2" fontWeight={500}>
+                                  {fullName}
+                                </Typography>
+                                {!isEvaluated && (
+                                  <StyledChip
+                                    icon={<PendingIcon fontSize="small" />}
+                                    label="Needs Evaluation"
+                                    color="warning"
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ mt: 0.5 }}
+                                  />
+                                )}
+                              </Box>
                             </Stack>
                           </StyledTableCell>
-                          <StyledTableCell>{course?.courseName || "-"}</StyledTableCell>
-                          <StyledTableCell>{getStatusChip(item)}</StyledTableCell>
                           <StyledTableCell>
-                            {item.forwardedAt
-                              ? new Date(item.forwardedAt).toLocaleDateString(undefined, {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric',
-                                })
-                              : "-"}
+                            <Typography variant="body2" fontWeight={500}>
+                              {course?.courseName || "-"}
+                            </Typography>
                           </StyledTableCell>
                           <StyledTableCell>
                             {item.dateEvaluated && item.evaluationStatus
@@ -458,8 +482,14 @@ const ApplicantsListPage = () => {
                                   year: 'numeric',
                                   month: 'short',
                                   day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
                                 })
-                              : "-"}
+                              : (
+                                  <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                                    Not evaluated yet
+                                  </Typography>
+                                )}
                           </StyledTableCell>
                           <StyledTableCell align="center">
                             {!isEvaluated ? (

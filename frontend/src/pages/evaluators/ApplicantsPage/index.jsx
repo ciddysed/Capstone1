@@ -48,6 +48,7 @@ const EvaluatorLoginForm = ({
 }) => {
   const [currentFormType, setCurrentFormType] = useState(formType);
   const [departments, setDepartments] = useState([]);
+  const [evaluatorDepartment, setEvaluatorDepartment] = useState("");
   const schema = getValidationSchema(currentFormType);
   const navigate = useNavigate();
 
@@ -67,6 +68,14 @@ const EvaluatorLoginForm = ({
     }
   }, [currentFormType]);
 
+  // Fetch current evaluator's department if logged in
+  useEffect(() => {
+    const evaluatorId = localStorage.getItem("evaluatorId");
+    if (evaluatorId && currentFormType === "login") {
+      fetchCurrentEvaluatorDepartment(evaluatorId);
+    }
+  }, [currentFormType]);
+
   const fetchDepartments = async () => {
     try {
       const response = await fetch(
@@ -82,6 +91,25 @@ const EvaluatorLoginForm = ({
     } catch (error) {
       console.error("Error fetching departments:", error);
       setDepartments([]);
+    }
+  };
+
+  const fetchCurrentEvaluatorDepartment = async (evaluatorId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/evaluators/${evaluatorId}`
+      );
+      if (response.ok) {
+        const evaluatorData = await response.json();
+        // Extract department name from the department object
+        const departmentName =
+          evaluatorData.department?.departmentName ||
+          evaluatorData.department ||
+          "";
+        setEvaluatorDepartment(departmentName);
+      }
+    } catch (error) {
+      console.error("Error fetching evaluator department:", error);
     }
   };
 
@@ -216,6 +244,20 @@ const EvaluatorLoginForm = ({
             ? "Evaluator Login Form"
             : "Evaluator Signup Form"}
         </Typography>
+        {evaluatorDepartment && currentFormType === "login" && (
+          <Typography
+            variant="body2"
+            textAlign="center"
+            sx={{
+              color: "#800000",
+              fontWeight: 600,
+              fontStyle: "italic",
+              mt: -1,
+            }}
+          >
+            Department: {evaluatorDepartment}
+          </Typography>
+        )}
 
         <Stack direction="row" justifyContent="center">
           <ToggleButtonGroup

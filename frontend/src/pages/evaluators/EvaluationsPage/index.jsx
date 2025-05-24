@@ -3,30 +3,30 @@ import { useNavigate } from "react-router-dom";
 import {
   Paper,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
   Button,
   Stack,
   styled,
   Box,
   IconButton,
   Tooltip,
-  Chip,
   CircularProgress,
   alpha,
   createTheme,
   ThemeProvider,
   Grow,
+  Card,
+  CardContent,
+  Grid,
+  Avatar,
+  Divider,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import HomeIcon from "@mui/icons-material/Home";
-import RefreshIcon from "@mui/icons-material/Refresh";
 import AssessmentIcon from "@mui/icons-material/Assessment";
+import PeopleIcon from "@mui/icons-material/People";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import WorkIcon from "@mui/icons-material/Work";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import MainLayout from "../../../templates/MainLayout";
 
 // Custom maroon and gold color palette
@@ -55,6 +55,9 @@ const customTheme = createTheme({
   },
   typography: {
     fontFamily: '"Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif',
+    h4: {
+      fontWeight: 700,
+    },
     h5: {
       fontWeight: 600,
     },
@@ -64,30 +67,7 @@ const customTheme = createTheme({
   },
 });
 
-// Styled components for enhanced UI
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  fontWeight: 500,
-  "&.MuiTableCell-head": {
-    backgroundColor: maroon.main,
-    color: maroon.contrastText,
-    fontSize: 14,
-    fontWeight: 600,
-  },
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  "&:nth-of-type(odd)": {
-    backgroundColor: alpha(gold.light, 0.15),
-  },
-  "&:hover": {
-    backgroundColor: alpha(gold.light, 0.3),
-    transition: "background-color 0.2s ease",
-  },
-  "&:last-child td, &:last-child th": {
-    border: 0,
-  },
-}));
-
+// Enhanced styled components
 const AnimatedPaper = styled(Paper)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 1.5,
   boxShadow: "0 8px 40px -12px rgba(106, 0, 0, 0.2)",
@@ -106,91 +86,134 @@ const ActionButton = styled(Button)(({ theme }) => ({
   boxShadow: "none",
   "&:hover": {
     boxShadow: "0 6px 20px rgba(106, 0, 0, 0.25)",
+    transform: "translateY(-2px)",
+  },
+  transition: "all 0.2s ease",
+}));
+
+const WelcomeCard = styled(Card)(({ theme }) => ({
+  background: `linear-gradient(135deg, ${maroon.main}, ${maroon.light})`,
+  color: maroon.contrastText,
+  borderRadius: theme.shape.borderRadius * 2,
+  boxShadow: "0 12px 32px rgba(106, 0, 0, 0.3)",
+  overflow: "hidden",
+  position: "relative",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: "40%",
+    height: "100%",
+    background: `linear-gradient(45deg, transparent, ${alpha(gold.main, 0.2)})`,
+    borderRadius: "50% 0 0 50%",
   },
 }));
 
-const StyledChip = styled(Chip)(({ theme }) => ({
-  fontWeight: 600,
-  borderRadius: theme.shape.borderRadius,
-  "&.MuiChip-outlined": {
-    borderWidth: 2,
+const FeatureCard = styled(Card)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius * 1.5,
+  transition: "all 0.3s ease",
+  border: `2px solid ${alpha(maroon.main, 0.1)}`,
+  "&:hover": {
+    transform: "translateY(-8px)",
+    boxShadow: "0 16px 40px rgba(106, 0, 0, 0.15)",
+    borderColor: gold.main,
+  },
+}));
+
+const StatCard = styled(Card)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius * 1.5,
+  borderLeft: `4px solid ${gold.main}`,
+  backgroundColor: alpha(gold.light, 0.1),
+  transition: "all 0.2s ease",
+  "&:hover": {
+    backgroundColor: alpha(gold.light, 0.2),
+    transform: "scale(1.02)",
   },
 }));
 
 const EvaluationsPage = () => {
   const navigate = useNavigate();
-  const [evaluations, setEvaluations] = useState([]);
+  const [userFullName, setUserFullName] = useState("Evaluator");
+  const [evaluatorDepartment, setEvaluatorDepartment] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchDepartmentEvaluations();
+    // Fetch evaluator information
+    const evaluatorId = localStorage.getItem("evaluatorId");
+    if (evaluatorId) {
+      fetchEvaluatorInfo(evaluatorId);
+    } else {
+      setLoading(false);
+    }
   }, []);
 
-  const fetchDepartmentEvaluations = async () => {
+  const fetchEvaluatorInfo = async (evaluatorId) => {
     try {
-      setLoading(true);
-      const evaluatorId = localStorage.getItem("evaluatorId");
-
-      if (!evaluatorId) {
-        setError("Evaluator ID not found. Please log in again.");
-        return;
-      }
-
-      // Fetch evaluations filtered by evaluator's department
       const response = await fetch(
-        `http://localhost:8080/api/evaluators/${evaluatorId}/department-evaluations`
+        `http://localhost:8080/api/evaluators/${evaluatorId}`
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch evaluations");
+      if (response.ok) {
+        const data = await response.json();
+        setUserFullName(data.name || "Evaluator");
+        // Extract department name from the department object
+        const departmentName = data.department?.departmentName || data.department || "";
+        setEvaluatorDepartment(departmentName);
       }
-
-      const data = await response.json();
-      setEvaluations(data);
     } catch (error) {
-      console.error("Error fetching evaluations:", error);
-      setError("Failed to load evaluations. Please try again.");
+      console.error("Error fetching evaluator info:", error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleResend = async (evaluationId) => {
-    // Implement resend logic here
-    console.log("Resend evaluation with ID:", evaluationId);
   };
 
   const handleBackToHome = () => {
     navigate("/evaluator/homepage");
   };
 
-  const getStatusChip = (status) => {
-    const statusColors = {
-      APPROVED: "success",
-      REJECTED: "error",
-      PENDING: "warning",
-      IN_PROGRESS: "info",
-    };
-    return statusColors[status] || "default";
+  const handleNavigateToApplicants = () => {
+    navigate("/evaluator/applicants");
   };
+
+  const handleNavigateToEvaluations = () => {
+    navigate("/evaluator/evaluations");
+  };
+
+  if (loading) {
+    return (
+      <ThemeProvider theme={customTheme}>
+        <MainLayout>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: "50vh",
+            }}
+          >
+            <CircularProgress sx={{ color: maroon.main }} size={60} />
+          </Box>
+        </MainLayout>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider theme={customTheme}>
       <MainLayout>
         <Grow in={true} timeout={500}>
-          <AnimatedPaper elevation={3} sx={{ p: 3, my: 2, overflow: "hidden" }}>
+          <Box sx={{ p: 2 }}>
             {/* Header with Navigation */}
             <Box
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                mb: 3,
+                mb: 4,
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Tooltip title="Back to Homepage" arrow>
+                <Tooltip title="Back to Main Dashboard" arrow>
                   <IconButton
                     onClick={handleBackToHome}
                     sx={{
@@ -210,212 +233,330 @@ const EvaluationsPage = () => {
                 </Tooltip>
                 <Box>
                   <Typography
-                    variant="h5"
+                    variant="h4"
                     fontWeight="bold"
                     color={maroon.dark}
                     sx={{
-                      borderBottom: `2px solid ${gold.main}`,
+                      borderBottom: `3px solid ${gold.main}`,
                       paddingBottom: 1,
                       display: "inline-block",
                     }}
                   >
-                    Department Evaluations
+                    Evaluator Dashboard
                   </Typography>
                   <Typography
-                    variant="body2"
+                    variant="body1"
                     color="text.secondary"
                     sx={{ mt: 0.5 }}
                   >
-                    View and manage evaluations for your department
+                    Welcome back! Manage your evaluations and view department
+                    insights
                   </Typography>
+                  {evaluatorDepartment && (
+                    <Typography
+                      variant="body2"
+                      color={maroon.main}
+                      sx={{
+                        mt: 0.5,
+                        fontWeight: 600,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      Department: {evaluatorDepartment}
+                    </Typography>
+                  )}
                 </Box>
               </Box>
-              <Stack direction="row" spacing={1}>
-                <ActionButton
-                  variant="outlined"
-                  startIcon={<HomeIcon />}
-                  onClick={handleBackToHome}
-                  sx={{
-                    borderColor: maroon.main,
-                    color: maroon.main,
-                    fontWeight: 600,
-                    "&:hover": {
-                      borderColor: maroon.dark,
-                      backgroundColor: alpha(maroon.main, 0.1),
-                      transform: 'translateY(-2px)',
-                    },
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  Homepage
-                </ActionButton>
-                <ActionButton
-                  variant="contained"
-                  startIcon={
-                    loading ? (
-                      <CircularProgress size={20} color="inherit" />
-                    ) : (
-                      <RefreshIcon />
-                    )
-                  }
-                  onClick={fetchDepartmentEvaluations}
-                  disabled={loading}
-                  sx={{
-                    background: `linear-gradient(45deg, ${maroon.main}, ${maroon.light})`,
-                    color: "white",
-                    fontWeight: 600,
-                    "&:hover": {
-                      background: `linear-gradient(45deg, ${maroon.dark}, ${maroon.main})`,
-                      transform: 'translateY(-2px)',
-                    },
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {loading ? "Refreshing..." : "Refresh"}
-                </ActionButton>
-              </Stack>
             </Box>
 
-            {/* Content */}
-            {loading ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  my: 6,
-                  flexDirection: "column",
-                }}
-              >
-                <CircularProgress sx={{ color: maroon.main, mb: 2 }} size={60} />
-                <Typography variant="h6" color="text.secondary">
-                  Loading evaluations...
-                </Typography>
-              </Box>
-            ) : error ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  my: 6,
-                  py: 6,
-                  backgroundColor: alpha("#ffebee", 0.8),
-                  borderRadius: 2,
-                  border: "1px solid #ffcdd2",
-                }}
-              >
-                <AssessmentIcon
-                  sx={{
-                    fontSize: 60,
-                    color: "error.main",
-                    opacity: 0.5,
-                    mb: 2,
-                  }}
-                />
-                <Typography variant="h6" color="error" gutterBottom>
-                  {error}
-                </Typography>
-                <ActionButton
-                  variant="contained"
-                  onClick={fetchDepartmentEvaluations}
-                  sx={{ mt: 2 }}
-                >
-                  Try Again
-                </ActionButton>
-              </Box>
-            ) : evaluations.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  my: 6,
-                  py: 6,
-                  backgroundColor: alpha(gold.light, 0.2),
-                  borderRadius: 2,
-                }}
-              >
-                <AssessmentIcon
-                  sx={{
-                    fontSize: 60,
-                    color: "text.secondary",
-                    opacity: 0.5,
-                    mb: 2,
-                  }}
-                />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No evaluations found for your department
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Check back later or contact your administrator
-                </Typography>
-              </Box>
-            ) : (
-              <TableContainer
-                sx={{
-                  borderRadius: 2,
-                  boxShadow: "inset 0 0 8px rgba(0,0,0,0.05)",
-                  backgroundColor: alpha("#ffffff", 0.8),
-                  mb: 2,
-                }}
-              >
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <StyledTableCell>
-                        <TableSortLabel>Evaluation ID</TableSortLabel>
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        <TableSortLabel>Applicant Name</TableSortLabel>
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        <TableSortLabel>Position</TableSortLabel>
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        <TableSortLabel>Status</TableSortLabel>
-                      </StyledTableCell>
-                      <StyledTableCell align="center">Action</StyledTableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {evaluations.map((evaluation) => (
-                      <StyledTableRow key={evaluation.evaluationId}>
-                        <StyledTableCell>{evaluation.evaluationId}</StyledTableCell>
-                        <StyledTableCell>
-                          <Typography variant="body2" fontWeight={500}>
-                            {evaluation.applicantName}
+            <Grid container spacing={3}>
+              {/* Welcome Section */}
+              <Grid item xs={12}>
+                <WelcomeCard>
+                  <CardContent sx={{ p: 4, position: "relative", zIndex: 1 }}>
+                    <Grid container spacing={3} alignItems="center">
+                      <Grid item xs={12} md={8}>
+                        <Stack spacing={2}>
+                          <Typography variant="h5" fontWeight="bold">
+                            Hello, {userFullName}! 👋
                           </Typography>
-                        </StyledTableCell>
-                        <StyledTableCell>{evaluation.position}</StyledTableCell>
-                        <StyledTableCell>
-                          <StyledChip
-                            label={evaluation.status}
-                            color={getStatusChip(evaluation.status)}
-                            variant="outlined"
-                            size="small"
-                          />
-                        </StyledTableCell>
-                        <StyledTableCell align="center">
-                          <ActionButton
-                            variant="outlined"
-                            size="small"
-                            onClick={() => handleResend(evaluation.evaluationId)}
-                            sx={{
-                              borderColor: gold.main,
-                              color: gold.dark,
-                              "&:hover": {
-                                borderColor: gold.dark,
-                                backgroundColor: alpha(gold.main, 0.1),
-                              },
-                            }}
-                          >
-                            Resend
-                          </ActionButton>
-                        </StyledTableCell>
-                      </StyledTableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </AnimatedPaper>
+                          <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                            Ready to review applications and help students achieve
+                            their educational goals through ETEEAP?
+                          </Typography>
+                          <Stack direction="row" spacing={2}>
+                            <ActionButton
+                              variant="contained"
+                              startIcon={<PeopleIcon />}
+                              onClick={handleNavigateToApplicants}
+                              sx={{
+                                backgroundColor: gold.main,
+                                color: gold.contrastText,
+                                "&:hover": {
+                                  backgroundColor: gold.dark,
+                                },
+                              }}
+                            >
+                              View Applicants
+                            </ActionButton>
+                            <ActionButton
+                              variant="outlined"
+                              startIcon={<AssessmentIcon />}
+                              onClick={handleNavigateToEvaluations}
+                              sx={{
+                                borderColor: "white",
+                                color: "white",
+                                "&:hover": {
+                                  borderColor: gold.light,
+                                  backgroundColor: alpha("white", 0.1),
+                                },
+                              }}
+                            >
+                              My Evaluations
+                            </ActionButton>
+                          </Stack>
+                        </Stack>
+                      </Grid>
+                      <Grid item xs={12} md={4} sx={{ textAlign: "center" }}>
+                        <Avatar
+                          sx={{
+                            width: 120,
+                            height: 120,
+                            bgcolor: alpha("white", 0.2),
+                            fontSize: "3rem",
+                            fontWeight: "bold",
+                            mx: "auto",
+                            border: `3px solid ${alpha("white", 0.3)}`,
+                          }}
+                        >
+                          {userFullName
+                            .split(" ")
+                            .map((name) => name[0])
+                            .join("")
+                            .toUpperCase()}
+                        </Avatar>
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </WelcomeCard>
+              </Grid>
+
+              {/* Quick Stats */}
+              <Grid item xs={12} md={4}>
+                <StatCard>
+                  <CardContent sx={{ textAlign: "center", py: 3 }}>
+                    <TrendingUpIcon
+                      sx={{ fontSize: 48, color: gold.main, mb: 1 }}
+                    />
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      color={maroon.dark}
+                    >
+                      Active Evaluations
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Stay updated with your current workload
+                    </Typography>
+                  </CardContent>
+                </StatCard>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <StatCard>
+                  <CardContent sx={{ textAlign: "center", py: 3 }}>
+                    <WorkIcon sx={{ fontSize: 48, color: maroon.main, mb: 1 }} />
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      color={maroon.dark}
+                    >
+                      Department Focus
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Specialized evaluation in your field
+                    </Typography>
+                  </CardContent>
+                </StatCard>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <StatCard>
+                  <CardContent sx={{ textAlign: "center", py: 3 }}>
+                    <DashboardIcon
+                      sx={{ fontSize: 48, color: gold.dark, mb: 1 }}
+                    />
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      color={maroon.dark}
+                    >
+                      Evaluation Tools
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Access comprehensive review features
+                    </Typography>
+                  </CardContent>
+                </StatCard>
+              </Grid>
+
+              {/* Feature Cards */}
+              <Grid item xs={12} md={6}>
+                <FeatureCard>
+                  <CardContent sx={{ p: 3 }}>
+                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                      <Avatar
+                        sx={{
+                          bgcolor: alpha(maroon.main, 0.1),
+                          color: maroon.main,
+                        }}
+                      >
+                        <PeopleIcon />
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          variant="h6"
+                          fontWeight="bold"
+                          gutterBottom
+                        >
+                          Review Applications
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          paragraph
+                        >
+                          Evaluate student applications, review their portfolios, and
+                          provide comprehensive assessments for ETEEAP eligibility.
+                        </Typography>
+                        <ActionButton
+                          variant="outlined"
+                          onClick={handleNavigateToApplicants}
+                          sx={{
+                            borderColor: maroon.main,
+                            color: maroon.main,
+                            "&:hover": {
+                              borderColor: maroon.dark,
+                              backgroundColor: alpha(maroon.main, 0.1),
+                            },
+                          }}
+                        >
+                          Start Reviewing
+                        </ActionButton>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </FeatureCard>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <FeatureCard>
+                  <CardContent sx={{ p: 3 }}>
+                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                      <Avatar
+                        sx={{
+                          bgcolor: alpha(gold.main, 0.2),
+                          color: gold.dark,
+                        }}
+                      >
+                        <AssessmentIcon />
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          variant="h6"
+                          fontWeight="bold"
+                          gutterBottom
+                        >
+                          Track Progress
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          paragraph
+                        >
+                          Monitor your evaluation history, track completion rates, and
+                          manage your assessment workflow efficiently.
+                        </Typography>
+                        <ActionButton
+                          variant="outlined"
+                          onClick={handleNavigateToEvaluations}
+                          sx={{
+                            borderColor: gold.main,
+                            color: gold.dark,
+                            "&:hover": {
+                              borderColor: gold.dark,
+                              backgroundColor: alpha(gold.main, 0.1),
+                            },
+                          }}
+                        >
+                          View History
+                        </ActionButton>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </FeatureCard>
+              </Grid>
+
+              {/* Information Section */}
+              <Grid item xs={12}>
+                <AnimatedPaper
+                  elevation={2}
+                  sx={{ p: 3, bgcolor: alpha(gold.light, 0.1) }}
+                >
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    gutterBottom
+                    color={maroon.dark}
+                  >
+                    📋 Evaluation Guidelines
+                  </Typography>
+                  <Divider sx={{ my: 2, borderColor: gold.main }} />
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="bold"
+                        gutterBottom
+                      >
+                        Quality Assessment
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Ensure thorough review of all submitted materials and
+                        documentation
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="bold"
+                        gutterBottom
+                      >
+                        Timely Reviews
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Complete evaluations within the designated timeframe for
+                        student progress
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="bold"
+                        gutterBottom
+                      >
+                        Fair Evaluation
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Maintain objectivity and consistency in all assessment
+                        criteria
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </AnimatedPaper>
+              </Grid>
+            </Grid>
+          </Box>
         </Grow>
       </MainLayout>
     </ThemeProvider>
