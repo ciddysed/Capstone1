@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import MinimalLayout from "../../../templates/MinimalLayout";
+import React from "react";
+
 import backgroundImage from "../../../assets/login-bg.png";
 import logo from "../../../assets/logo.png";
-import { Stack } from "@mui/material";
+import MinimalLayout from "../../../templates/MinimalLayout";
 import useResponseHandler from "../../../utils/useResponseHandler";
+import { Stack } from "@mui/material";
 import ForgotPasswordRequestForm from "../../../components/ForgotPassword/ForgotPasswordRequestForm";
 
 const ForgotPasswordPage = () => {

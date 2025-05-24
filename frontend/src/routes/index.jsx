@@ -1,7 +1,7 @@
 // src/routes/AppRoutes.jsx
 import { useRoutes } from "react-router-dom";
 import OrganizedCourseDialog from "../components/OrganizedCourseDialog";
-import EvaluatorManagementPage from "../pages/ProgramAdmin/EvaluatorManagement";
+import EvaluatorManagementPage from "../pages/SystemAdmin/EvaluatorManagement";
 import ProgramAdminHomePage from "../pages/ProgramAdmin/HomePage";
 import ProgramShowcase from "../pages/ProgramShowcase";
 import AppCoursePreference from "../pages/applicants/AppCoursePreference";

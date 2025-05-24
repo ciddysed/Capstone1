@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -7,11 +7,9 @@ import {
   Button,
   Divider,
   InputLabel,
-  Snackbar,
   Stack,
   ToggleButtonGroup,
   Typography,
-  Alert,
 } from "@mui/material";
 import { StyledPaper, StyledTextField, StyledToggleButton } from "../LoginForm";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -31,15 +29,8 @@ const schema = yup.object().shape({
 const SetUpProfile = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { applicantId, showCompleteProfileSnackbar } = location.state || {};
+  const { applicantId } = location.state || {};
   const [gender, setGender] = useState("");
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-
-  useEffect(() => {
-    if (showCompleteProfileSnackbar) {
-      setSnackbarOpen(true);
-    }
-  }, [showCompleteProfileSnackbar]);
 
   const {
     register,
@@ -182,17 +173,6 @@ const SetUpProfile = () => {
           Save & Continue
         </Button>
       </form>
-
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={4000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert severity="info" onClose={() => setSnackbarOpen(false)}>
-          Please complete your profile first
-        </Alert>
-      </Snackbar>
     </StyledPaper>
   );
 };

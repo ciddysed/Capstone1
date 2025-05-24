@@ -95,18 +95,12 @@ const LoginForm = ({
 
         if (applicantId) {
           localStorage.setItem("applicantId", applicantId);
-
-          if (message === "Login successful! Please complete your profile.") {
-            navigate("/setup-profile", {
-              state: {
-                applicantId,
-                showCompleteProfileSnackbar: true,
-              },
-            });
-          } else {
-            handleSuccess("Login successful!");
-            navigate("/homepage");
-          }
+          handleSuccess("Login successful!");
+          navigate("/setup-profile", {
+            state: {
+              applicantId,
+            },
+          });
         } else {
           throw new Error("Applicant ID missing in response");
         }
