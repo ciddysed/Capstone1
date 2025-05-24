@@ -112,7 +112,11 @@ const EvaluatorLoginForm = ({
         }
         console.log("isAdmin (final):", isAdmin, "role:", result.role);
 
-        if (response.status === 200 && typeof result === "object" && result !== null) {
+        if (
+          response.status === 200 &&
+          typeof result === "object" &&
+          result !== null
+        ) {
           // Store evaluatorId in localStorage if present
           if ("evaluatorId" in result) {
             localStorage.setItem("evaluatorId", result.evaluatorId);
@@ -172,11 +176,7 @@ const EvaluatorLoginForm = ({
         </Stack>
         <Stack gap={2}>
           {/* Move onSubmit to the form and ensure it's not wrapped in a fragment */}
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            noValidate
-            autoComplete="off"
-          >
+          <form onSubmit={handleSubmit(onSubmit)} noValidate autoComplete="off">
             <StyledTextField
               type="email"
               fullWidth
@@ -211,10 +211,21 @@ const EvaluatorLoginForm = ({
                 helperText={errors.reEnterPassword?.message}
               />
             )}
-
             <Stack direction="row" justifyContent="flex-start">
               {currentFormType === "login" && (
-                <Link href="#" variant="body2" sx={{ color: "black" }}>
+                <Link
+                  component="button"
+                  variant="body2"
+                  onClick={() => navigate("/forget-password")}
+                  sx={{
+                    color: "black",
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                  }}
+                >
                   Forgot password?
                 </Link>
               )}

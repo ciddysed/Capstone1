@@ -67,15 +67,10 @@ const LoginForm = ({
             password: data.password,
           }
         );
-
-        console.log("Signup response:", response.data);
-        handleSuccess("Successfully signed up! Please complete your profile.");
         localStorage.setItem("applicantId", response.data.applicantId);
-        navigate("/setup-profile", {
-          state: {
-            applicantId: response.data.applicantId,
-          },
-        });
+        handleSuccess("Successfully signed up! Please log in.");
+        reset();
+        setCurrentFormType("login");
       } catch (error) {
         console.error("Signup error:", error);
         handleError("Signup failed. Please try again.");
@@ -95,21 +90,31 @@ const LoginForm = ({
           }
         );
 
-        // Store applicantId in localStorage
-        const applicantId = response.data.applicantId;
+        const { applicantId, message } = response.data;
+        console.log("GIKAN LOGIN", response.data);
+
         if (applicantId) {
           localStorage.setItem("applicantId", applicantId);
-        } else {
-          throw new Error("Applicant ID is missing in the response");
-        }
 
-        console.log("Login response:", response.data);
-        handleSuccess("Login successful!");
-        navigate("/homepage");
+          if (message === "Login successful! Please complete your profile.") {
+            navigate("/setup-profile", {
+              state: {
+                applicantId,
+                showCompleteProfileSnackbar: true,
+              },
+            });
+          } else {
+            handleSuccess("Login successful!");
+            navigate("/homepage");
+          }
+        } else {
+          throw new Error("Applicant ID missing in response");
+        }
       } catch (error) {
         console.error("Login error:", error.response?.data || error.message);
-        const errorMessage = error.response?.data || error.message;
-        handleError(errorMessage);
+        handleError(
+          error.response?.data?.message || "Login failed. Please try again."
+        );
       }
     }
   };
@@ -202,7 +207,19 @@ const LoginForm = ({
 
           <Stack direction="row" justifyContent="flex-start">
             {currentFormType === "login" && (
-              <Link href="#" variant="body2" sx={{ color: "black" }}>
+              <Link
+                component="button"
+                variant="body2"
+                onClick={() => navigate("/forget-password")}
+                sx={{
+                  color: "black",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                }}
+              >
                 Forgot password?
               </Link>
             )}

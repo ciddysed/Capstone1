@@ -1,26 +1,36 @@
 // src/routes/AppRoutes.jsx
-import React from "react";
 import { useRoutes } from "react-router-dom";
+import OrganizedCourseDialog from "../components/OrganizedCourseDialog";
+import EvaluatorManagementPage from "../pages/ProgramAdmin/EvaluatorManagement";
+import ProgramAdminHomePage from "../pages/ProgramAdmin/HomePage";
+import ProgramShowcase from "../pages/ProgramShowcase";
+import AppCoursePreference from "../pages/applicants/AppCoursePreference";
+import ApplicationTrack from "../pages/applicants/ApplicationTrack";
+import Homepage from "../pages/applicants/HomePage";
 import LoginPage from "../pages/applicants/LoginPage";
 import SetUpProfilePage from "../pages/applicants/SetUpProfile";
-import Homepage from "../pages/applicants/HomePage";
-import ProtectedRoute from "./ProtectedRoutes";
-import ApplicationTrack from "../pages/applicants/ApplicationTrack";
-import AppCoursePreference from "../pages/applicants/AppCoursePreference";
-import ProgramShowcase from "../pages/ProgramShowcase";
-import EvaluatorsLoginPage from "../pages/evaluators/LoginPage";
-import EvaluatorHomePage from "../pages/evaluators/HomePage";
+import ForgotPasswordPage from "../pages/common/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/common/ResetPasswordPage";
 import ApplicantsListPage from "../pages/evaluators/ApplicantsListPage";
+import EvaluatorHomePage from "../pages/evaluators/HomePage";
+import EvaluatorsLoginPage from "../pages/evaluators/LoginPage";
 import ViewApplicantPage from "../pages/evaluators/ViewApplicantPage";
-import OrganizedCourseDialog from "../components/OrganizedCourseDialog";
-import ProgramAdminHomePage from "../pages/ProgramAdmin/HomePage";
-import EvaluatorManagementPage from "../pages/ProgramAdmin/EvaluatorManagement";
+import ProtectedRoute from "./ProtectedRoutes";
 
 const AppRoutes = () => {
   return useRoutes([
     {
       path: "/login",
       element: <LoginPage />,
+    },
+    {
+      path: "/forget-password",
+      element: <ForgotPasswordPage />,
+    },
+    //TODO: Remove this after creadting dynamic reset link for password
+    {
+      path: "/forget-password/reset-password",
+      element: <ResetPasswordPage />,
     },
     {
       path: "/setup-profile",
@@ -95,7 +105,7 @@ const AppRoutes = () => {
           <OrganizedCourseDialog />
         </ProtectedRoute>
       ),
-    }, 
+    },
 
     {
       path: "/evaluator/homepage",
@@ -124,9 +134,6 @@ const AppRoutes = () => {
       ),
     },
 
-
-
-    
     //   path: "*",
     //   element: <NotFoundPage />,
     // },

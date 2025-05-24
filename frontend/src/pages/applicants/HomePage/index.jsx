@@ -78,25 +78,21 @@ const Homepage = () => {
   useEffect(() => {
     const applicantId = localStorage.getItem("applicantId");
     if (!applicantId || applicantId === "undefined") {
-      // Validate applicantId
       handleError("Please login to continue");
       navigate("/login");
       return;
     }
 
-    // Fetch user data using the ApplicantController endpoint
     const fetchUserData = async () => {
       try {
-        const response = await fetch(
+        const response = await axios.get(
           `http://localhost:8080/api/applicants/${applicantId}`
         );
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
-        const data = await response.json();
+        const data = response.data;
         setUserFullName(`${data.firstName} ${data.lastName}`);
       } catch (error) {
         handleError("Failed to fetch user data");
+        console.error("Homepage error:", error);
       }
     };
 
