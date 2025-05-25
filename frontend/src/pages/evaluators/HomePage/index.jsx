@@ -20,9 +20,7 @@ import {
 import InfoIcon from "@mui/icons-material/Info";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import MainLayout from "../../../templates/MainLayout";
-import backgroundImage from "../../../assets/login-bg.png";
 import AssignmentIcon from "@mui/icons-material/Assignment";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { useNavigate } from "react-router-dom";
@@ -112,7 +110,12 @@ const EvaluatorHomePage = () => {
 
   if (evaluatorStatus !== "APPROVED") {
     return (
-      <MainLayout background={backgroundImage}>
+      <MainLayout
+        //TODO: fetch user data for login then put it here
+        data={""}
+        userType={"evaluator"}
+      >
+        {" "}
         <Stack height="60vh" alignItems="center" justifyContent="center">
           <Paper
             elevation={3}
@@ -297,7 +300,9 @@ const EvaluatorHomePage = () => {
                 mb: 2,
               }}
             >
-              <Typography variant="h6">Recently Forwarded Applications</Typography>
+              <Typography variant="h6">
+                Recently Forwarded Applications
+              </Typography>
               <Button
                 variant="outlined"
                 size="small"
@@ -343,7 +348,8 @@ const EvaluatorHomePage = () => {
                             variant="body2"
                             color="text.primary"
                           >
-                            {app.coursePreference || "Course preference pending"}
+                            {app.coursePreference ||
+                              "Course preference pending"}
                           </Typography>
                           <br />
                           <Typography
@@ -368,7 +374,11 @@ const EvaluatorHomePage = () => {
                 <Typography variant="body1" color="text.secondary">
                   No applications have been forwarded to you yet
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1 }}
+                >
                   Administrators will forward applications for your evaluation
                 </Typography>
               </Box>

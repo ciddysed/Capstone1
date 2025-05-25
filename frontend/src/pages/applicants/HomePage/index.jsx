@@ -5,8 +5,8 @@ import backgroundImage from "../../../assets/login-bg.png";
 import logo from "../../../assets/logo.png";
 
 import axios from "axios";
-import MinimalLayout from "../../../templates/MinimalLayout";
 import useResponseHandler from "../../../utils/useResponseHandler";
+import MainLayout from "../../../templates/MainLayout";
 
 // Styled components
 const StartButton = styled(Button)(({ theme }) => ({
@@ -74,6 +74,7 @@ const Homepage = () => {
   const [userFullName, setUserFullName] = useState("User");
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const { handleSuccess, handleError, snackbar } = useResponseHandler();
+  const [userData, setUserData] = useState();
 
   useEffect(() => {
     const applicantId = localStorage.getItem("applicantId");
@@ -106,6 +107,7 @@ const Homepage = () => {
         }
 
         setUserFullName(`${data.firstName} ${data.lastName}`);
+        setUserData(data);
       } catch (error) {
         handleError("Failed to fetch user data");
         console.error("Homepage error:", error);
@@ -154,7 +156,11 @@ const Homepage = () => {
   };
 
   return (
-    <MinimalLayout backgroundImage={backgroundImage}>
+    <MainLayout
+      backgroundImage={backgroundImage}
+      data={userFullName}
+      userType={"applicant"}
+    >
       <Stack alignItems="center" spacing={4} sx={{ position: "relative" }}>
         {/* Logo */}
         <img src={logo} alt="Logo" />
@@ -237,7 +243,7 @@ const Homepage = () => {
       </SuccessModal>
 
       {snackbar}
-    </MinimalLayout>
+    </MainLayout>
   );
 };
 

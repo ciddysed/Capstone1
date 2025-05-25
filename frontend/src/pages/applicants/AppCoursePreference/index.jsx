@@ -1,42 +1,38 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { 
-  Typography, 
-  Box, 
-  Button, 
-  Grid, 
-  Stack,
-  Paper,
-  CircularProgress,
-  createTheme,
-  ThemeProvider,
+import {
   alpha,
+  Box,
+  CircularProgress,
   Divider,
-  Grow
+  Grid,
+  Grow,
+  Stack,
+  ThemeProvider,
+  Typography
 } from "@mui/material";
 import axios from "axios";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import MinimalLayout from "../../../templates/MinimalLayout";
 import backgroundImage from "../../../assets/login-bg.png";
-import logo from "../../../assets/logo.png";
+import MinimalLayout from "../../../templates/MinimalLayout";
 import useResponseHandler from "../../../utils/useResponseHandler";
 
 // Import components
 import CourseSelectionDialog from "../../../components/OrganizedCourseDialog";
 import ApplicationHeader from "./components/ApplicationHeader";
 import CoursePreferences from "./components/CoursePreferences";
-import DocumentUpload from "./components/DocumentUpload";
 import DocumentList from "./components/DocumentList";
+import DocumentUpload from "./components/DocumentUpload";
 import SuccessModal from "./components/SuccessModal";
 
 // Import styled components and theme
-import { 
+import {
   AnimatedPaper,
-  SubmitButton,
-  maroon,
+  customTheme,
   gold,
-  SectionTitle,
   InfoBox,
-  customTheme
+  maroon,
+  SectionTitle,
+  SubmitButton
 } from './styles';
 
 // Document type definitions with user-friendly names

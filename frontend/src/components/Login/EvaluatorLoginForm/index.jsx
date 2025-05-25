@@ -229,11 +229,7 @@ const EvaluatorLoginForm = ({
           </ToggleButtonGroup>
         </Stack>
         <Stack gap={2}>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            noValidate
-            autoComplete="off"
-          >
+          <form onSubmit={handleSubmit(onSubmit)} noValidate autoComplete="off">
             {currentFormType === "signup" && (
               <StyledTextField
                 type="text"
