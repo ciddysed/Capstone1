@@ -175,6 +175,7 @@ const EvaluatorLoginForm = ({
           // Store evaluatorId in localStorage if present
           if ("evaluatorId" in result) {
             localStorage.setItem("evaluatorId", result.evaluatorId);
+            localStorage.setItem("userType", "evaluator");
           } else {
             localStorage.removeItem("evaluatorId");
           }

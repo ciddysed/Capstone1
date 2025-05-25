@@ -30,7 +30,8 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("applicantID");
+    localStorage.removeItem("applicantId");
+    localStorage.removeItem("evaluatorId");
     localStorage.removeItem("userType");
 
     if (userType === "applicant") {

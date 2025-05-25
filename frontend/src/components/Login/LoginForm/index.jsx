@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -68,6 +68,7 @@ const LoginForm = ({
           }
         );
         localStorage.setItem("applicantId", response.data.applicantId);
+        localStorage.setItem("userType", "applicant");
         handleSuccess("Successfully signed up! Please log in.");
         reset();
         setCurrentFormType("login");
@@ -95,21 +96,25 @@ const LoginForm = ({
 
         if (applicantId) {
           localStorage.setItem("applicantId", applicantId);
+          localStorage.setItem("userType", "applicant");
           handleSuccess("Login successful!");
-          
+
           // Check if profile is complete by fetching user data
           try {
-            const userResponse = await axios.get(`http://localhost:8080/api/applicants/${applicantId}`);
+            const userResponse = await axios.get(
+              `http://localhost:8080/api/applicants/${applicantId}`
+            );
             const userData = userResponse.data;
-            
+
             // Check if essential profile fields are missing
-            const isProfileIncomplete = !userData.firstName || 
-                                      !userData.lastName || 
-                                      !userData.address || 
-                                      !userData.contactNumber || 
-                                      !userData.dateOfBirth || 
-                                      !userData.gender;
-            
+            const isProfileIncomplete =
+              !userData.firstName ||
+              !userData.lastName ||
+              !userData.address ||
+              !userData.contactNumber ||
+              !userData.dateOfBirth ||
+              !userData.gender;
+
             if (isProfileIncomplete) {
               // Navigate to setup profile within the same page
               setView("setupProfile");

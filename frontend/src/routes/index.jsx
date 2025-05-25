@@ -16,9 +16,14 @@ import EvaluatorHomePage from "../pages/evaluators/HomePage";
 import EvaluatorsLoginPage from "../pages/evaluators/LoginPage";
 import ViewApplicantPage from "../pages/evaluators/ViewApplicantPage";
 import ProtectedRoute from "./ProtectedRoutes";
+import Redirecter from "./Redirecter";
 
 const AppRoutes = () => {
   return useRoutes([
+    {
+      path: "/",
+      element: <Redirecter />,
+    },
     {
       path: "/login",
       element: <LoginPage />,
@@ -36,17 +41,17 @@ const AppRoutes = () => {
       path: "/setup-profile",
       element: (
         // TODO: Uncoment all the proretced route after implementing the backend
-        // <ProtectedRoute>
-        <SetUpProfilePage />
-        // </ProtectedRoute>
+        <ProtectedRoute>
+          <SetUpProfilePage />
+        </ProtectedRoute>
       ),
     },
     {
       path: "/homepage",
       element: (
-        // <ProtectedRoute>
-        <Homepage />
-        // </ProtectedRoute>
+        <ProtectedRoute>
+          <Homepage />
+        </ProtectedRoute>
       ),
     },
     {
@@ -77,24 +82,22 @@ const AppRoutes = () => {
     // {
     {
       path: "/evaluator/login",
-      element: (
-        // <ProtectedRoute>
-        <EvaluatorsLoginPage />
-        // </ProtectedRoute>
-      ),
+      element: <EvaluatorsLoginPage />,
     },
     {
       path: "/evaluator/applicants",
       element: (
-        // <ProtectedRoute>
-        <ApplicantsListPage />
+        <ProtectedRoute>
+          <ApplicantsListPage />
+        </ProtectedRoute>
       ),
     },
     {
       path: "/evaluator/applicants/view-applicant",
       element: (
-        // <ProtectedRoute>
-        <ViewApplicantPage />
+        <ProtectedRoute>
+          <ViewApplicantPage />
+        </ProtectedRoute>
       ),
     },
 
@@ -110,27 +113,27 @@ const AppRoutes = () => {
     {
       path: "/evaluator/homepage",
       element: (
-        // <ProtectedRoute>
-        <EvaluatorHomePage />
-        // </ProtectedRoute>
+        <ProtectedRoute>
+          <EvaluatorHomePage />
+        </ProtectedRoute>
       ),
     },
 
     {
       path: "/program-admin/homepage",
       element: (
-        // <ProtectedRoute>
-        <ProgramAdminHomePage />
-        // </ProtectedRoute>
+        <ProtectedRoute>
+          <ProgramAdminHomePage />{" "}
+        </ProtectedRoute>
       ),
     },
 
     {
       path: "/system-admin/evaluator-management",
       element: (
-        // <ProtectedRoute>
-        <EvaluatorManagementPage />
-        // </ProtectedRoute>
+        <ProtectedRoute>
+          <EvaluatorManagementPage />
+        </ProtectedRoute>
       ),
     },
 
