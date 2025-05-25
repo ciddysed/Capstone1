@@ -110,25 +110,36 @@ const ApplicationForm = () => {
     try {
       const response = await axios.get("http://localhost:8080/api/courses");
       const processedCourses = response.data.map((course) => {
-        const name = course.courseName.toLowerCase();
         let department = "";
-
-        if (name.includes("business") || name.includes("accounting") || name.includes("management")) {
-          department = "College of Management, Business and Accountancy";
-        } else if (name.includes("computer") || name.includes("information") || name.includes("technology")) {
+        // Assign department based on course.department?.departmentId
+        const deptId = course.department?.departmentId;
+        if (deptId === 1) {
           department = "College of Computer Studies";
-        } else if (name.includes("education") || name.includes("art") || name.includes("science")) {
+        } else if (deptId === 2) {
           department = "College of Arts, Sciences, and Education";
-        } else if (name.includes("engineering") || name.includes("architecture")) {
-          department = "College of Engineering & Architecture";
+        } else if (deptId === 3) {
+          department = "College of Management, Business and Accountancy";
+        } else if (deptId === 4) {
+          department = "College of Engineering and Architecture";
         } else {
           department = "Other Programs";
         }
 
+        // Log if description is present
+        if (course.description) {
+          console.log(`Course "${course.courseName}" has description: "${course.description}"`);
+        } else {
+          console.log(`Course "${course.courseName}" has NO description.`);
+        }
+
+        // Add displayName as a string with courseName and description
+        const displayName = course.description;
+
         return {
           ...course,
           department: department,
-          courseCode: course.courseCode || `CRS-${course.courseId}`,
+          courseCode: course.courseCode || displayName,
+         // displayName: displayName,
         };
       });
 
@@ -214,25 +225,54 @@ const ApplicationForm = () => {
       return;
     }
 
+    // Find if a preference for this priority already exists
+    const existingPreference = coursePreferences.find(
+      (pref) => pref.priorityOrder === priorityOrders[currentPriorityIndex]
+    );
+
     try {
-      const newPreference = {
-        course: { courseId: selectedCourse.courseId },
-        priorityOrder: priorityOrders[currentPriorityIndex],
-      };
+      if (existingPreference) {
+        // Update (PUT) the existing preference
+        const updatedPreference = {
+          preferenceId: existingPreference.preferenceId,
+          applicant: { applicantId: applicantId },
+          course: { courseId: selectedCourse.courseId },
+          priorityOrder: priorityOrders[currentPriorityIndex],
+          status: existingPreference.status || "PENDING"
+        };
 
-      const response = await axios.post(
-        `http://localhost:8080/api/preferences/applicant/${applicantId}`,
-        newPreference
-      );
+        const response = await axios.put(
+          `http://localhost:8080/api/preferences/${existingPreference.preferenceId}`,
+          updatedPreference
+        );
 
-      const updatedPreferences = [...coursePreferences];
-      const filteredPreferences = updatedPreferences.filter(
-        (pref) => pref.priorityOrder !== priorityOrders[currentPriorityIndex]
-      );
-      filteredPreferences.push(response.data);
+        // Replace the updated preference in the list
+        const updatedPreferences = coursePreferences.map((pref) =>
+          pref.preferenceId === existingPreference.preferenceId ? response.data : pref
+        );
+        setCoursePreferences(updatedPreferences);
+        handleSuccess("Course preference updated!");
+      } else {
+        // Create (POST) a new preference
+        const newPreference = {
+          course: { courseId: selectedCourse.courseId },
+          priorityOrder: priorityOrders[currentPriorityIndex],
+        };
 
-      setCoursePreferences(filteredPreferences);
-      handleSuccess("Course preference updated!");
+        const response = await axios.post(
+          `http://localhost:8080/api/preferences/applicant/${applicantId}`,
+          newPreference
+        );
+
+        const updatedPreferences = [...coursePreferences];
+        const filteredPreferences = updatedPreferences.filter(
+          (pref) => pref.priorityOrder !== priorityOrders[currentPriorityIndex]
+        );
+        filteredPreferences.push(response.data);
+
+        setCoursePreferences(filteredPreferences);
+        handleSuccess("Course preference added!");
+      }
     } catch (error) {
       console.error("Error saving course preference:", error);
       handleError("Failed to save course preference");
@@ -294,6 +334,13 @@ const ApplicationForm = () => {
   };
 
   const handleSubmit = async () => {
+    // Check if "INFORMATIVE_COPY_OF_TOR" is uploaded
+    const hasTOR = files.some(file => file.documentType === "INFORMATIVE_COPY_OF_TOR");
+    if (!hasTOR) {
+      handleError('You must upload the "Informative Copy of TOR" before submitting your application.');
+      return;
+    }
+
     try {
       setSubmitting(true);
       

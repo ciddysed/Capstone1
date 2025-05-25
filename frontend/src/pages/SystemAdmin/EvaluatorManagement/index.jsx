@@ -170,9 +170,11 @@ const EvaluatorManagementPage = () => {
     setLoadingEvaluators(true);
     try {
       const response = await axios.get(`${EVALUATOR_API_URL}`);
-      setEvaluators(response.data);
+      // Ensure evaluators is always an array
+      setEvaluators(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Error fetching evaluators:", error);
+      setEvaluators([]); // fallback to empty array on error
     } finally {
       setLoadingEvaluators(false);
     }
@@ -253,10 +255,12 @@ const EvaluatorManagementPage = () => {
   }, []);
 
   // Filter evaluators for current page
-  const displayedEvaluators = evaluators.slice(
-    evaluatorPage * evaluatorRowsPerPage,
-    evaluatorPage * evaluatorRowsPerPage + evaluatorRowsPerPage
-  );
+  const displayedEvaluators = Array.isArray(evaluators)
+    ? evaluators.slice(
+        evaluatorPage * evaluatorRowsPerPage,
+        evaluatorPage * evaluatorRowsPerPage + evaluatorRowsPerPage
+      )
+    : [];
 
   return (
     <ThemeProvider theme={customTheme}>
