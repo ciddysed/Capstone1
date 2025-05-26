@@ -36,71 +36,6 @@ const ForgotPasswordRequestForm = () => {
 
   const handleClose = () => setSnackbar({ ...snackbar, open: false });
 
-  //TODO: This is still work on progress, uncomment or use this when ready. If not pls use the other on submit as of now
-
-  // const onSubmit = async (data) => {
-  //   console.log("=== FRONTEND: ForgotPassword Form Submit START ===");
-  //   console.log("Form data:", { email: data.email });
-  //   console.log(
-  //     "API URL:",
-  //     "http://localhost:8080/api/applicants/forgot-password"
-  //   );
-
-  //   setLoading(true);
-
-  //   try {
-  //     console.log("Making axios POST request...");
-  //     const response = await axios.post(
-  //       "http://localhost:8080/api/applicants/forgot-password",
-  //       {
-  //         email: data.email,
-  //       },
-  //       {
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         timeout: 10000, // 10 second timeout
-  //       }
-  //     );
-
-  //     console.log("=== API RESPONSE SUCCESS ===");
-  //     console.log("Status:", response.status);
-  //     console.log("Headers:", response.headers);
-  //     console.log("Data:", response.data);
-
-  //     showSnackbar(
-  //       response.data.message || "Reset link sent to your email.",
-  //       "success"
-  //     );
-  //   } catch (error) {
-  //     console.log("=== API RESPONSE ERROR ===");
-  //     console.error("Error type:", error.constructor.name);
-  //     console.error("Error message:", error.message);
-
-  //     if (error.response) {
-  //       console.error("Response status:", error.response.status);
-  //       console.error("Response headers:", error.response.headers);
-  //       console.error("Response data:", error.response.data);
-  //     } else if (error.request) {
-  //       console.error("No response received. Request:", error.request);
-  //       console.error("Network error or server not responding");
-  //     } else {
-  //       console.error("Request setup error:", error.message);
-  //     }
-
-  //     const errorMessage =
-  //       error.response?.data?.message || error.message.includes("timeout")
-  //         ? "Request timed out. Please try again."
-  //         : error.message.includes("Network Error")
-  //         ? "Cannot connect to server. Please check if the backend is running."
-  //         : "Failed to send reset link. Please try again.";
-  //     showSnackbar(errorMessage, "error");
-  //   } finally {
-  //     setLoading(false);
-  //     console.log("=== FRONTEND: ForgotPassword Form Submit END ===");
-  //   }
-  // };
-
   const onSubmit = async (data) => {
     if (data.newPassword !== data.confirmPassword) {
       showSnackbar("Passwords do not match.", "error");
@@ -110,8 +45,9 @@ const ForgotPasswordRequestForm = () => {
     setLoading(true);
 
     try {
+      console.log("=== FRONTEND: Evaluator Direct Password Reset START ===");
       const response = await axios.post(
-        "http://localhost:8080/api/applicants/reset-password",
+        "http://localhost:8080/api/evaluators/reset-password",
         {
           email: data.email,
           newPassword: data.newPassword,
@@ -124,14 +60,25 @@ const ForgotPasswordRequestForm = () => {
         }
       );
 
+      console.log("=== API RESPONSE SUCCESS ===");
+      console.log("Data:", response.data);
+
       showSnackbar(
-        response.data || "Password updated successfully.",
+        response.data.message || "Password updated successfully.",
         "success"
       );
     } catch (error) {
-      console.error(error);
+      console.error("=== API RESPONSE ERROR ===", error);
 
-      showSnackbar("error", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message.includes("timeout")
+          ? "Request timed out. Please try again."
+          : error.message.includes("Network Error")
+          ? "Cannot connect to server. Please check if the backend is running."
+          : "Failed to update password. Please try again.";
+
+      showSnackbar(errorMessage, "error");
     } finally {
       setLoading(false);
     }

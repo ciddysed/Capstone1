@@ -31,6 +31,7 @@ const ResetPasswordForm = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const userType = searchParams.get('type') || 'applicant'; // Default to applicant
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -50,18 +51,22 @@ const ResetPasswordForm = () => {
 
   useEffect(() => {
     const validateToken = async () => {
-      console.log("ResetPasswordForm: Starting token validation", { token });
+      console.log("ResetPasswordForm: Starting token validation", { token, userType });
       
       if (!token) {
         console.error("ResetPasswordForm: No token found in URL parameters");
         showSnackbar("Invalid reset link. Please request a new one.", "error");
-        setTimeout(() => navigate("/forgot-password"), 2000);
+        setTimeout(() => navigate("/forget-password"), 2000);
         return;
       }
 
       try {
         console.log("ResetPasswordForm: Sending token validation request");
-        const response = await axios.get(`http://localhost:8080/api/applicants/validate-reset-token/${token}`);
+        const baseUrl = userType === "evaluator" 
+          ? "http://localhost:8080/api/evaluators" 
+          : "http://localhost:8080/api/applicants";
+        
+        const response = await axios.get(`${baseUrl}/validate-reset-token/${token}`);
         
         console.log("ResetPasswordForm: Token validation response", response.data);
         setTokenValid(response.data.valid);
@@ -69,7 +74,7 @@ const ResetPasswordForm = () => {
         if (!response.data.valid) {
           console.warn("ResetPasswordForm: Token validation failed - token is invalid or expired");
           showSnackbar("Reset link has expired. Please request a new one.", "error");
-          setTimeout(() => navigate("/forgot-password"), 2000);
+          setTimeout(() => navigate("/forget-password"), 2000);
         } else {
           console.log("ResetPasswordForm: Token validation successful");
         }
@@ -81,12 +86,12 @@ const ResetPasswordForm = () => {
         });
         
         showSnackbar("Invalid reset link. Please request a new one.", "error");
-        setTimeout(() => navigate("/forgot-password"), 2000);
+        setTimeout(() => navigate("/forget-password"), 2000);
       }
     };
 
     validateToken();
-  }, [token, navigate]);
+  }, [token, userType, navigate]);
 
   const onSubmit = async (data) => {
     console.log("ResetPasswordForm: Starting password reset submission");
@@ -99,8 +104,12 @@ const ResetPasswordForm = () => {
 
     setLoading(true);
     try {
-      console.log("ResetPasswordForm: Sending password reset request", { token });
-      const response = await axios.post("http://localhost:8080/api/applicants/reset-password", {
+      console.log("ResetPasswordForm: Sending password reset request", { token, userType });
+      const baseUrl = userType === "evaluator" 
+        ? "http://localhost:8080/api/evaluators" 
+        : "http://localhost:8080/api/applicants";
+      
+      const response = await axios.post(`${baseUrl}/reset-password`, {
         token: token,
         password: data.password
       });
@@ -110,7 +119,7 @@ const ResetPasswordForm = () => {
       
       setTimeout(() => {
         console.log("ResetPasswordForm: Redirecting to login page");
-        navigate("/login");
+        navigate(userType === "evaluator" ? "/evaluators/login" : "/login");
       }, 1500);
     } catch (error) {
       console.error("ResetPasswordForm: Password reset request failed", {
