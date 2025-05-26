@@ -30,7 +30,7 @@ const AppRoutes = () => {
     },
     {
       path: "/forget-password",
-      element: <ForgotPasswordPage />,
+      element: <ResetPasswordPage />,
     },
     //TODO: Remove this after creadting dynamic reset link for password
     {

@@ -182,6 +182,7 @@ const EvaluatorLoginForm = ({
           // Navigate based on admin (now robust)
           if (isAdmin) {
             handleSuccess("Login successful!");
+
             navigate("/evaluator/applicants");
           } else {
             handleSuccess(

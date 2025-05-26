@@ -21,11 +21,22 @@ import SearchIcon from "@mui/icons-material/Search";
 import logo from "../../assets/logo.png";
 import backgroundImage from "../../assets/login-bg.png";
 import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 
 const ListLayoutWithFilters = ({ children }) => {
   const [activeButton, setActiveButton] = useState("Dashboard");
-
   const navItems = ["Applicants", "Logout"];
+  const navigate = useNavigate();
+
+  const handleNavItemClick = (item) => {
+    setActiveButton(item);
+
+    if (item === "Applicants") {
+      navigate("/evaluator/applicants");
+    } else if (item === "Logout") {
+      navigate("/evaluator/login");
+    }
+  };
 
   return (
     <Box
@@ -60,7 +71,7 @@ const ListLayoutWithFilters = ({ children }) => {
               <ListItem key={item} disablePadding sx={{ my: 1 }}>
                 <Button
                   fullWidth
-                  onClick={() => setActiveButton(item)}
+                  onClick={() => handleNavItemClick(item)}
                   sx={{
                     justifyContent: "flex-start",
                     color: activeButton === item ? "#000" : "#fff",

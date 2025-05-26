@@ -28,21 +28,23 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
   const handleClosePopover = () => {
     setAnchorEl(null);
   };
-
   const handleLogout = () => {
     localStorage.removeItem("applicantId");
     localStorage.removeItem("evaluatorId");
     localStorage.removeItem("userType");
 
-    if (userType === "applicant") {
-      navigate("/login");
-    } else if (userType === "evaluator") {
-      navigate("/evaluator/login");
-    } else if (userType === "admin") {
-      navigate("/admin/login");
-    } else {
-      navigate("/login");
-    }
+    // Redirect AFTER a brief delay or state update
+    setTimeout(() => {
+      if (userType === "applicant") {
+        navigate("/login", { replace: true });
+      } else if (userType === "evaluator") {
+        navigate("/evaluator/login", { replace: true });
+      } else if (userType === "admin") {
+        navigate("/admin/login", { replace: true });
+      } else {
+        navigate("/login", { replace: true });
+      }
+    }, 0);
   };
 
   const open = Boolean(anchorEl);
@@ -81,9 +83,10 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
 
             {/* Right: Avatar and Popover */}
             <Stack direction="row" alignItems="center" spacing={2}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+              {/* TODO: Uncomment when data is already set */}
+              {/* <Typograpbhy variant="subtitle1" sx={{ fontWeight: 500 }}>
                 {data}
-              </Typography>
+              </Typography> */}
 
               <IconButton onClick={handleAvatarClick} sx={{ p: 0 }}>
                 <Avatar
@@ -162,7 +165,10 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
       </AppBar>
 
       {/* Main content */}
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container
+        maxWidth="lg"
+        sx={{ py: 4, alignItems: "center", justifyContent: "center" }}
+      >
         {children}
       </Container>
     </Stack>
