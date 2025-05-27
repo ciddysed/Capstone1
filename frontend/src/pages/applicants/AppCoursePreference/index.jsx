@@ -24,6 +24,9 @@ import DocumentList from "./components/DocumentList";
 import DocumentUpload from "./components/DocumentUpload";
 import SuccessModal from "./components/SuccessModal";
 
+// Import shared component
+import DocumentHandler from "../../../components/shared/DocumentHandler";
+
 // Import styled components and theme
 import {
   AnimatedPaper,
@@ -32,7 +35,8 @@ import {
   InfoBox,
   maroon,
   SectionTitle,
-  SubmitButton
+  SubmitButton,
+  UploadButton
 } from './styles';
 
 // Document type definitions with user-friendly names
@@ -62,7 +66,12 @@ const ApplicationForm = () => {
   const [currentPriorityIndex, setCurrentPriorityIndex] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({
+    profile: true,
+    courses: true,
+    documents: true,
+    preferences: true
+  });
   const [submitting, setSubmitting] = useState(false);
 
   const priorityOrders = ["FIRST", "SECOND", "THIRD"];
@@ -91,6 +100,7 @@ const ApplicationForm = () => {
 
   const fetchApplicantData = useCallback(async (id) => {
     try {
+      setLoading(prev => ({ ...prev, profile: true }));
       const response = await axios.get(`http://localhost:8080/api/applicants/${id}`);
       setUserData({
         name: `${response.data.firstName} ${response.data.lastName}`,
@@ -99,11 +109,14 @@ const ApplicationForm = () => {
     } catch (error) {
       console.error("Error fetching applicant data:", error);
       handleError("Failed to load applicant data");
+    } finally {
+      setLoading(prev => ({ ...prev, profile: false }));
     }
   }, [handleError]);
 
   const fetchCoursesFromBackend = useCallback(async () => {
     try {
+      setLoading(prev => ({ ...prev, courses: true }));
       const response = await axios.get("http://localhost:8080/api/courses");
       const processedCourses = response.data.map((course) => {
         let department = "";
@@ -135,19 +148,20 @@ const ApplicationForm = () => {
           ...course,
           department: department,
           courseCode: course.courseCode || displayName,
-         // displayName: displayName,
         };
       });
-
       setAvailableCourses(processedCourses);
     } catch (error) {
       console.error("Error fetching courses:", error);
       handleError("Failed to load courses");
+    } finally {
+      setLoading(prev => ({ ...prev, courses: false }));
     }
   }, [handleError]);
 
   const fetchUploadedDocuments = useCallback(async (applicantId) => {
     try {
+      setLoading(prev => ({ ...prev, documents: true }));
       const response = await axios.get(`http://localhost:8080/api/documents/applicant/${applicantId}`);
       const documents = response.data.map((doc) => ({
         name: doc.fileName,
@@ -159,38 +173,14 @@ const ApplicationForm = () => {
     } catch (error) {
       console.error("Error fetching uploaded documents:", error);
       handleError("Failed to load uploaded documents");
+    } finally {
+      setLoading(prev => ({ ...prev, documents: false }));
     }
   }, [handleError]);
 
-  useEffect(() => {
-    setLoading(true);
-    const storedApplicantId = localStorage.getItem("applicantId");
-
-    if (!storedApplicantId) {
-      handleError("Please login to continue");
-      navigate("/login");
-      return;
-    }
-
-    setApplicantId(storedApplicantId);
-
-    // Fetch all required data in parallel
-    Promise.all([
-      fetchApplicantData(storedApplicantId),
-      fetchCoursesFromBackend(),
-      fetchUploadedDocuments(storedApplicantId),
-      fetchCoursePreferences(storedApplicantId)
-    ]).then(() => {
-      setLoading(false);
-    }).catch(error => {
-      console.error("Error loading application data:", error);
-      handleError("Some data could not be loaded. Please refresh the page.");
-      setLoading(false);
-    });
-  }, [navigate, handleError, fetchApplicantData, fetchCoursesFromBackend, fetchUploadedDocuments]);
-
   const fetchCoursePreferences = async (applicantId) => {
     try {
+      setLoading(prev => ({ ...prev, preferences: true }));
       const response = await axios.get(`http://localhost:8080/api/preferences/applicant/${applicantId}`);
       
       // Sort preferences by priority
@@ -203,7 +193,35 @@ const ApplicationForm = () => {
     } catch (error) {
       console.error("Error fetching course preferences:", error);
       setCoursePreferences([]);
+    } finally {
+      setLoading(prev => ({ ...prev, preferences: false }));
     }
+  };
+
+  useEffect(() => {
+    const storedApplicantId = localStorage.getItem("applicantId");
+
+    if (!storedApplicantId) {
+      handleError("Please login to continue");
+      navigate("/login");
+      return;
+    }
+
+    setApplicantId(storedApplicantId);
+  }, [navigate, handleError]);
+
+  // Separate effect for fetching data after applicantId is set
+  useEffect(() => {
+    if (applicantId) {
+      fetchApplicantData(applicantId);
+      fetchCoursesFromBackend();
+      fetchUploadedDocuments(applicantId);
+      fetchCoursePreferences(applicantId);
+    }
+  }, [applicantId, fetchApplicantData, fetchCoursesFromBackend, fetchUploadedDocuments]);
+
+  const checkCourseAlreadySelected = (courseId) => {
+    return coursePreferences.some(pref => pref.course.courseId === courseId);
   };
 
   const openCourseDialog = (priorityIndex) => {
@@ -218,6 +236,17 @@ const ApplicationForm = () => {
 
   const handleDialogConfirm = async () => {
     if (!selectedCourse || currentPriorityIndex === null) {
+      return;
+    }
+
+    // Check if this course is already selected in another priority level
+    const isDuplicate = coursePreferences.some(
+      pref => pref.course.courseId === selectedCourse.courseId && 
+             pref.priorityOrder !== priorityOrders[currentPriorityIndex]
+    );
+
+    if (isDuplicate) {
+      handleError("This course is already selected in another priority level. Each course can only be selected once.");
       return;
     }
 
@@ -291,28 +320,59 @@ const ApplicationForm = () => {
       return;
     }
 
+    // Check if this is a replacement (documentType is an object with document info)
+    const isReplacement = typeof documentType === 'object' && documentType.documentType;
+    const actualDocumentType = isReplacement ? documentType.documentType : documentType;
+    const documentId = isReplacement ? documentType.id : null;
+
     const formData = new FormData();
     formData.append("files", file);
     formData.append("applicantId", applicantId);
-    formData.append("documentType", documentType);
+    formData.append("documentType", actualDocumentType);
 
     try {
-      const response = await axios.post("http://localhost:8080/api/documents/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      if (isReplacement && documentId) {
+        // For replacement, use PUT request to update existing document
+        const response = await axios.put(`http://localhost:8080/api/documents/${documentId}`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
 
-      handleSuccess(`${getDocumentTypeLabel(documentType)} uploaded successfully!`);
-      
-      const uploadedFile = {
-        name: response.data.fileName,
-        id: response.data.documentId,
-        downloadUrl: response.data.downloadUrl,
-        documentType: documentType
-      };
+        handleSuccess(`${getDocumentTypeLabel(actualDocumentType)} replaced successfully!`);
+        
+        // Update the specific file in the files array
+        setFiles((prevFiles) => 
+          prevFiles.map(prevFile => 
+            prevFile.id === documentId 
+              ? {
+                  name: response.data.fileName,
+                  id: response.data.documentId,
+                  downloadUrl: response.data.downloadUrl,
+                  documentType: actualDocumentType
+                }
+              : prevFile
+          )
+        );
+      } else {
+        // For new upload, use POST request
+        const response = await axios.post("http://localhost:8080/api/documents/upload", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
 
-      setFiles((prevFiles) => [...prevFiles, uploadedFile]);
+        handleSuccess(`${getDocumentTypeLabel(actualDocumentType)} uploaded successfully!`);
+        
+        const uploadedFile = {
+          name: response.data.fileName,
+          id: response.data.documentId,
+          downloadUrl: response.data.downloadUrl,
+          documentType: actualDocumentType
+        };
+
+        setFiles((prevFiles) => [...prevFiles, uploadedFile]);
+      }
     } catch (error) {
       console.error("Error uploading file:", error);
       if (error.response && error.response.data) {
@@ -383,6 +443,9 @@ const ApplicationForm = () => {
     navigate("/ApplicationTrack");
   };
 
+  // Check if all data has finished loading
+  const isLoading = loading.profile || loading.courses || loading.documents || loading.preferences;
+
   return (
     <ThemeProvider theme={customTheme}>
       <MinimalLayout backgroundImage={backgroundImage}>
@@ -411,7 +474,7 @@ const ApplicationForm = () => {
             </Box>
           </Grow>
           
-          {loading ? (
+          {isLoading ? (
             <Box sx={{ 
               display: "flex", 
               flexDirection: 'column',
@@ -437,8 +500,10 @@ const ApplicationForm = () => {
             <Grow in={true} timeout={800}>
               <AnimatedPaper elevation={3}>
                 <Grid container spacing={4} sx={{ flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
+                  {/* Left Column - Personal Info and Course Preferences */}
                   <Grid item md={7} xs={12} sx={{ minWidth: 0, flex: 1 }}>
                     <Stack spacing={4}>
+                      {/* Personal Information - Using same style as ApplicationTrack */}
                       <InfoBox>
                         <SectionTitle variant="subtitle1">Personal Information</SectionTitle>
                         <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -461,29 +526,70 @@ const ApplicationForm = () => {
                         </Grid>
                       </InfoBox>
                       
-                      <CoursePreferences 
-                        priorityOrders={priorityOrders}
-                        coursePreferences={coursePreferences}
-                        availableCourses={availableCourses}
-                        openCourseDialog={openCourseDialog}
-                        getPriorityLabel={getPriorityLabel}
-                      />
+                      {/* Course Preferences - Using same container style */}
+                      <Box>
+                        <SectionTitle variant="subtitle1">Course Preference(s)</SectionTitle>
+                        <Box sx={{
+                          bgcolor: alpha('#FFFFFF', 0.7),
+                          borderRadius: 2,
+                          padding: 2,
+                          boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)'
+                        }}>
+                          <CoursePreferences 
+                            priorityOrders={priorityOrders}
+                            coursePreferences={coursePreferences}
+                            availableCourses={availableCourses}
+                            openCourseDialog={openCourseDialog}
+                            getPriorityLabel={getPriorityLabel}
+                            checkCourseAlreadySelected={checkCourseAlreadySelected}
+                          />
+                        </Box>
+                      </Box>
                     </Stack>
                   </Grid>
                   
+                  {/* Right Column - Documents */}
                   <Grid item md={5} xs={12} sx={{ minWidth: 0, flex: 1 }}>
-                    <Stack spacing={4}>
-                      <DocumentUpload 
-                        documentTypes={documentTypes}
-                        files={files}
-                        handleFileUpload={handleFileUpload}
-                        getDocumentTypeLabel={getDocumentTypeLabel}
-                      />
-                      
-                      <DocumentList 
-                        files={files}
-                        getDocumentTypeLabel={getDocumentTypeLabel}
-                      />
+                    <Stack spacing={3}>
+                      {/* Document Upload Section */}
+                      <Box sx={{
+                        bgcolor: alpha('#FFFFFF', 0.7),
+                        borderRadius: 2,
+                        padding: 2,
+                        boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)'
+                      }}>
+                        <DocumentUpload 
+                          documentTypes={documentTypes}
+                          files={files}
+                          handleFileUpload={handleFileUpload}
+                          getDocumentTypeLabel={getDocumentTypeLabel}
+                        />
+                      </Box>
+
+                      {/* Files Uploaded List */}
+                      <Box sx={{
+                        bgcolor: alpha('#FFFFFF', 0.7),
+                        borderRadius: 2,
+                        padding: 2,
+                        boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)',
+                        height: 'fit-content'
+                      }}>
+                        <DocumentHandler
+                          documents={files}
+                          uploadingFiles={false}
+                          handleFileChange={handleFileUpload}
+                          maroon={maroon}
+                          gold={gold}
+                          showPreviewDownload={false}
+                          showSimpleList={true}
+                          SectionTitle={({ children, ...props }) => (
+                            <SectionTitle {...props}>
+                              Files Uploaded ({files.length})
+                            </SectionTitle>
+                          )}
+                          UploadButton={UploadButton}
+                        />
+                      </Box>
                     </Stack>
                   </Grid>
                 </Grid>
@@ -513,6 +619,7 @@ const ApplicationForm = () => {
           priorityIndex={currentPriorityIndex}
           selectedCourse={selectedCourse}
           setSelectedCourse={setSelectedCourse}
+          checkCourseAlreadySelected={checkCourseAlreadySelected}
         />
         
         <SuccessModal

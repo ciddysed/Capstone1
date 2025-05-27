@@ -16,7 +16,7 @@ import axios from "axios";
 import { StyledTextField } from "../../Login/LoginForm";
 import { useNavigate } from "react-router-dom";
 
-const ForgotPasswordRequestForm = ({ onSuccess }) => {
+const EvaluatorForgotPasswordRequestForm = ({ onSuccess }) => {
   const {
     register,
     handleSubmit,
@@ -47,9 +47,9 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
     setLoading(true);
 
     try {
-      console.log("=== FRONTEND: Applicant Direct Password Reset START ===");
+      console.log("=== FRONTEND: Evaluator Direct Password Reset START ===");
       const response = await axios.post(
-        "http://localhost:8080/api/applicants/reset-password",
+        "http://localhost:8080/api/evaluators/reset-password",
         {
           email: data.email,
           newPassword: data.newPassword,
@@ -75,7 +75,7 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
       } else {
         // Add a timeout before redirecting
         setTimeout(() => {
-          navigate("/login");
+          navigate("/evaluator/login");
         }, 2000);
       }
     } catch (error) {
@@ -102,7 +102,7 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
           <LockResetIcon fontSize="medium" />
         </Avatar>
         <Typography variant="h5" fontWeight="bold">
-          Applicant Reset Password
+          Evaluator Reset Password
         </Typography>
         <Typography
           variant="body2"
@@ -207,4 +207,4 @@ const StyledPaper = styled(Paper)({
   borderRadius: 16,
 });
 
-export default ForgotPasswordRequestForm;
+export default EvaluatorForgotPasswordRequestForm;

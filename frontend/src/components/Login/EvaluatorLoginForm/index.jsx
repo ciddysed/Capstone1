@@ -210,158 +210,156 @@ const EvaluatorLoginForm = ({
   };
 
   return (
-    <>
-      <StyledPaper elevation={6}>
-        <Typography variant="h5" textAlign="center" fontWeight="bold">
-          {currentFormType === "login"
-            ? "Evaluator Login Form"
-            : "Evaluator Signup Form"}
-        </Typography>
+    <StyledPaper elevation={6}>
+      <Typography variant="h5" textAlign="center" fontWeight="bold">
+        {currentFormType === "login"
+          ? "Evaluator Login Form"
+          : "Evaluator Signup Form"}
+      </Typography>
 
-        <Stack direction="row" justifyContent="center">
-          <ToggleButtonGroup
-            value={currentFormType}
-            exclusive
-            onChange={handleToggle}
-            aria-label="Login or Signup"
-          >
-            <StyledToggleButton value="login">Login</StyledToggleButton>
-            <StyledToggleButton value="signup">Signup</StyledToggleButton>
-          </ToggleButtonGroup>
-        </Stack>
-        <Stack gap={2}>
-          <form onSubmit={handleSubmit(onSubmit)} noValidate autoComplete="off">
-            {currentFormType === "signup" && (
+      <Stack direction="row" justifyContent="center">
+        <ToggleButtonGroup
+          value={currentFormType}
+          exclusive
+          onChange={handleToggle}
+          aria-label="Login or Signup"
+        >
+          <StyledToggleButton value="login">Login</StyledToggleButton>
+          <StyledToggleButton value="signup">Signup</StyledToggleButton>
+        </ToggleButtonGroup>
+      </Stack>
+      <Stack gap={2}>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          {currentFormType === "signup" && (
+            <StyledTextField
+              type="text"
+              fullWidth
+              placeholder="Enter your full name"
+              variant="outlined"
+              size="small"
+              {...register("name")}
+              error={!!errors.name}
+              helperText={errors.name?.message}
+            />
+          )}
+
+          <StyledTextField
+            type="email"
+            fullWidth
+            placeholder="Enter your email"
+            variant="outlined"
+            size="small"
+            {...register("email")}
+            error={!!errors.email}
+            helperText={errors.email?.message}
+          />
+
+          {currentFormType === "signup" && (
+            <>
+              <StyledTextField
+                type="tel"
+                fullWidth
+                placeholder="Enter your contact number"
+                variant="outlined"
+                size="small"
+                {...register("contactNumber")}
+                error={!!errors.contactNumber}
+                helperText={errors.contactNumber?.message}
+              />
+
               <StyledTextField
                 type="text"
                 fullWidth
-                placeholder="Enter your full name"
+                placeholder="Enter your role"
                 variant="outlined"
                 size="small"
-                {...register("name")}
-                error={!!errors.name}
-                helperText={errors.name?.message}
+                {...register("role")}
+                error={!!errors.role}
+                helperText={errors.role?.message}
               />
-            )}
 
-            <StyledTextField
-              type="email"
-              fullWidth
-              placeholder="Enter your email"
-              variant="outlined"
-              size="small"
-              {...register("email")}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-            />
-
-            {currentFormType === "signup" && (
-              <>
-                <StyledTextField
-                  type="tel"
-                  fullWidth
-                  placeholder="Enter your contact number"
-                  variant="outlined"
-                  size="small"
-                  {...register("contactNumber")}
-                  error={!!errors.contactNumber}
-                  helperText={errors.contactNumber?.message}
-                />
-
-                <StyledTextField
-                  type="text"
-                  fullWidth
-                  placeholder="Enter your role"
-                  variant="outlined"
-                  size="small"
-                  {...register("role")}
-                  error={!!errors.role}
-                  helperText={errors.role?.message}
-                />
-
-                <StyledTextField
-                  select
-                  fullWidth
-                  placeholder="Select your department"
-                  variant="outlined"
-                  size="small"
-                  {...register("department")}
-                  error={!!errors.department}
-                  helperText={errors.department?.message}
-                >
-                  {departments.length > 0 ? (
-                    departments.map((dept) => (
-                      <MenuItem
-                        key={dept.departmentId}
-                        value={dept.departmentName}
-                      >
-                        {dept.departmentName}
-                      </MenuItem>
-                    ))
-                  ) : (
-                    <MenuItem value="" disabled>
-                      Loading departments...
+              <StyledTextField
+                select
+                fullWidth
+                placeholder="Select your department"
+                variant="outlined"
+                size="small"
+                {...register("department")}
+                error={!!errors.department}
+                helperText={errors.department?.message}
+              >
+                {departments.length > 0 ? (
+                  departments.map((dept) => (
+                    <MenuItem
+                      key={dept.departmentId}
+                      value={dept.departmentName}
+                    >
+                      {dept.departmentName}
                     </MenuItem>
-                  )}
-                </StyledTextField>
-              </>
-            )}
+                  ))
+                ) : (
+                  <MenuItem value="" disabled>
+                    Loading departments...
+                  </MenuItem>
+                )}
+              </StyledTextField>
+            </>
+          )}
 
+          <StyledTextField
+            type="password"
+            fullWidth
+            placeholder="Enter your password"
+            variant="outlined"
+            size="small"
+            {...register("password")}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+          />
+
+          {currentFormType === "signup" && (
             <StyledTextField
               type="password"
-              fullWidth
-              placeholder="Enter your password"
+              placeholder="Re-enter your password"
               variant="outlined"
               size="small"
-              {...register("password")}
-              error={!!errors.password}
-              helperText={errors.password?.message}
-            />
-
-            {currentFormType === "signup" && (
-              <StyledTextField
-                type="password"
-                placeholder="Re-enter your password"
-                variant="outlined"
-                size="small"
-                fullWidth
-                {...register("reEnterPassword")}
-                error={!!errors.reEnterPassword}
-                helperText={errors.reEnterPassword?.message}
-              />
-            )}
-            <Stack direction="row" justifyContent="flex-start">
-              {currentFormType === "login" && (
-                <Link
-                  component="button"
-                  variant="body2"
-                  onClick={() => navigate("/forget-password")}
-                  sx={{
-                    color: "black",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                  }}
-                >
-                  Forgot password?
-                </Link>
-              )}
-            </Stack>
-
-            <Button
-              type="submit"
-              variant="contained"
               fullWidth
-              sx={{ backgroundColor: "#800000", borderRadius: "20px" }}
-            >
-              {currentFormType === "login" ? "Login" : "Signup"}
-            </Button>
-          </form>
-        </Stack>
-      </StyledPaper>
-    </>
+              {...register("reEnterPassword")}
+              error={!!errors.reEnterPassword}
+              helperText={errors.reEnterPassword?.message}
+            />
+          )}
+          {currentFormType === "login" && (
+            <Stack direction="row" justifyContent="flex-start">
+              <Link
+                component="button"
+                variant="body2"
+                onClick={() => navigate("/evaluator/forget-password")}
+                sx={{
+                  color: "black",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                }}
+              >
+                Forgot password?
+              </Link>
+            </Stack>
+          )}
+
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{ backgroundColor: "#800000", borderRadius: "20px" }}
+          >
+            {currentFormType === "login" ? "Login" : "Signup"}
+          </Button>
+        </form>
+      </Stack>
+    </StyledPaper>
   );
 };
 

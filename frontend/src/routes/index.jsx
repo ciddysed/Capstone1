@@ -12,6 +12,7 @@ import SetUpProfilePage from "../pages/applicants/SetUpProfile";
 import ForgotPasswordPage from "../pages/common/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/common/ResetPasswordPage";
 import ApplicantsListPage from "../pages/evaluators/ApplicantsListPage";
+import EvaluatorForgotPasswordPage from "../pages/evaluators/ForgotPasswordPage";
 import EvaluatorHomePage from "../pages/evaluators/HomePage";
 import EvaluatorsLoginPage from "../pages/evaluators/LoginPage";
 import ViewApplicantPage from "../pages/evaluators/ViewApplicantPage";
@@ -83,6 +84,10 @@ const AppRoutes = () => {
     {
       path: "/evaluator/login",
       element: <EvaluatorsLoginPage />,
+    },
+    {
+      path: "/evaluator/forget-password",
+      element: <EvaluatorForgotPasswordPage />,
     },
     {
       path: "/evaluator/applicants",

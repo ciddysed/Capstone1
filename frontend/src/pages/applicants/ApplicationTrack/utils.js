@@ -55,6 +55,24 @@ export const DOCUMENT_TYPES = {
   }
 };
 
+// Document type labels for mapping backend enum values to user-friendly names
+export const DOCUMENT_TYPE_LABELS = {
+  APPLICANTS_EVALUATION_SHEET: "Applicant's Evaluation Sheet",
+  INFORMATIVE_COPY_OF_TOR: "Informative Copy of TOR",
+  PSA_AUTHENTICATED_BIRTH_CERTIFICATE: "PSA Birth Certificate",
+  CERTIFICATE_OF_TRANSFER_CREDENTIAL: "Certificate of Transfer Credential",
+  MARRIAGE_CERTIFICATE: "Marriage Certificate", 
+  CERTIFICATE_OF_EMPLOYMENT: "Certificate of Employment",
+  EMPLOYER_CERTIFIED_DETAILED_JOB_DESCRIPTION: "Employer Certified Job Description",
+  EVIDENCE_OF_BUSINESS_OWNERSHIP: "Evidence of Business Ownership",
+  GENERAL: "General Document",
+};
+
+// Get document type label from document type value
+export const getDocumentTypeLabel = (documentType) => {
+  return DOCUMENT_TYPE_LABELS[documentType] || documentType || "General Document";
+};
+
 // Get initials from name
 export const getInitials = (name) =>
   name
@@ -87,6 +105,21 @@ export const getStatusIcon = (status) => {
     case PREFERENCE_STATUS.REVIEWED:
     default:
       return <AccessTime fontSize="small" sx={{ color: "#1565C0" }} />;
+  }
+};
+
+// Function to get status color based on preference status
+export const getStatusColor = (status) => {
+  switch(status) {
+    case PREFERENCE_STATUS.ACCEPTED:
+      return { bg: "rgba(76, 175, 80, 0.1)", color: "#2e7d32", border: "#4caf50" };
+    case PREFERENCE_STATUS.REJECTED:
+      return { bg: "rgba(244, 67, 54, 0.1)", color: "#d32f2f", border: "#f44336" };
+    case PREFERENCE_STATUS.REVIEWED:
+      return { bg: "rgba(33, 150, 243, 0.1)", color: "#1565c0", border: "#2196f3" };
+    case PREFERENCE_STATUS.PENDING:
+    default:
+      return { bg: "rgba(255, 152, 0, 0.1)", color: "#e65100", border: "#ff9800" };
   }
 };
 

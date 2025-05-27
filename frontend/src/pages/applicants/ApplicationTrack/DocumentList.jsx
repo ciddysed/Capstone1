@@ -8,10 +8,13 @@ import {
   Tooltip,
   IconButton,
   List,
+  ListItem,
   Chip,
   CircularProgress,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  Divider,
+  alpha
 } from "@mui/material";
 import { Description, Visibility, Download, UploadFile } from "@mui/icons-material";
 import {
@@ -19,6 +22,8 @@ import {
   DocumentItem,
   UploadButton
 } from "./styled";
+import { getDocumentTypeLabel } from "./utils";
+import { maroon, gold } from "../AppCoursePreference/styles";
 
 const DocumentList = ({
   isLoading,
@@ -70,72 +75,124 @@ const DocumentList = ({
           <CircularProgress size={24} />
         </Box>
       ) : getCurrentDocuments().length > 0 ? (
-        <List sx={{ 
-          bgcolor: "#f8f8f8", 
+        <List dense sx={{ 
+          bgcolor: alpha('#FFFFFF', 0.7), 
           borderRadius: 2,
-          p: 1,
+          border: `1px solid ${alpha(maroon.main, 0.1)}`,
+          boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)',
+          p: 0.5,
           maxHeight: "300px",
           overflowY: "auto"
         }}>
-          {getCurrentDocuments().map((doc, index) => (
-            <DocumentItem 
-              key={doc.id || index}
-              sx={{ mb: 0.5 }}
-            >
-              <ListItemIcon>
-                {doc.icon}
-              </ListItemIcon>
-              <ListItemText 
-                primary={doc.name}
-                secondary={
-                  <Box component="span" sx={{ display: "inline-flex", alignItems: "center" }}>
-                    <Typography variant="caption" component="span">
-                      Uploaded: {doc.uploadDate}
-                    </Typography>
-                    {doc.type !== "General" && (
-                      <Chip 
-                        label={doc.type} 
+          {getCurrentDocuments().map((doc, index) => {
+            const documentTypeLabel = getDocumentTypeLabel(doc.type);
+            
+            return (
+              <React.Fragment key={doc.id || index}>
+                {index > 0 && <Divider component="li" sx={{ borderColor: alpha(maroon.main, 0.1) }} />}
+                <ListItem sx={{ 
+                  py: 1,
+                  transition: 'background-color 0.2s',
+                  '&:hover': {
+                    backgroundColor: alpha(gold.light, 0.3)
+                  }
+                }}>
+                  <ListItemIcon>
+                    {doc.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Stack spacing={0.2}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Box 
+                            sx={{ 
+                              width: 8, 
+                              height: 8, 
+                              borderRadius: '50%', 
+                              bgcolor: maroon.main,
+                              mr: 1 
+                            }} 
+                          />
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {doc.name}
+                          </Typography>
+                        </Box>
+                        
+                        {/* Document type label with emphasis */}
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            color: maroon.main, 
+                            fontWeight: 600,
+                            ml: 2.2,
+                            display: 'block',
+                            bgcolor: alpha(maroon.light, 0.08),
+                            px: 1,
+                            py: 0.2,
+                            borderRadius: 1,
+                            width: 'fit-content'
+                          }}
+                        >
+                          {documentTypeLabel}
+                        </Typography>
+                      </Stack>
+                    }
+                    secondary={
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          color: 'text.secondary', 
+                          fontSize: '0.75rem', 
+                          ml: 2.2,
+                          display: 'block',
+                          mt: 0.5
+                        }}
+                      >
+                        Uploaded: {doc.uploadDate}
+                      </Typography>
+                    }
+                    disableTypography
+                  />
+                  <Stack direction="row" spacing={1}>
+                    <Tooltip title="Preview Document">
+                      <IconButton 
                         size="small" 
-                        sx={{ ml: 1, height: 18, fontSize: '0.6rem' }}
-                      />
-                    )}
-                  </Box>
-                }
-                primaryTypographyProps={{
-                  style: { fontWeight: 500, fontSize: '0.9rem' }
-                }}
-              />
-              <Stack direction="row" spacing={1}>
-                <Tooltip title="Preview Document">
-                  <IconButton 
-                    size="small" 
-                    onClick={() => handlePreviewDocument(doc)}
-                    sx={{ color: '#1976d2' }}
-                  >
-                    <Visibility fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Download Document">
-                  <IconButton 
-                    size="small" 
-                    onClick={() => handleDownloadDocument(doc)}
-                  >
-                    <Download fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            </DocumentItem>
-          ))}
+                        onClick={() => handlePreviewDocument(doc)}
+                        sx={{ color: maroon.main }}
+                      >
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Download Document">
+                      <IconButton 
+                        size="small" 
+                        onClick={() => handleDownloadDocument(doc)}
+                        sx={{ color: maroon.dark }}
+                      >
+                        <Download fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                </ListItem>
+              </React.Fragment>
+            );
+          })}
         </List>
       ) : (
         <Box sx={{ 
-          bgcolor: "#f8f8f8", 
-          borderRadius: 2, 
-          p: 3,
-          textAlign: "center" 
+          bgcolor: alpha('#FFFFFF', 0.7), 
+          p: 3, 
+          borderRadius: 2,
+          border: `1px dashed ${alpha(maroon.main, 0.3)}`,
+          textAlign: "center",
+          boxShadow: 'inset 0 0 8px rgba(0,0,0,0.03)'
         }}>
-          <Typography variant="body2" color="text.secondary" paragraph>
+          <UploadFile sx={{ fontSize: 40, color: alpha(maroon.main, 0.3), mb: 1 }} />
+          <Typography variant="body2" color="text.secondary">
             No documents {documentTab > 0 ? "in this category" : "uploaded yet"}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Please upload the required documents
           </Typography>
         </Box>
       )}

@@ -20,11 +20,10 @@ import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-const ResetPasswordForm = ({ onSuccessCallback }) => {
+const EvaluatorResetPasswordForm = ({ onSuccessCallback }) => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm();
 
@@ -50,40 +49,40 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
 
   useEffect(() => {
     const validateToken = async () => {
-      console.log("ResetPasswordForm: Starting token validation", { token });
+      console.log("EvaluatorResetPasswordForm: Starting token validation", { token });
       
       if (!token) {
-        console.error("ResetPasswordForm: No token found in URL parameters");
+        console.error("EvaluatorResetPasswordForm: No token found in URL parameters");
         showSnackbar("Invalid reset link. Please request a new one.", "error");
-        setTimeout(() => navigate("/forget-password"), 2000);
+        setTimeout(() => navigate("/evaluators/forget-password"), 2000);
         return;
       }
 
       try {
-        console.log("ResetPasswordForm: Sending token validation request");
-        const baseUrl = "http://localhost:8080/api/applicants";
+        console.log("EvaluatorResetPasswordForm: Sending token validation request");
+        const baseUrl = "http://localhost:8080/api/evaluators";
         
         const response = await axios.get(`${baseUrl}/validate-reset-token/${token}`);
         
-        console.log("ResetPasswordForm: Token validation response", response.data);
+        console.log("EvaluatorResetPasswordForm: Token validation response", response.data);
         setTokenValid(response.data.valid);
         
         if (!response.data.valid) {
-          console.warn("ResetPasswordForm: Token validation failed - token is invalid or expired");
+          console.warn("EvaluatorResetPasswordForm: Token validation failed - token is invalid or expired");
           showSnackbar("Reset link has expired. Please request a new one.", "error");
-          setTimeout(() => navigate("/forget-password"), 2000);
+          setTimeout(() => navigate("/evaluators/forget-password"), 2000);
         } else {
-          console.log("ResetPasswordForm: Token validation successful");
+          console.log("EvaluatorResetPasswordForm: Token validation successful");
         }
       } catch (error) {
-        console.error("ResetPasswordForm: Token validation request failed", {
+        console.error("EvaluatorResetPasswordForm: Token validation request failed", {
           error: error.message,
           response: error.response?.data,
           status: error.response?.status
         });
         
         showSnackbar("Invalid reset link. Please request a new one.", "error");
-        setTimeout(() => navigate("/forget-password"), 2000);
+        setTimeout(() => navigate("/evaluators/forget-password"), 2000);
       }
     };
 
@@ -91,25 +90,25 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
   }, [token, navigate]);
 
   const onSubmit = async (data) => {
-    console.log("ResetPasswordForm: Starting password reset submission");
+    console.log("EvaluatorResetPasswordForm: Starting password reset submission");
     
     if (data.password !== data.confirmPassword) {
-      console.warn("ResetPasswordForm: Password confirmation mismatch");
+      console.warn("EvaluatorResetPasswordForm: Password confirmation mismatch");
       showSnackbar("Passwords do not match", "error");
       return;
     }
 
     setLoading(true);
     try {
-      console.log("ResetPasswordForm: Sending password reset request", { token });
-      const baseUrl = "http://localhost:8080/api/applicants";
+      console.log("EvaluatorResetPasswordForm: Sending password reset request", { token });
+      const baseUrl = "http://localhost:8080/api/evaluators";
       
       const response = await axios.post(`${baseUrl}/reset-password`, {
         token: token,
         password: data.password
       });
 
-      console.log("ResetPasswordForm: Password reset response", response.data);
+      console.log("EvaluatorResetPasswordForm: Password reset response", response.data);
       const successMessage = response.data.message || "Password reset successfully";
       showSnackbar(successMessage, "success");
       
@@ -119,12 +118,12 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
       } else {
         // Redirect automatically after showing success message
         setTimeout(() => {
-          console.log("ResetPasswordForm: Redirecting to login page");
-          navigate("/login");
+          console.log("EvaluatorResetPasswordForm: Redirecting to login page");
+          navigate("/evaluators/login");
         }, 1500);
       }
     } catch (error) {
-      console.error("ResetPasswordForm: Password reset request failed", {
+      console.error("EvaluatorResetPasswordForm: Password reset request failed", {
         error: error.message,
         response: error.response?.data,
         status: error.response?.status
@@ -134,7 +133,7 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
       showSnackbar(errorMessage, "error");
     } finally {
       setLoading(false);
-      console.log("ResetPasswordForm: Password reset submission completed");
+      console.log("EvaluatorResetPasswordForm: Password reset submission completed");
     }
   };
 
@@ -174,7 +173,7 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
           <LockIcon />
         </Avatar>
         <Typography variant="h5" fontWeight="bold">
-          Applicant Reset Password
+          Evaluator Reset Password
         </Typography>
         <Typography
           variant="body2"
@@ -283,4 +282,4 @@ const StyledPaper = styled(Paper)({
   borderRadius: 16,
 });
 
-export default ResetPasswordForm;
+export default EvaluatorResetPasswordForm;

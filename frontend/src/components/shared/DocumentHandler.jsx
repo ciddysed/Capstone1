@@ -9,8 +9,6 @@ import {
   CircularProgress,
   Divider,
   alpha,
-  Grid,
-  Card,
   Button,
   List,
   ListItem,
@@ -20,56 +18,93 @@ import {
   UploadFile,
 } from "@mui/icons-material";
 
-// Import reusable styled components from AppCoursePreference
-import { SectionTitle, UploadButton } from "../AppCoursePreference/styles";
-
 const DocumentHandler = ({
-  isLoading,
-  documents,
-  documentsByType,
-  apiBaseUrl,
-  uploadingFiles,
+  documents = [],
+  uploadingFiles = false,
   handleFileUpload,
   handleFileChange,
-  missingDocuments,
+  missingDocuments = [],
   handleMissingFileUpload,
-  requiredDocuments,
+  requiredDocuments = [],
   maroon,
-  gold
+  gold,
+  showPreviewDownload = false,
+  showSimpleList = false,
+  apiBaseUrl,
+  SectionTitle,
+  UploadButton
 }) => {
-  // Handle file replacement
-  const handleFileChangeInternal = useCallback(async (event, documentToReplace) => {
-    // Use the passed handleFileChange prop instead of internal implementation
-    if (handleFileChange) {
-      handleFileChange(event, documentToReplace);
-    }
-  }, [handleFileChange]);
+
+  // Get document type label from value
+  const getDocumentTypeLabel = (value) => {
+    if (!requiredDocuments.length) return value;
+    const docType = requiredDocuments.find(type => type.value === value);
+    return docType ? docType.label : value;
+  };
 
   return (
     <Box>
-      {/* Header using SectionTitle from AppCoursePreference */}
+      {/* Header */}
       <SectionTitle variant="subtitle1" sx={{ mb: 2 }}>
-        Application Documents
+        {documents.length > 0 ? `Files Uploaded (${documents.length})` : "Application Documents"}
       </SectionTitle>
       
-      {/* Documents List - Using same style as DocumentList component */}
-      {isLoading ? (
-        <Box sx={{ 
-          display: "flex", 
-          flexDirection: "column", 
-          alignItems: "center", 
-          justifyContent: "center", 
-          py: 4,
-          bgcolor: alpha('#FFFFFF', 0.7),
+      {/* Simple List View (for AppCoursePreference) */}
+      {showSimpleList && documents.length > 0 ? (
+        <List dense sx={{ 
+          bgcolor: alpha('#FFFFFF', 0.7), 
           borderRadius: 2,
           border: `1px solid ${alpha(maroon.main, 0.1)}`,
+          boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)'
         }}>
-          <CircularProgress size={28} sx={{ color: maroon.main, mb: 2 }} />
-          <Typography variant="body2" color="text.secondary">
-            Loading documents...
-          </Typography>
-        </Box>
-      ) : documents.length > 0 ? (
+          {documents.map((doc, index) => (
+            <React.Fragment key={doc.id}>
+              {index > 0 && <Divider component="li" sx={{ borderColor: alpha(maroon.main, 0.1) }} />}
+              <ListItem sx={{ 
+                py: 1,
+                transition: 'background-color 0.2s',
+                '&:hover': {
+                  backgroundColor: alpha(gold.light, 0.3)
+                }
+              }}>
+                <ListItemText
+                  primary={
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box 
+                        sx={{ 
+                          width: 8, 
+                          height: 8, 
+                          borderRadius: '50%', 
+                          bgcolor: maroon.main,
+                          mr: 1 
+                        }} 
+                      />
+                      <a 
+                        href={doc.downloadUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ 
+                          color: maroon.main, 
+                          textDecoration: 'none',
+                          fontWeight: 500
+                        }}
+                      >
+                        {doc.name}
+                      </a>
+                    </Box>
+                  }
+                  secondary={
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
+                      {getDocumentTypeLabel(doc.documentType)}
+                    </Typography>
+                  }
+                />
+              </ListItem>
+            </React.Fragment>
+          ))}
+        </List>
+      ) : !showSimpleList && documents.length > 0 ? (
+        /* Detailed List View (for ApplicationTrack) */
         <List dense sx={{ 
           bgcolor: alpha('#FFFFFF', 0.7), 
           borderRadius: 2,
@@ -137,7 +172,7 @@ const DocumentHandler = ({
                   }
                   secondary={
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                      Uploaded: {doc.uploadDate} • Type: {doc.type}
+                      Type: {getDocumentTypeLabel(doc.documentType)}
                     </Typography>
                   }
                 />
@@ -146,6 +181,7 @@ const DocumentHandler = ({
           ))}
         </List>
       ) : (
+        /* Empty State */
         <Box sx={{ 
           bgcolor: alpha('#FFFFFF', 0.7), 
           p: 3, 
@@ -165,13 +201,8 @@ const DocumentHandler = ({
         </Box>
       )}
 
-      {/* Upload Section using same style as AppCoursePreference */}
-      <SectionTitle variant="subtitle2" sx={{ mb: 1.5 }}>
-        {documents.length > 0 ? "Upload Additional Documents" : "Upload Required Documents"}
-      </SectionTitle>
-
-      {/* Missing Required Documents Section */}
-      {missingDocuments && missingDocuments.length > 0 && (
+      {/* Missing Required Documents Section - For ApplicationTrack */}
+      {missingDocuments && missingDocuments.length > 0 && !showSimpleList && (
         <Box sx={{ 
           mb: 3,
           bgcolor: alpha('#fff3e0', 0.5),
@@ -232,44 +263,53 @@ const DocumentHandler = ({
         </Box>
       )}
 
-      {/* General Upload Button using AppCoursePreference style */}
-      <UploadButton
-        variant="contained"
-        component="label"
-        startIcon={uploadingFiles ? <CircularProgress size={18} color="inherit" /> : <UploadFile />}
-        size="small"
-        disabled={uploadingFiles}
-      >
-        {uploadingFiles ? "Uploading Files..." : "Upload Documents"}
-        <input
-          type="file"
-          hidden
-          onChange={handleFileUpload}
-          multiple
-          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-          aria-label="Upload application documents"
-        />
-      </UploadButton>
-      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-        Accepted formats: PDF, Word documents, JPEG, PNG images
-      </Typography>
+      {/* General Upload Button */}
+      {UploadButton && handleFileUpload && (
+        <>
+          <SectionTitle variant="subtitle2" sx={{ mb: 1.5 }}>
+            {documents.length > 0 ? "Upload Additional Documents" : "Upload Documents"}
+          </SectionTitle>
+          <UploadButton
+            variant="contained"
+            component="label"
+            startIcon={uploadingFiles ? <CircularProgress size={18} color="inherit" /> : <UploadFile />}
+            size="small"
+            disabled={uploadingFiles}
+          >
+            {uploadingFiles ? "Uploading Files..." : "Upload Documents"}
+            <input
+              type="file"
+              hidden
+              onChange={handleFileUpload}
+              multiple={!showSimpleList}
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              aria-label="Upload application documents"
+            />
+          </UploadButton>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+            Accepted formats: PDF, Word documents, JPEG, PNG images
+          </Typography>
+        </>
+      )}
     </Box>
   );
 };
 
 DocumentHandler.propTypes = {
-  isLoading: PropTypes.bool.isRequired,
-  documents: PropTypes.array.isRequired,
-  documentsByType: PropTypes.object.isRequired,
-  apiBaseUrl: PropTypes.string.isRequired,
-  uploadingFiles: PropTypes.bool.isRequired,
-  handleFileUpload: PropTypes.func.isRequired,
-  handleFileChange: PropTypes.func.isRequired,
+  documents: PropTypes.array,
+  uploadingFiles: PropTypes.bool,
+  handleFileUpload: PropTypes.func,
+  handleFileChange: PropTypes.func,
   missingDocuments: PropTypes.array,
   handleMissingFileUpload: PropTypes.func,
   requiredDocuments: PropTypes.array,
-  maroon: PropTypes.object.isRequired,
-  gold: PropTypes.object.isRequired
+  maroon: PropTypes.object,
+  gold: PropTypes.object,
+  showPreviewDownload: PropTypes.bool,
+  showSimpleList: PropTypes.bool,
+  apiBaseUrl: PropTypes.string,
+  SectionTitle: PropTypes.elementType,
+  UploadButton: PropTypes.elementType
 };
 
 export default DocumentHandler;

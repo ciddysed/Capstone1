@@ -7,17 +7,64 @@ import { Stack } from "@mui/material";
 import SetUpProfile from "../../../components/Login/SetUpProfile";
 import useResponseHandler from "../../../utils/useResponseHandler";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const LoginPage = () => {
   const [view, setView] = useState("login"); // login | signup | setupProfile
   const { handleSuccess, handleError, snackbar } = useResponseHandler();
   const navigate = useNavigate();
 
+  // Function to check if applicant has started their application
+  const checkApplicationStatus = async (applicantId) => {
+    try {
+      // Check for course preferences
+      const preferencesResponse = await axios.get(
+        `http://localhost:8080/api/preferences/applicant/${applicantId}`
+      );
+      const hasPreferences =
+        preferencesResponse.data && preferencesResponse.data.length > 0;
+
+      // Check for uploaded documents
+      const documentsResponse = await axios.get(
+        `http://localhost:8080/api/documents/applicant/${applicantId}`
+      );
+      const hasDocuments =
+        documentsResponse.data && documentsResponse.data.length > 0;
+
+      // If they have either preferences or documents, they've started their application
+      if (hasPreferences || hasDocuments) {
+        navigate("/ApplicationTrack");
+        return true;
+      }
+
+      // Check if they have submitted an application
+      const applicationResponse = await axios.get(
+        `http://localhost:8080/api/applications/applicant/${applicantId}`
+      );
+      if (applicationResponse.data && applicationResponse.data.length > 0) {
+        navigate("/ApplicationTrack");
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      // If any API call fails (e.g., 404), assume no application data exists
+      console.log("No existing application data found, proceeding to homepage");
+      return false;
+    }
+  };
+
   useEffect(() => {
     const userType = localStorage.getItem("userType");
+    const applicantId = localStorage.getItem("applicantId");
 
-    if (userType === "applicant") {
-      navigate("/homepage"); // or "/applicant/home"
+    if (userType === "applicant" && applicantId) {
+      // Check if applicant has started their application
+      checkApplicationStatus(applicantId).then((hasStartedApplication) => {
+        if (!hasStartedApplication) {
+          navigate("/homepage");
+        }
+      });
     } else if (userType === "evaluator") {
       navigate("/evaluator/homepage");
     }

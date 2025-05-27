@@ -119,8 +119,8 @@ const LoginForm = ({
               // Navigate to setup profile within the same page
               setView("setupProfile");
             } else {
-              // Profile is complete, go to homepage
-              navigate("/homepage");
+              // Profile is complete, now check application status
+              await checkApplicationStatusAndRedirect(applicantId);
             }
           } catch (userError) {
             console.error("Error fetching user data:", userError);
@@ -143,6 +143,45 @@ const LoginForm = ({
     if (newFormType) {
       setCurrentFormType(newFormType);
       reset();
+    }
+  };
+
+  // Function to check if applicant has started their application
+  const checkApplicationStatusAndRedirect = async (applicantId) => {
+    try {
+      // Check for course preferences
+      const preferencesResponse = await axios.get(
+        `http://localhost:8080/api/preferences/applicant/${applicantId}`
+      );
+      const hasPreferences =
+        preferencesResponse.data && preferencesResponse.data.length > 0;
+
+      // Check for uploaded documents
+      const documentsResponse = await axios.get(
+        `http://localhost:8080/api/documents/applicant/${applicantId}`
+      );
+      const hasDocuments =
+        documentsResponse.data && documentsResponse.data.length > 0;
+
+      // Check if they have submitted an application
+      const applicationResponse = await axios.get(
+        `http://localhost:8080/api/applications/applicant/${applicantId}`
+      );
+      const hasSubmittedApplication =
+        applicationResponse.data && applicationResponse.data.length > 0;
+
+      // If they have any application data, redirect to tracking
+      if (hasPreferences || hasDocuments || hasSubmittedApplication) {
+        navigate("/ApplicationTrack");
+        return;
+      }
+
+      // No application data found, go to homepage
+      navigate("/homepage");
+    } catch (error) {
+      // If any API call fails (e.g., 404), assume no application data exists
+      console.log("No existing application data found, proceeding to homepage");
+      navigate("/homepage");
     }
   };
 

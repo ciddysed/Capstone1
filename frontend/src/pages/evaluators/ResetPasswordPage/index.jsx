@@ -3,19 +3,19 @@ import MinimalLayout from "../../../templates/MinimalLayout";
 import backgroundImage from "../../../assets/login-bg.png";
 import logo from "../../../assets/logo.png";
 import { Stack } from "@mui/material";
-import ResetPasswordForm from "../../../components/ForgotPassword/ResetPasswordForm";
+import EvaluatorResetPasswordForm from "../../../components/ForgotPassword/EvaluatorResetPasswordForm";
 import { useNavigate } from "react-router-dom";
 import useResponseHandler from "../../../utils/useResponseHandler";
 
-const ResetPasswordPage = () => {
+const EvaluatorResetPasswordPage = () => {
   const navigate = useNavigate();
   const { handleSuccess, snackbar } = useResponseHandler();
   
   const handleResetSuccess = (message) => {
     handleSuccess(message);
-    // Automatically redirect to the applicant login page after successful reset
+    // Automatically redirect to the evaluator login page after successful reset
     setTimeout(() => {
-      navigate("/login");
+      navigate("/evaluators/login");
     }, 2000);
   };
 
@@ -23,11 +23,11 @@ const ResetPasswordPage = () => {
     <MinimalLayout backgroundImage={backgroundImage}>
       <Stack alignItems="center" spacing={2}>
         <img src={logo} alt="Logo" />
-        <ResetPasswordForm onSuccessCallback={handleResetSuccess} />
+        <EvaluatorResetPasswordForm onSuccessCallback={handleResetSuccess} />
       </Stack>
       {snackbar}
     </MinimalLayout>
   );  
 };
 
-export default ResetPasswordPage;
+export default EvaluatorResetPasswordPage;

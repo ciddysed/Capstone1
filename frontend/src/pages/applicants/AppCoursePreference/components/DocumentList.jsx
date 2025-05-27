@@ -14,8 +14,6 @@ const DocumentList = ({ files, getDocumentTypeLabel }) => {
           bgcolor: alpha('#FFFFFF', 0.7), 
           borderRadius: 2,
           border: `1px solid ${alpha(maroon.main, 0.1)}`,
-          maxHeight: 200,
-          overflow: "auto",
           boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)'
         }}>
           {files.map((file, index) => (
