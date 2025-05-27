@@ -115,8 +115,14 @@ const EvaluatorHomePage = () => {
         data={""}
         userType={"evaluator"}
       >
-        {" "}
-        <Stack height="60vh" alignItems="center" justifyContent="center">
+        <Stack
+          sx={{
+            display: "flex",
+
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
           <Paper
             elevation={3}
             sx={{

@@ -14,7 +14,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { StyledTextField } from "../../Login/LoginForm";
-import { useNavigate } from "react-router-dom";
 
 const EvaluatorForgotPasswordRequestForm = ({ onSuccess }) => {
   const {
@@ -23,7 +22,6 @@ const EvaluatorForgotPasswordRequestForm = ({ onSuccess }) => {
     formState: { errors },
   } = useForm();
 
-  const navigate = useNavigate();
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -39,20 +37,14 @@ const EvaluatorForgotPasswordRequestForm = ({ onSuccess }) => {
   const handleClose = () => setSnackbar({ ...snackbar, open: false });
 
   const onSubmit = async (data) => {
-    if (data.newPassword !== data.confirmPassword) {
-      showSnackbar("Passwords do not match.", "error");
-      return;
-    }
-
     setLoading(true);
 
     try {
-      console.log("=== FRONTEND: Evaluator Direct Password Reset START ===");
+      console.log("=== FRONTEND: Evaluator Forgot Password Request START ===");
       const response = await axios.post(
-        "http://localhost:8080/api/evaluators/reset-password",
+        "http://localhost:8080/api/evaluators/forgot-password",
         {
           email: data.email,
-          newPassword: data.newPassword,
         },
         {
           headers: {
@@ -66,30 +58,27 @@ const EvaluatorForgotPasswordRequestForm = ({ onSuccess }) => {
       console.log("Data:", response.data);
 
       const successMessage =
-        response.data.message || "Password updated successfully.";
+        response.data.message || "If your email exists, a reset link has been sent.";
       showSnackbar(successMessage, "success");
 
       // If onSuccess callback is provided, use it
       if (onSuccess) {
         onSuccess(successMessage);
-      } else {
-        // Add a timeout before redirecting
-        setTimeout(() => {
-          navigate("/evaluator/login");
-        }, 2000);
       }
     } catch (error) {
       console.error("=== API RESPONSE ERROR ===", error);
 
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message.includes("timeout")
-          ? "Request timed out. Please try again."
-          : error.message.includes("Network Error")
-          ? "Cannot connect to server. Please check if the backend is running."
-          : "Failed to update password. Please try again.";
-
-      showSnackbar(errorMessage, "error");
+      // Always show a generic message for security reasons
+      const errorMessage = "If your email exists, a reset link has been sent.";
+      showSnackbar(errorMessage, "info");
+      
+      // For development purposes, log the actual error
+      console.error("Actual error:", error.response?.data?.message || error.message);
+      
+      // Still trigger success callback with the generic message
+      if (onSuccess) {
+        onSuccess(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -102,7 +91,7 @@ const EvaluatorForgotPasswordRequestForm = ({ onSuccess }) => {
           <LockResetIcon fontSize="medium" />
         </Avatar>
         <Typography variant="h5" fontWeight="bold">
-          Evaluator Reset Password
+          Reset Password
         </Typography>
         <Typography
           variant="body2"
@@ -110,7 +99,7 @@ const EvaluatorForgotPasswordRequestForm = ({ onSuccess }) => {
           textAlign="center"
           px={2}
         >
-          Enter your email and new password below.
+          Enter your email address below. We will send you a link to reset your password.
         </Typography>
       </Stack>
 
@@ -132,36 +121,6 @@ const EvaluatorForgotPasswordRequestForm = ({ onSuccess }) => {
             sx={{ backgroundColor: "#D9D9D9", borderRadius: 1 }}
           />
 
-          <StyledTextField
-            label="New Password"
-            type="password"
-            {...register("newPassword", {
-              required: "New password is required",
-              minLength: {
-                value: 6,
-                message: "Password must be at least 6 characters",
-              },
-            })}
-            error={!!errors.newPassword}
-            helperText={errors.newPassword?.message}
-            fullWidth
-            disabled={loading}
-            sx={{ backgroundColor: "#D9D9D9", borderRadius: 1 }}
-          />
-
-          <StyledTextField
-            label="Confirm Password"
-            type="password"
-            {...register("confirmPassword", {
-              required: "Please confirm your password",
-            })}
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword?.message}
-            fullWidth
-            disabled={loading}
-            sx={{ backgroundColor: "#D9D9D9", borderRadius: 1 }}
-          />
-
           <Button
             type="submit"
             variant="contained"
@@ -175,7 +134,7 @@ const EvaluatorForgotPasswordRequestForm = ({ onSuccess }) => {
             {loading ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              "Update Password"
+              "Send Reset Link"
             )}
           </Button>
         </Stack>

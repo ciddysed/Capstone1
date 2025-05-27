@@ -9,12 +9,14 @@ import {
   Typography,
   styled,
   CircularProgress,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { StyledTextField } from "../../Login/LoginForm";
-import { useNavigate } from "react-router-dom";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const ForgotPasswordRequestForm = ({ onSuccess }) => {
   const {
@@ -23,7 +25,6 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
     formState: { errors },
   } = useForm();
 
-  const navigate = useNavigate();
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -31,6 +32,8 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
@@ -47,12 +50,13 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
     setLoading(true);
 
     try {
-      console.log("=== FRONTEND: Applicant Direct Password Reset START ===");
+      console.log("=== FRONTEND: Direct Password Reset START ===");
+      // Use POST method instead of PUT to match the backend endpoint
       const response = await axios.post(
         "http://localhost:8080/api/applicants/reset-password",
         {
           email: data.email,
-          newPassword: data.newPassword,
+          password: data.newPassword,
         },
         {
           headers: {
@@ -72,22 +76,17 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
       // If onSuccess callback is provided, use it
       if (onSuccess) {
         onSuccess(successMessage);
-      } else {
-        // Add a timeout before redirecting
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
       }
     } catch (error) {
       console.error("=== API RESPONSE ERROR ===", error);
 
       const errorMessage =
         error.response?.data?.message ||
-        error.message.includes("timeout")
+        (error.message.includes("timeout")
           ? "Request timed out. Please try again."
           : error.message.includes("Network Error")
           ? "Cannot connect to server. Please check if the backend is running."
-          : "Failed to update password. Please try again.";
+          : "Failed to update password. Please try again.");
 
       showSnackbar(errorMessage, "error");
     } finally {
@@ -102,7 +101,7 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
           <LockResetIcon fontSize="medium" />
         </Avatar>
         <Typography variant="h5" fontWeight="bold">
-          Applicant Reset Password
+          Reset Password
         </Typography>
         <Typography
           variant="body2"
@@ -110,7 +109,7 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
           textAlign="center"
           px={2}
         >
-          Enter your email and new password below.
+          Enter your email and set a new password below.
         </Typography>
       </Stack>
 
@@ -134,7 +133,7 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
 
           <StyledTextField
             label="New Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             {...register("newPassword", {
               required: "New password is required",
               minLength: {
@@ -147,11 +146,24 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
             fullWidth
             disabled={loading}
             sx={{ backgroundColor: "#D9D9D9", borderRadius: 1 }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    edge="end"
+                    disabled={loading}
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
 
           <StyledTextField
             label="Confirm Password"
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             {...register("confirmPassword", {
               required: "Please confirm your password",
             })}
@@ -160,6 +172,19 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
             fullWidth
             disabled={loading}
             sx={{ backgroundColor: "#D9D9D9", borderRadius: 1 }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    edge="end"
+                    disabled={loading}
+                  >
+                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
 
           <Button
@@ -175,7 +200,7 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
             {loading ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              "Update Password"
+              "Reset Password"
             )}
           </Button>
         </Stack>

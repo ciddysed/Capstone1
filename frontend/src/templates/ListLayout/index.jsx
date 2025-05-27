@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 
 const ListLayout = ({ children }) => {
   const navigate = useNavigate();
+  const userType = localStorage.getItem("userType");
   const [activeButton, setActiveButton] = useState("Dashboard");
 
   const navItems = ["Applicants", "Logout"];
@@ -34,7 +35,7 @@ const ListLayout = ({ children }) => {
     if (item === "Applicants") {
       navigate("/evaluator/applicants");
     } else if (item === "Logout") {
-      navigate("/login");
+      navigate("/evaluator/login");
     }
   };
 

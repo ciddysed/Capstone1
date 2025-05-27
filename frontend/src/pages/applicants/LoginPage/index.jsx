@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
-import MinimalLayout from "../../../templates/MinimalLayout";
-import LoginForm from "../../../components/Login/LoginForm";
+import { Stack } from "@mui/material";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import backgroundImage from "../../../assets/login-bg.png";
 import logo from "../../../assets/logo.png";
-import { Stack } from "@mui/material";
+import LoginForm from "../../../components/Login/LoginForm";
 import SetUpProfile from "../../../components/Login/SetUpProfile";
+import MinimalLayout from "../../../templates/MinimalLayout";
 import useResponseHandler from "../../../utils/useResponseHandler";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const LoginPage = () => {

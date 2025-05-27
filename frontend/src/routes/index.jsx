@@ -18,6 +18,9 @@ import EvaluatorsLoginPage from "../pages/evaluators/LoginPage";
 import ViewApplicantPage from "../pages/evaluators/ViewApplicantPage";
 import ProtectedRoute from "./ProtectedRoutes";
 import Redirecter from "./Redirecter";
+import ApplicantForgotPasswordPage from "../pages/applicants/ForgotPasswordPage"; 
+import EvaluatorResetPasswordPage from "../pages/evaluators/ResetPasswordPage";
+import ApplicantResetPasswordPage from "../pages/applicants/ApplicantResetPasswordPage";
 
 const AppRoutes = () => {
   return useRoutes([
@@ -141,6 +144,45 @@ const AppRoutes = () => {
         </ProtectedRoute>
       ),
     },
+
+    {
+      path: "/system-admin/program-management",
+      element: (
+        <ProtectedRoute>
+          <ProgramAdminHomePage />
+        </ProtectedRoute>
+      ),
+    },
+
+     {
+      path: "/system-admin/course-management",
+      element: (
+        <ProtectedRoute>
+          <ProgramAdminHomePage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/forgot-password",
+      element: <ApplicantForgotPasswordPage />,
+    },
+    {
+      path: "/reset-password",
+      element: <ResetPasswordPage />,
+    },
+    // Uncomment this if you have a NotFoundPage component
+
+    {
+      path: "/evaluator/reset-password",
+      element: <EvaluatorResetPasswordPage />,
+    },
+    
+    {
+      path: "/applicant/reset-password",
+      element: <ApplicantResetPasswordPage />,
+    },
+
+     
 
     //   path: "*",
     //   element: <NotFoundPage />,

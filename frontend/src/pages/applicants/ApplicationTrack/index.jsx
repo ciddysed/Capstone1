@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Assignment, Logout } from "@mui/icons-material";
 import {
   Typography,
   Box,
@@ -8,36 +8,41 @@ import {
   Tooltip,
   ThemeProvider,
   alpha,
-  Grow,
+  Card,
+  createTheme,
   Divider,
+  Grow,
+  MenuItem,
+  Popover,
   Button
 } from "@mui/material";
-import { Assignment } from "@mui/icons-material";
 import axios from "axios";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MinimalLayout from "../../../templates/MinimalLayout";
 import backgroundImage from "../../../assets/login-bg.png";
 import useResponseHandler from "../../../utils/useResponseHandler";
+import logo from "../../../assets/logo.png";
 
 // Import reusable components and styles from AppCoursePreference
 import ApplicationHeader from "../AppCoursePreference/components/ApplicationHeader";
 import {
   AnimatedPaper,
-  customTheme,
-  gold,
   InfoBox,
-  maroon,
   SectionTitle
 } from '../AppCoursePreference/styles';
 
 // Import shared component
 import DocumentHandler from "../../../components/shared/DocumentHandler";
+import ApplicantInfo from "./ApplicantInfo";
+import CoursePreferences from "./CoursePreferences";
 
 import {
   TrackingPaper,
   StatusChip,
   UserAvatar
 } from "./styled";
+
 import {
   APPLICATION_STATUS,
   DOCUMENT_TYPES,
@@ -46,11 +51,73 @@ import {
   getDocumentType,
   getDocumentTypeLabel
 } from "./utils";
-import ApplicantInfo from "./ApplicantInfo";
-import CoursePreferences from "./CoursePreferences";
 
 // API base URL - move to environment config in production
 const API_BASE_URL = "http://localhost:8080/api";
+
+// Custom maroon and gold color palette
+const maroon = {
+  light: "#8D323C",
+  main: "#6A0000",
+  dark: "#450000",
+  contrastText: "#FFFFFF",
+};
+
+const gold = {
+  light: "#FFF0B9",
+  main: "#FFC72C",
+  dark: "#D4A500",
+  contrastText: "#000000",
+};
+
+// Create a custom theme with maroon and gold
+const customTheme = createTheme({
+  palette: {
+    primary: maroon,
+    secondary: gold,
+  },
+  shape: {
+    borderRadius: 8,
+  },
+  typography: {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif',
+    h5: {
+      fontWeight: 700,
+    },
+    h6: {
+      fontWeight: 600,
+    },
+    subtitle1: {
+      fontWeight: 500,
+    },
+  },
+  components: {
+    MuiPaper: {
+      defaultProps: {
+        elevation: 0,
+      },
+      styleOverrides: {
+        root: {
+          backgroundImage: "none",
+        },
+      },
+    },
+    MuiDivider: {
+      styleOverrides: {
+        root: {
+          borderColor: alpha(gold.main, 0.3),
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          fontWeight: 600,
+        },
+      },
+    },
+  },
+});
 
 // Required document types
 const REQUIRED_DOCUMENTS = [
@@ -74,7 +141,9 @@ const ApplicationTracking = () => {
     email: "",
     initials: "",
   });
-  const [applicationStatus, setApplicationStatus] = useState(APPLICATION_STATUS.PENDING);
+  const [applicationStatus, setApplicationStatus] = useState(
+    APPLICATION_STATUS.PENDING
+  );
   const [coursePreferences, setCoursePreferences] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [availableCourses, setAvailableCourses] = useState([]);
@@ -82,10 +151,22 @@ const ApplicationTracking = () => {
     profile: true,
     courses: true,
     preferences: true,
-    documents: true
+    documents: true,
   });
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [missingDocuments, setMissingDocuments] = useState([]);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const userType = localStorage.getItem("userType");
+
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  
+  const handleClosePopover = () => {
+    setAnchorEl(null);
+  };
+
+  const open = Boolean(anchorEl);
 
   // Create axios instance with common configurations - use useMemo to avoid recreating on each render
   const api = useMemo(() => {
@@ -93,16 +174,18 @@ const ApplicationTracking = () => {
       baseURL: API_BASE_URL,
       timeout: 10000,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      },
     });
 
     // Add interceptors for error handling
     instance.interceptors.response.use(
-      response => response,
-      error => {
+      (response) => response,
+      (error) => {
         console.error("API Error:", error);
-        const errorMessage = error.response?.data?.message || "An error occurred while communicating with the server";
+        const errorMessage =
+          error.response?.data?.message ||
+          "An error occurred while communicating with the server";
         handleError(errorMessage);
         return Promise.reject(error);
       }
@@ -114,57 +197,24 @@ const ApplicationTracking = () => {
   // Get applicant initials for avatar
   const getInitials = useCallback((name) => {
     return name
-      .split(' ')
-      .map(part => part.charAt(0))
-      .join('')
+      .split(" ")
+      .map((part) => part.charAt(0))
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   }, []);
 
   // Helper to determine document type from filename
   const getDocumentType = useCallback((filename) => {
-    const extension = filename.split('.').pop().toLowerCase();
-    
-    if (extension === 'pdf') return 'PDF';
-    if (['doc', 'docx'].includes(extension)) return extension === 'doc' ? 'DOC' : 'DOCX';
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(extension)) return 'IMAGE';
-    return 'OTHER';
-  }, []);
+    const extension = filename.split(".").pop().toLowerCase();
 
-  const fetchApplicantData = useCallback(async (id) => {
-    if (!id) return;
-    
-    try {
-      setLoading(prev => ({ ...prev, profile: true }));
-      
-      // Fetch applicant profile
-      const profileResponse = await api.get(`/applicants/${id}`);
-      const applicantData = profileResponse.data;
-      
-      const fullName = `${applicantData.firstName} ${applicantData.middleInitial ? applicantData.middleInitial + '.' : ''} ${applicantData.lastName}`;
-      
-      // Set user data
-      setUserData({
-        name: fullName,
-        email: applicantData.email,
-        initials: getInitials(fullName)
-      });
-      
-      // Check if applicant already has an application
-      const applicationsResponse = await api.get(`/applications/applicant/${id}`);
-      
-      if (applicationsResponse.data && applicationsResponse.data.length > 0) {
-        // Store application status but don't set unused applicationId
-        setApplicationStatus(applicationsResponse.data[0].status);
-      } else {
-        handleError("No application found");
-      }
-    } catch (error) {
-      console.error("Error fetching applicant data:", error);
-    } finally {
-      setLoading(prev => ({ ...prev, profile: false }));
-    }
-  }, [api, getInitials, handleError]);
+    if (extension === "pdf") return "PDF";
+    if (["doc", "docx"].includes(extension))
+      return extension === "doc" ? "DOC" : "DOCX";
+    if (["jpg", "jpeg", "png", "gif", "bmp"].includes(extension))
+      return "IMAGE";
+    return "OTHER";
+  }, []);
 
   // Check for missing required documents
   const checkMissingDocuments = useCallback((documents) => {
@@ -174,6 +224,48 @@ const ApplicationTracking = () => {
     );
     setMissingDocuments(missing);
   }, []);
+
+  const fetchApplicantData = useCallback(
+    async (id) => {
+      if (!id) return;
+
+      try {
+        setLoading((prev) => ({ ...prev, profile: true }));
+
+        // Fetch applicant profile
+        const profileResponse = await api.get(`/applicants/${id}`);
+        const applicantData = profileResponse.data;
+
+        const fullName = `${applicantData.firstName} ${
+          applicantData.middleInitial ? applicantData.middleInitial + "." : ""
+        } ${applicantData.lastName}`;
+
+        // Set user data
+        setUserData({
+          name: fullName,
+          email: applicantData.email,
+          initials: getInitials(fullName),
+        });
+
+        // Check if applicant already has an application
+        const applicationsResponse = await api.get(
+          `/applications/applicant/${id}`
+        );
+
+        if (applicationsResponse.data && applicationsResponse.data.length > 0) {
+          // Store application status but don't set unused applicationId
+          setApplicationStatus(applicationsResponse.data[0].status);
+        } else {
+          handleError("No application found");
+        }
+      } catch (error) {
+        console.error("Error fetching applicant data:", error);
+      } finally {
+        setLoading((prev) => ({ ...prev, profile: false }));
+      }
+    },
+    [api, getInitials, handleError]
+  );
 
   const fetchDocuments = useCallback(async (applicantId) => {
     if (!applicantId) return;
@@ -206,46 +298,50 @@ const ApplicationTracking = () => {
     } finally {
       setLoading(prev => ({ ...prev, documents: false }));
     }
-  }, [api, checkMissingDocuments]);
-  
+  }, [api, getDocumentType, checkMissingDocuments]);
+
   const fetchCourses = useCallback(async () => {
     try {
-      setLoading(prev => ({ ...prev, courses: true }));
+      setLoading((prev) => ({ ...prev, courses: true }));
       const response = await api.get("/courses");
       setAvailableCourses(response.data);
     } catch (error) {
       console.error("Error fetching courses:", error);
     } finally {
-      setLoading(prev => ({ ...prev, courses: false }));
+      setLoading((prev) => ({ ...prev, courses: false }));
     }
   }, [api]);
- 
-  const fetchCoursePreferences = useCallback(async (applicantId) => {
-    if (!applicantId) return;
-    
-    try {
-      setLoading(prev => ({ ...prev, preferences: true }));
-      const response = await api.get(`/preferences/applicant/${applicantId}`);
-      
-      // Sort preferences by priority
-      const priorityOrder = { 
-        [PRIORITY_ORDER.FIRST]: 1, 
-        [PRIORITY_ORDER.SECOND]: 2, 
-        [PRIORITY_ORDER.THIRD]: 3 
-      };
-      
-      const sortedPrefs = [...response.data].sort((a, b) => 
-        priorityOrder[a.priorityOrder] - priorityOrder[b.priorityOrder]
-      );
-      
-      setCoursePreferences(sortedPrefs);
-    } catch (error) {
-      console.error("Error fetching course preferences:", error);
-      setCoursePreferences([]); 
-    } finally {
-      setLoading(prev => ({ ...prev, preferences: false }));
-    }
-  }, [api]);
+
+  const fetchCoursePreferences = useCallback(
+    async (applicantId) => {
+      if (!applicantId) return;
+
+      try {
+        setLoading((prev) => ({ ...prev, preferences: true }));
+        const response = await api.get(`/preferences/applicant/${applicantId}`);
+
+        // Sort preferences by priority
+        const priorityOrder = {
+          [PRIORITY_ORDER.FIRST]: 1,
+          [PRIORITY_ORDER.SECOND]: 2,
+          [PRIORITY_ORDER.THIRD]: 3,
+        };
+
+        const sortedPrefs = [...response.data].sort(
+          (a, b) =>
+            priorityOrder[a.priorityOrder] - priorityOrder[b.priorityOrder]
+        );
+
+        setCoursePreferences(sortedPrefs);
+      } catch (error) {
+        console.error("Error fetching course preferences:", error);
+        setCoursePreferences([]);
+      } finally {
+        setLoading((prev) => ({ ...prev, preferences: false }));
+      }
+    },
+    [api]
+  );
 
   // Initialize application data
   useEffect(() => {
@@ -267,11 +363,17 @@ const ApplicationTracking = () => {
       fetchCoursePreferences(applicantId);
       fetchDocuments(applicantId);
     }
-  }, [applicantId, fetchApplicantData, fetchCourses, fetchCoursePreferences, fetchDocuments]);
+  }, [
+    applicantId,
+    fetchApplicantData,
+    fetchCourses,
+    fetchCoursePreferences,
+    fetchDocuments,
+  ]);
 
   const handleFileUpload = async (event) => {
     const fileList = Array.from(event.target.files);
-    
+
     if (fileList.length === 0 || !applicantId) return;
 
     // Prepare form data for file upload
@@ -291,15 +393,19 @@ const ApplicationTracking = () => {
         },
       });
 
-      handleSuccess(`${fileList.length} ${fileList.length === 1 ? 'file' : 'files'} uploaded successfully!`);
-      
+      handleSuccess(
+        `${fileList.length} ${
+          fileList.length === 1 ? "file" : "files"
+        } uploaded successfully!`
+      );
+
       // Fetch updated documents after upload
       fetchDocuments(applicantId);
     } catch (error) {
       console.error("Error uploading files:", error);
     } finally {
       setUploadingFiles(false);
-      
+
       // Reset file input
       event.target.value = null;
     }
@@ -410,17 +516,20 @@ const ApplicationTracking = () => {
   };
 
   // Get the course name for a given course ID
-  const getCourseName = useCallback((courseId) => {
-    const course = availableCourses.find(c => c.courseId === courseId);
-    return course ? course.courseName : "Course not found";
-  }, [availableCourses]);
+  const getCourseName = useCallback(
+    (courseId) => {
+      const course = availableCourses.find((c) => c.courseId === courseId);
+      return course ? course.courseName : "Course not found";
+    },
+    [availableCourses]
+  );
 
   // Convert priority order to readable format
   const formatPriority = useCallback((priority) => {
     const formats = {
       [PRIORITY_ORDER.FIRST]: "Course 1",
       [PRIORITY_ORDER.SECOND]: "Course 2",
-      [PRIORITY_ORDER.THIRD]: "Course 3"
+      [PRIORITY_ORDER.THIRD]: "Course 3",
     };
     return formats[priority] || priority;
   }, []);
@@ -462,16 +571,115 @@ const ApplicationTracking = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("applicantId");
+    localStorage.removeItem("evaluatorId");
     localStorage.removeItem("userType");
     handleSuccess("Logged out successfully!");
-    navigate("/login");
+
+    // Redirect AFTER a brief delay or state update
+    setTimeout(() => {
+      if (userType === "applicant") {
+        navigate("/login", { replace: true });
+      } else if (userType === "evaluator") {
+        navigate("/evaluator/login", { replace: true });
+      } else if (userType === "admin") {
+        navigate("/admin/login", { replace: true });
+      } else {
+        navigate("/login", { replace: true });
+      }
+    }, 0);
   };
 
   return (
     <ThemeProvider theme={customTheme}>
       <MinimalLayout backgroundImage={backgroundImage}>
         <Stack alignItems="center" spacing={3} sx={{ width: "100%" }}>
-          <ApplicationHeader userData={userData} />
+          {/* Header with Logo and User Info */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              width: "100%",
+              maxWidth: 850,
+              mb: 1,
+            }}
+            onClick={handleClick} 
+          >
+            <img src={logo} alt="University Logo" style={{ height: 50 }} />
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <Typography variant="body2" color="text.secondary">
+                  {userData.email}
+                </Typography>
+                <UserAvatar
+                  alt={userData.name}
+                  sx={{
+                    bgcolor: maroon.main,
+                    color: maroon.contrastText,
+                    boxShadow: `0 3px 5px ${alpha("#000", 0.2)}`,
+                  }}
+                >
+                  {userData.name.charAt(0)}
+                </UserAvatar>
+              </Stack>
+            </Box>
+          </Box>
+
+          <Popover
+            open={open}
+            anchorEl={anchorEl}
+            onClose={handleClosePopover}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "right",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "right",
+            }}
+            PaperProps={{
+              sx: {
+                width: 220,
+                borderRadius: 2,
+                boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
+                mt: 1.5,
+              },
+            }}
+          >
+            <Box sx={{ p: 2 }}>
+              <Typography variant="subtitle1" fontWeight="bold">
+                {userData.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {userType
+                  ? `${
+                      userType.charAt(0).toUpperCase() + userType.slice(1)
+                    } Account`
+                  : "User Account"}
+              </Typography>
+            </Box>
+
+            <Divider />
+
+            <MenuItem
+              onClick={() => {
+                handleLogout();
+                handleClosePopover();
+              }}
+              sx={{
+                py: 1.5,
+                "&:hover": {
+                  backgroundColor: "rgba(128, 0, 0, 0.08)",
+                },
+              }}
+            >
+              <Logout
+                fontSize="small"
+                sx={{ mr: 1.5, color: "text.secondary" }}
+              />
+              <Typography variant="body2">Sign Out</Typography>
+            </MenuItem>
+          </Popover>
           
           <Grow in={true} timeout={500}>
             <Box sx={{ textAlign: 'center', mb: 1 }}>
@@ -535,9 +743,9 @@ const ApplicationTracking = () => {
                           bgcolor: alpha(maroon.main, 0.1), 
                           borderRadius: '50%', 
                           p: 1.2,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
                         <Assignment sx={{ color: maroon.main, fontSize: 28 }} />
@@ -550,9 +758,13 @@ const ApplicationTracking = () => {
                       </Box>
                     </Stack>
                     <Box sx={{ display: "flex", alignItems: "flex-start" }}>
-                      <Tooltip title={`Application Status: ${applicationStatus}`} arrow placement="top">
-                        <StatusChip 
-                          label={applicationStatus} 
+                      <Tooltip
+                        title={`Application Status: ${applicationStatus}`}
+                        arrow
+                        placement="top"
+                      >
+                        <StatusChip
+                          label={applicationStatus}
                           status={applicationStatus}
                           icon={getStatusIcon(applicationStatus)}
                           sx={{ py: 1, px: 1.5 }}
@@ -682,8 +894,9 @@ const ApplicationTracking = () => {
                         Your Application is Under Review
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Our admissions team is currently processing your application.
-                        You will receive an email notification when there's an update.
+                        Our admissions team is currently processing your
+                        application. You will receive an email notification when
+                        there's an update.
                       </Typography>
                     </InfoBox>
                   </>
@@ -692,7 +905,7 @@ const ApplicationTracking = () => {
             </Grow>
           )}
         </Stack>
-        
+
         {snackbar}
       </MinimalLayout>
     </ThemeProvider>
