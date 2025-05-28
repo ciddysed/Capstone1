@@ -67,37 +67,30 @@ const LoginPage = () => {
       });
     } else if (userType === "evaluator") {
       navigate("/evaluator/homepage");
+    } else if (userType && userType.includes("admin")) {
+      // Admin routing
+      if (userType === "system-admin") {
+        navigate("/system-admin/evaluator-management");
+      } else if (userType === "program-admin") {
+        navigate("/program-admin/homepage");
+      } else {
+        navigate("/admin");
+      }
     }
-
-    //TODO: Uncomment this once admin routing is established
-
-    // else if (userType === "admin") {
-    //   navigate("/admin/dashboard");
-    // }
-
-    console.log(userType);
-  }, []);
+  }, [navigate]);
 
   return (
     <MinimalLayout backgroundImage={backgroundImage}>
       <Stack alignItems="center" spacing={2}>
         <img src={logo} alt="Logo" />
-        {view === "login" && (
+        {view === "login" || view === "signup" ? (
           <LoginForm
+            formType={view}
             setView={setView}
             handleSuccess={handleSuccess}
             handleError={handleError}
           />
-        )}
-        {view === "signup" && (
-          <LoginForm
-            formType="signup"
-            setView={setView}
-            handleSuccess={handleSuccess}
-            handleError={handleError}
-          />
-        )}
-        {view === "setupProfile" && (
+        ) : (
           <SetUpProfile handleSuccess={handleSuccess} />
         )}
       </Stack>

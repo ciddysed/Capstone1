@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -14,6 +14,8 @@ import {
   styled,
   InputAdornment,
   IconButton,
+  InputLabel,
+  Divider,
 } from "@mui/material";
 
 import { Visibility, VisibilityOff } from "@mui/icons-material";
@@ -33,6 +35,14 @@ const getValidationSchema = (formType) =>
         .string()
         .oneOf([yup.ref("password")], "Passwords must match")
         .required("Please re-enter password"),
+      firstName: yup.string().required("First name is required"),
+      lastName: yup.string().required("Last name is required"),
+      address: yup.string().required("Address is required"),
+      contactNumber: yup
+        .string()
+        .matches(/^09\d{9}$/, "Invalid contact number")
+        .required("Contact number is required"),
+      birthDate: yup.date().required("Date of birth is required"),
     }),
   });
 
@@ -45,6 +55,7 @@ const LoginForm = ({
   const [currentFormType, setCurrentFormType] = useState(formType);
   const [showPassword, setShowPassword] = useState(false);
   const [showRePassword, setShowRePassword] = useState(false);
+  const [gender, setGender] = useState("");
   const schema = getValidationSchema(currentFormType);
   const navigate = useNavigate();
 
@@ -57,16 +68,38 @@ const LoginForm = ({
     resolver: yupResolver(schema),
   });
 
+  const handleGenderChange = (event, newGender) => {
+    if (newGender !== null) {
+      setGender(newGender);
+    }
+  };
+
   const onSubmit = async (data) => {
     if (currentFormType === "signup") {
       try {
+        // Format date for the API
+        const date = new Date(data.birthDate);
+        const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
+
+        // Complete signup with all profile data
         const response = await axios.post(
-          "http://localhost:8080/api/applicants/register",
+          "http://localhost:8080/api/applicants/register-complete",
           {
             email: data.email,
             password: data.password,
+            firstName: data.firstName,
+            middleInitial: data.middleInitial || "",
+            lastName: data.lastName,
+            address: data.address,
+            contactNumber: data.contactNumber,
+            dateOfBirth: formattedDate,
+            gender: gender.toUpperCase(),
+            profileDetails: "Software Engineer",
           }
         );
+
         localStorage.setItem("applicantId", response.data.applicantId);
         localStorage.setItem("userType", "applicant");
         handleSuccess("Successfully signed up! Please log in.");
@@ -142,6 +175,7 @@ const LoginForm = ({
   const handleToggle = (event, newFormType) => {
     if (newFormType) {
       setCurrentFormType(newFormType);
+      setGender(""); // Reset gender when switching forms
       reset();
     }
   };
@@ -186,7 +220,7 @@ const LoginForm = ({
   };
 
   return (
-    <StyledPaper elevation={6}>
+    <StyledPaper elevation={6} sx={{ maxWidth: currentFormType === "signup" ? 700 : 500 }}>
       <Typography variant="h5" textAlign="center" fontWeight="bold">
         {currentFormType === "login" ? "Login Form" : "Signup Form"}
       </Typography>
@@ -240,28 +274,110 @@ const LoginForm = ({
           />
 
           {currentFormType === "signup" && (
-            <StyledTextField
-              type={showRePassword ? "text" : "password"}
-              placeholder="Re-enter your password"
-              variant="outlined"
-              size="small"
-              fullWidth
-              {...register("reEnterPassword")}
-              error={!!errors.reEnterPassword}
-              helperText={errors.reEnterPassword?.message}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowRePassword((prev) => !prev)}
-                      edge="end"
-                    >
-                      {showRePassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+            <>
+              <StyledTextField
+                type={showRePassword ? "text" : "password"}
+                placeholder="Re-enter your password"
+                variant="outlined"
+                size="small"
+                fullWidth
+                {...register("reEnterPassword")}
+                error={!!errors.reEnterPassword}
+                helperText={errors.reEnterPassword?.message}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowRePassword((prev) => !prev)}
+                        edge="end"
+                      >
+                        {showRePassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="subtitle1" textAlign="center" fontWeight="bold">
+                Personal Information
+              </Typography>
+              
+              <Stack direction={"row"} gap={2}>
+                <StyledTextField
+                  fullWidth
+                  placeholder="First Name"
+                  variant="outlined"
+                  size="small"
+                  {...register("firstName")}
+                  error={!!errors.firstName}
+                  helperText={errors.firstName?.message}
+                />
+                <StyledTextField
+                  fullWidth
+                  placeholder="Last Name"
+                  variant="outlined"
+                  size="small"
+                  {...register("lastName")}
+                  error={!!errors.lastName}
+                  helperText={errors.lastName?.message}
+                />
+                <StyledTextField
+                  placeholder="M.I."
+                  variant="outlined"
+                  size="small"
+                  {...register("middleInitial")}
+                />
+              </Stack>
+
+              <Stack direction={"row"} gap={2} mt={2}>
+                <StyledTextField
+                  fullWidth
+                  placeholder="Address"
+                  variant="outlined"
+                  size="small"
+                  {...register("address")}
+                  error={!!errors.address}
+                  helperText={errors.address?.message}
+                />
+                <StyledTextField
+                  placeholder="Contact Number (09*********)"
+                  variant="outlined"
+                  size="small"
+                  {...register("contactNumber")}
+                  error={!!errors.contactNumber}
+                  helperText={errors.contactNumber?.message}
+                />
+              </Stack>
+
+              <Stack direction={"row"} justifyContent={"center"} gap={2} mt={2}>
+                <Stack gap={1}>
+                  <InputLabel sx={{ fontSize: "14px" }}>Date of Birth</InputLabel>
+                  <StyledTextField
+                    type="date"
+                    variant="outlined"
+                    size="small"
+                    {...register("birthDate")}
+                    error={!!errors.birthDate}
+                    helperText={errors.birthDate?.message}
+                    sx={{ maxWidth: 200 }}
+                  />
+                </Stack>
+
+                <Stack direction="column" justifyContent="center" sx={{ mb: 2 }}>
+                  <InputLabel sx={{ fontSize: "14px" }}>Gender</InputLabel>
+                  <ToggleButtonGroup
+                    value={gender}
+                    exclusive
+                    onChange={handleGenderChange}
+                    aria-label="Gender"
+                  >
+                    <StyledToggleButton value="male">Male</StyledToggleButton>
+                    <StyledToggleButton value="female">Female</StyledToggleButton>
+                  </ToggleButtonGroup>
+                </Stack>
+              </Stack>
+            </>
           )}
 
           <Stack direction="row" justifyContent="flex-start">
@@ -288,7 +404,7 @@ const LoginForm = ({
             type="submit"
             variant="contained"
             fullWidth
-            sx={{ backgroundColor: "#800000", borderRadius: "20px" }}
+            sx={{ backgroundColor: "#800000", borderRadius: "20px", mt: 2 }}
           >
             {currentFormType === "login" ? "Login" : "Signup"}
           </Button>
@@ -327,7 +443,6 @@ export const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
 export const StyledPaper = styled(Paper)({
   padding: 32,
   width: "100%",
-  maxWidth: 500,
   display: "flex",
   flexDirection: "column",
   gap: 16,
