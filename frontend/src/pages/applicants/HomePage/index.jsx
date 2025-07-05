@@ -8,23 +8,41 @@ import axios from "axios";
 import useResponseHandler from "../../../utils/useResponseHandler";
 import MainLayout from "../../../templates/MainLayout";
 
+// Maroon and Gold theme colors
+const maroonTheme = {
+  primary: {
+    main: '#800000', // Deep maroon
+    light: '#A0001A', // Lighter maroon
+    dark: '#600000', // Darker maroon
+  },
+  secondary: {
+    main: '#B8860B', // Dark goldenrod
+    light: '#FFD700', // Gold
+    dark: '#8B6F00' // Darker gold
+  }
+}
+
 // Styled components
 const StartButton = styled(Button)(({ theme }) => ({
-  backgroundColor: "#FFD700",
-  color: "#000",
+  background: `linear-gradient(135deg, ${maroonTheme.primary.main} 0%, ${maroonTheme.secondary.main} 100%)`,
+  color: "#fff",
   fontWeight: "bold",
   borderRadius: "20px",
   padding: "12px 24px",
   fontSize: 18,
   textTransform: "none",
   width: 256,
+  boxShadow: `0 4px 20px rgba(128, 0, 0, 0.3)`,
   "&:hover": {
-    backgroundColor: "#F0C800",
+    background: `linear-gradient(135deg, ${maroonTheme.primary.dark} 0%, ${maroonTheme.secondary.dark} 100%)`,
+    boxShadow: `0 6px 25px rgba(128, 0, 0, 0.4)`,
+    transform: 'translateY(-2px)',
   },
+  transition: 'all 0.3s ease'
 }));
 
 const ShowcaseButton = styled(Button)(({ theme }) => ({
-  backgroundColor: "#1976D2",
+  backgroundColor: maroonTheme.secondary.main,
   color: "#fff",
   fontWeight: "bold",
   borderRadius: "20px",
@@ -32,9 +50,13 @@ const ShowcaseButton = styled(Button)(({ theme }) => ({
   fontSize: 16,
   textTransform: "none",
   width: 256,
+  boxShadow: `0 4px 15px rgba(184, 134, 11, 0.3)`,
   "&:hover": {
-    backgroundColor: "#115293",
+    backgroundColor: maroonTheme.secondary.dark,
+    boxShadow: `0 6px 20px rgba(184, 134, 11, 0.4)`,
+    transform: 'translateY(-2px)',
   },
+  transition: 'all 0.3s ease'
 }));
 
 const SuccessModal = styled(Modal)(() => ({
@@ -44,9 +66,10 @@ const SuccessModal = styled(Modal)(() => ({
 }));
 
 const SuccessModalContent = styled(Box)(({ theme }) => ({
-  backgroundColor: "white",
+  background: `linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(255, 255, 255, 0.98) 100%)`,
   borderRadius: 16,
-  boxShadow: theme.shadows[5],
+  boxShadow: `0 12px 40px rgba(128, 0, 0, 0.15)`,
+  border: `2px solid rgba(255, 215, 0, 0.3)`,
   padding: theme.spacing(4),
   display: "flex",
   flexDirection: "column",
@@ -57,16 +80,21 @@ const SuccessModalContent = styled(Box)(({ theme }) => ({
 }));
 
 const TrackButton = styled(Button)(({ theme }) => ({
-  backgroundColor: "#ffde00",
-  color: "black",
+  background: `linear-gradient(135deg, ${maroonTheme.secondary.light} 0%, ${maroonTheme.secondary.main} 100%)`,
+  color: maroonTheme.primary.dark,
   borderRadius: 20,
   padding: "10px 30px",
   fontSize: 16,
   fontWeight: "bold",
   textTransform: "none",
+  boxShadow: `0 4px 15px rgba(255, 215, 0, 0.3)`,
   "&:hover": {
-    backgroundColor: "#e6c800",
+    background: `linear-gradient(135deg, ${maroonTheme.secondary.main} 0%, ${maroonTheme.secondary.dark} 100%)`,
+    color: "#fff",
+    boxShadow: `0 6px 20px rgba(255, 215, 0, 0.4)`,
+    transform: 'translateY(-2px)',
   },
+  transition: 'all 0.3s ease'
 }));
 
 const Homepage = () => {
@@ -169,14 +197,16 @@ const Homepage = () => {
         <Box
           sx={{
             textAlign: "center",
-            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            background: `linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%)`,
             borderRadius: 4,
+            border: `2px solid rgba(128, 0, 0, 0.2)`,
+            boxShadow: `0 8px 32px rgba(128, 0, 0, 0.1)`,
             p: 4,
             maxWidth: 600,
             width: "100%",
           }}
         >
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
+          <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ color: maroonTheme.primary.main }}>
             Hi, {userFullName}. Your ETEEAP journey begins here!
           </Typography>
 
@@ -186,7 +216,7 @@ const Homepage = () => {
             alignItems="center"
             sx={{ mt: 4 }}
           >
-            <Typography variant="body1">Click here to</Typography>
+            <Typography variant="body1" sx={{ color: maroonTheme.primary.dark }}>Click here to</Typography>
             <StartButton onClick={handleStartApplication} variant="contained">
               Start your Application
             </StartButton>
@@ -197,17 +227,19 @@ const Homepage = () => {
         <Box
           sx={{
             textAlign: "center",
-            backgroundColor: "rgba(25, 118, 210, 0.2)",
+            background: `linear-gradient(135deg, rgba(184, 134, 11, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%)`,
             borderRadius: 4,
+            border: `2px solid rgba(184, 134, 11, 0.3)`,
+            boxShadow: `0 8px 32px rgba(184, 134, 11, 0.1)`,
             p: 4,
             maxWidth: 600,
             width: "100%",
           }}
         >
-          <Typography variant="h5" fontWeight="bold" gutterBottom color="black">
+          <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ color: maroonTheme.secondary.main }}>
             🎓 Explore Our Program Showcase
           </Typography>
-          <Typography variant="body2" gutterBottom>
+          <Typography variant="body2" gutterBottom sx={{ color: maroonTheme.primary.dark }}>
             Learn more about ETEEAP and how it helps working professionals earn
             a degree through competency-based education.
           </Typography>
@@ -225,14 +257,14 @@ const Homepage = () => {
       >
         <SuccessModalContent>
           <img src={logo} alt="Logo" style={{ height: 40, marginBottom: 16 }} />
-          <Typography variant="h6" id="success-modal-title" sx={{ mb: 2 }}>
+          <Typography variant="h6" id="success-modal-title" sx={{ mb: 2, color: maroonTheme.primary.main, fontWeight: 600 }}>
             Hi, {userFullName.split(" ")[0]}. You already submitted an
             application.
           </Typography>
           <Typography
             variant="body2"
             id="success-modal-description"
-            sx={{ mb: 3 }}
+            sx={{ mb: 3, color: maroonTheme.primary.dark }}
           >
             Click here to
           </Typography>

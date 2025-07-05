@@ -49,18 +49,18 @@ const documentTypes = [
 
 const priorityOrders = ["FIRST", "SECOND", "THIRD"]
 
-// Maroon color palette
+// Maroon and Gold color palette
 const maroonTheme = {
   primary: {
-    main: '#800020', // Deep maroon
-    light: '#A0002A', // Lighter maroon
-    dark: '#600018', // Darker maroon
+    main: '#800000', // Deep maroon
+    light: '#A0001A', // Lighter maroon
+    dark: '#600000', // Darker maroon
     contrastText: '#FFFFFF'
   },
   secondary: {
-    main: '#8B0000', // Dark red
-    light: '#CD5C5C', // Indian red
-    dark: '#4B0000'
+    main: '#B8860B', // Dark goldenrod
+    light: '#FFD700', // Gold
+    dark: '#8B6F00' // Darker gold
   }
 }
 
@@ -501,9 +501,13 @@ export default function ApplicationForm() {
   }
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "grey.50" }}>
+    <Box sx={{ 
+      minHeight: "100vh", 
+      background: `linear-gradient(135deg, ${alpha('#B8860B', 0.05)} 0%, ${alpha('#FFD700', 0.03)} 100%)`,
+      bgcolor: "grey.50" 
+    }}>
       {/* Header */}
-      <Paper elevation={1} sx={{ borderRadius: 0 }}>
+      <Paper elevation={1} sx={{ borderRadius: 0, bgcolor: maroonTheme.primary.main }}>
         <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -511,30 +515,30 @@ export default function ApplicationForm() {
                 sx={{
                   width: 40,
                   height: 40,
-                  bgcolor: maroonTheme.primary.main,
+                  bgcolor: "white",
                   borderRadius: 1,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <GraduationCapIcon sx={{ color: "white", fontSize: 24 }} />
+                <GraduationCapIcon sx={{ color: maroonTheme.primary.main, fontSize: 24 }} />
               </Box>
               <Box>
-                <Typography variant="h5" fontWeight="bold" color="text.primary">
+                <Typography variant="h5" fontWeight="bold" color="white">
                   ETEEAP APPLICANT APPLICATION FORM
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="rgba(255,255,255,0.8)">
                   Complete your application for admission
                 </Typography>
               </Box>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Box sx={{ textAlign: "right" }}>
-                <Typography variant="body2" fontWeight="medium" color="text.primary">
+                <Typography variant="body2" fontWeight="medium" color="white">
                   {userData.name || "Loading..."}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" color="rgba(255,255,255,0.8)">
                   {userData.email || "Loading..."}
                 </Typography>
               </Box>
@@ -542,7 +546,7 @@ export default function ApplicationForm() {
                 sx={{
                   width: 32,
                   height: 32,
-                  bgcolor: maroonTheme.primary.light,
+                  bgcolor: "white",
                   borderRadius: "50%",
                   display: "flex",
                   alignItems: "center",
@@ -557,7 +561,7 @@ export default function ApplicationForm() {
       </Paper>
 
       {/* Progress Bar */}
-      <Paper elevation={1} sx={{ borderRadius: 0 }}>
+      <Paper elevation={1} sx={{ borderRadius: 0, background: `linear-gradient(135deg, ${alpha('#FFD700', 0.1)} 0%, ${alpha('#B8860B', 0.08)} 100%)` }}>
         <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
             <Typography variant="body2" fontWeight="medium" color="text.primary">
@@ -573,8 +577,9 @@ export default function ApplicationForm() {
             sx={{ 
               height: 8, 
               borderRadius: 4,
+              backgroundColor: alpha('#FFD700', 0.2),
               '& .MuiLinearProgress-bar': {
-                backgroundColor: maroonTheme.primary.main
+                background: `linear-gradient(90deg, ${maroonTheme.primary.main} 0%, ${maroonTheme.secondary.main} 100%)`
               }
             }}
           />
@@ -614,15 +619,25 @@ export default function ApplicationForm() {
               <Grid item xs={12} lg={6}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                   {/* Personal Information */}
-                  <Card elevation={1}>
+                  <Card elevation={2} sx={{ 
+                    border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
+                    '&:hover': { 
+                      boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
+                      transform: 'translateY(-2px)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}>
                     <CardHeader
                       title={
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                           <UserIcon sx={{ color: maroonTheme.primary.main, fontSize: 20 }} />
-                          <Typography variant="h6">Personal Information</Typography>
+                          <Typography variant="h6" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Personal Information</Typography>
                         </Box>
                       }
-                      sx={{ pb: 2 }}
+                      sx={{ 
+                        pb: 2,
+                        background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
+                      }}
                     />
                     <CardContent>
                       <Grid container spacing={3}>
@@ -632,7 +647,11 @@ export default function ApplicationForm() {
                               Full Name
                             </Typography>
                           </Box>
-                          <Paper variant="outlined" sx={{ p: 2, bgcolor: "grey.50" }}>
+                          <Paper variant="outlined" sx={{ 
+                            p: 2, 
+                            background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
+                            border: `1px solid ${alpha(maroonTheme.secondary.main, 0.2)}`
+                          }}>
                             <Typography fontWeight="medium" color="text.primary">
                               {userData.name}
                             </Typography>
@@ -644,7 +663,11 @@ export default function ApplicationForm() {
                               Email Address
                             </Typography>
                           </Box>
-                          <Paper variant="outlined" sx={{ p: 2, bgcolor: "grey.50" }}>
+                          <Paper variant="outlined" sx={{ 
+                            p: 2, 
+                            background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
+                            border: `1px solid ${alpha(maroonTheme.secondary.main, 0.2)}`
+                          }}>
                             <Typography color="text.primary">{userData.email}</Typography>
                           </Paper>
                         </Grid>
@@ -653,16 +676,26 @@ export default function ApplicationForm() {
                   </Card>
 
                   {/* Course Preferences */}
-                  <Card elevation={1}>
+                  <Card elevation={2} sx={{ 
+                    border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
+                    '&:hover': { 
+                      boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
+                      transform: 'translateY(-2px)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}>
                     <CardHeader
                       title={
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                           <GraduationCapIcon sx={{ color: maroonTheme.primary.main, fontSize: 20 }} />
-                          <Typography variant="h6">Course Preferences</Typography>
+                          <Typography variant="h6" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Course Preferences</Typography>
                         </Box>
                       }
                       subheader="Select up to 3 courses in order of preference"
-                      sx={{ pb: 2 }}
+                      sx={{ 
+                        pb: 2,
+                        background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
+                      }}
                     />
                     <CardContent>
                       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -685,7 +718,15 @@ export default function ApplicationForm() {
                                 label={getPriorityLabel(index)}
                                 variant="outlined"
                                 size="small"
-                                sx={{ minWidth: 80 }}
+                                sx={{ 
+                                  minWidth: 80,
+                                  backgroundColor: index % 2 === 0 ? maroonTheme.primary.main : maroonTheme.secondary.main,
+                                  color: 'white',
+                                  borderColor: index % 2 === 0 ? maroonTheme.primary.main : maroonTheme.secondary.main,
+                                  '&:hover': {
+                                    backgroundColor: index % 2 === 0 ? maroonTheme.primary.dark : maroonTheme.secondary.dark
+                                  }
+                                }}
                               />
                               <Box sx={{ flex: 1 }}>
                                 {preference ? (
@@ -720,6 +761,15 @@ export default function ApplicationForm() {
                                 variant="outlined"
                                 size="small"
                                 onClick={() => openCourseDialog(index)}
+                                sx={{
+                                  borderColor: maroonTheme.primary.main,
+                                  color: maroonTheme.primary.main,
+                                  '&:hover': {
+                                    borderColor: maroonTheme.primary.dark,
+                                    backgroundColor: alpha(maroonTheme.primary.main, 0.1),
+                                    color: maroonTheme.primary.dark
+                                  }
+                                }}
                               >
                                 {preference ? "Change" : "Select"}
                               </Button>
@@ -739,16 +789,27 @@ export default function ApplicationForm() {
                   <Grid container spacing={2}>
                     {/* Document Upload Card */}
                     <Grid item xs={12} md={4}>
-                      <Card elevation={1} sx={{ height: 'fit-content' }}>
+                      <Card elevation={2} sx={{ 
+                        height: 'fit-content',
+                        border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
+                        '&:hover': { 
+                          boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
+                          transform: 'translateY(-2px)'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}>
                         <CardHeader
                           title={
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                               <UploadIcon sx={{ color: maroonTheme.primary.main, fontSize: 18 }} />
-                              <Typography variant="subtitle1" fontSize="0.95rem">Upload Documents</Typography>
+                              <Typography variant="subtitle1" fontSize="0.95rem" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Upload Documents</Typography>
                             </Box>
                           }
                           subheader="Upload required documents"
-                          sx={{ pb: 1 }}
+                          sx={{ 
+                            pb: 1,
+                            background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
+                          }}
                         />
                         <CardContent sx={{ pt: 1 }}>
                           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -776,8 +837,7 @@ export default function ApplicationForm() {
                                       minHeight: 60,
                                       "&:hover": {
                                         borderColor: maroonTheme.primary.main,
-                                        bgcolor: maroonTheme.primary.light,
-                                        opacity: 0.1,
+                                        backgroundColor: alpha(maroonTheme.secondary.light, 0.1),
                                       },
                                     }}
                                   >
@@ -800,7 +860,17 @@ export default function ApplicationForm() {
                               variant="outlined"
                               size="small"
                               onClick={() => setDocumentsDialogOpen(true)}
-                              sx={{ mt: 1, fontSize: '0.7rem' }}
+                              sx={{ 
+                                mt: 1, 
+                                fontSize: '0.7rem',
+                                borderColor: maroonTheme.secondary.main,
+                                color: maroonTheme.secondary.main,
+                                '&:hover': {
+                                  borderColor: maroonTheme.secondary.dark,
+                                  backgroundColor: alpha(maroonTheme.secondary.main, 0.1),
+                                  color: maroonTheme.secondary.dark
+                                }
+                              }}
                             >
                               View All Document Types
                             </Button>
@@ -811,18 +881,37 @@ export default function ApplicationForm() {
 
                     {/* Uploaded Files Card */}
                     <Grid item xs={12} md={4}>
-                      <Card elevation={1} sx={{ height: 'fit-content' }}>
+                      <Card elevation={2} sx={{ 
+                        height: 'fit-content',
+                        border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
+                        '&:hover': { 
+                          boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
+                          transform: 'translateY(-2px)'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}>
                         <CardHeader
                           title={
                             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                 <FileTextIcon sx={{ color: maroonTheme.primary.main, fontSize: 18 }} />
-                                <Typography variant="subtitle1" fontSize="0.95rem">Uploaded Files</Typography>
+                                <Typography variant="subtitle1" fontSize="0.95rem" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Uploaded Files</Typography>
                               </Box>
-                              <Chip label={files.length} size="small" variant="outlined" />
+                              <Chip 
+                                label={files.length} 
+                                size="small" 
+                                sx={{
+                                  backgroundColor: maroonTheme.secondary.main,
+                                  color: 'white',
+                                  fontWeight: 600
+                                }}
+                              />
                             </Box>
                           }
-                          sx={{ pb: 1 }}
+                          sx={{ 
+                            pb: 1,
+                            background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
+                          }}
                         />
                         <CardContent sx={{ pt: 1 }}>
                           {files.length === 0 ? (
@@ -838,7 +927,17 @@ export default function ApplicationForm() {
                                 <Paper
                                   key={file.id}
                                   variant="outlined"
-                                  sx={{ p: 1.5, bgcolor: "grey.50", display: "flex", flexDirection: "column", gap: 0.5 }}
+                                  sx={{ 
+                                    p: 1.5, 
+                                    background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.9)} 100%)`,
+                                    display: "flex", 
+                                    flexDirection: "column", 
+                                    gap: 0.5,
+                                    border: `1px solid ${alpha(maroonTheme.secondary.main, 0.2)}`,
+                                    '&:hover': {
+                                      backgroundColor: alpha(maroonTheme.secondary.light, 0.1)
+                                    }
+                                  }}
                                 >
                                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                     <FileTextIcon sx={{ color: maroonTheme.primary.main, fontSize: 14, flexShrink: 0 }} />
@@ -872,7 +971,15 @@ export default function ApplicationForm() {
                                 <Button
                                   variant="text"
                                   size="small"
-                                  sx={{ fontSize: '0.7rem', mt: 0.5 }}
+                                  sx={{ 
+                                    fontSize: '0.7rem', 
+                                    mt: 0.5,
+                                    color: maroonTheme.secondary.main,
+                                    '&:hover': {
+                                      backgroundColor: alpha(maroonTheme.secondary.main, 0.1),
+                                      color: maroonTheme.secondary.dark
+                                    }
+                                  }}
                                   onClick={() => {
                                     // You can add a "View All Files" dialog here if needed
                                     console.log('View all files clicked')
@@ -889,15 +996,26 @@ export default function ApplicationForm() {
 
                     {/* Requirements Card */}
                     <Grid item xs={12} md={4}>
-                      <Card elevation={1} sx={{ height: 'fit-content' }}>
+                      <Card elevation={2} sx={{ 
+                        height: 'fit-content',
+                        border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
+                        '&:hover': { 
+                          boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
+                          transform: 'translateY(-2px)'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}>
                         <CardHeader
                           title={
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                               <CheckCircleIcon sx={{ color: maroonTheme.secondary.main, fontSize: 18 }} />
-                              <Typography variant="subtitle1" fontSize="0.95rem">Requirements</Typography>
+                              <Typography variant="subtitle1" fontSize="0.95rem" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Requirements</Typography>
                             </Box>
                           }
-                          sx={{ pb: 1 }}
+                          sx={{ 
+                            pb: 1,
+                            background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
+                          }}
                         />
                         <CardContent sx={{ pt: 1 }}>
                           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -936,11 +1054,19 @@ export default function ApplicationForm() {
 
             {/* Submit Section */}
             <Box sx={{ mt: 4 }}>
-              <Card elevation={1}>
+              <Card elevation={3} sx={{ 
+                border: `2px solid ${alpha(maroonTheme.secondary.light, 0.3)}`,
+                background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.95)} 100%)`,
+                '&:hover': { 
+                  boxShadow: `0 12px 40px ${alpha(maroonTheme.primary.main, 0.15)}`,
+                  transform: 'translateY(-3px)'
+                },
+                transition: 'all 0.3s ease'
+              }}>
                 <CardContent sx={{ pt: 3 }}>
                   <Box sx={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 2 }}>
                     <Box>
-                      <Typography variant="h6" fontWeight="600" color="text.primary">
+                      <Typography variant="h6" fontWeight="600" sx={{ color: maroonTheme.primary.main }}>
                         Ready to Submit?
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -949,7 +1075,18 @@ export default function ApplicationForm() {
                     </Box>
 
                     {!files.some((f) => f.documentType === "INFORMATIVE_COPY_OF_TOR") && (
-                      <Alert severity="warning" sx={{ maxWidth: 400, mx: "auto" }}>
+                      <Alert 
+                        severity="warning" 
+                        sx={{ 
+                          maxWidth: 400, 
+                          mx: "auto",
+                          backgroundColor: alpha('#FFD700', 0.1),
+                          color: maroonTheme.primary.dark,
+                          '& .MuiAlert-icon': {
+                            color: maroonTheme.secondary.main
+                          }
+                        }}
+                      >
                         Please upload the required Informative Copy of TOR before submitting.
                       </Alert>
                     )}
@@ -964,10 +1101,19 @@ export default function ApplicationForm() {
                         py: 1.5, 
                         fontSize: "1rem", 
                         fontWeight: "medium",
-                        backgroundColor: maroonTheme.primary.main,
+                        background: `linear-gradient(135deg, ${maroonTheme.primary.main} 0%, ${maroonTheme.secondary.main} 100%)`,
+                        color: 'white',
+                        boxShadow: `0 4px 20px ${alpha(maroonTheme.primary.main, 0.3)}`,
                         '&:hover': {
-                          backgroundColor: maroonTheme.primary.dark
-                        }
+                          background: `linear-gradient(135deg, ${maroonTheme.primary.dark} 0%, ${maroonTheme.secondary.dark} 100%)`,
+                          boxShadow: `0 6px 25px ${alpha(maroonTheme.primary.main, 0.4)}`,
+                          transform: 'translateY(-2px)'
+                        },
+                        '&:disabled': {
+                          background: alpha(maroonTheme.primary.main, 0.3),
+                          color: alpha('#FFFFFF', 0.6)
+                        },
+                        transition: 'all 0.3s ease'
                       }}
                     >
                       {submitting ? (
@@ -989,10 +1135,14 @@ export default function ApplicationForm() {
 
       {/* Course Selection Dialog */}
       <Dialog open={courseDialogOpen} onClose={() => setCourseDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
+        <DialogTitle sx={{ 
+          background: `linear-gradient(135deg, ${maroonTheme.primary.main} 0%, ${maroonTheme.secondary.main} 100%)`,
+          color: 'white',
+          fontWeight: 600
+        }}>
           Select Course for {currentPriorityIndex !== null ? getPriorityLabel(currentPriorityIndex) : ""}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.03)} 0%, ${alpha('#FFFFFF', 0.98)} 100%)` }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
             <Box sx={{ maxHeight: 400, overflow: "auto", display: "flex", flexDirection: "column", gap: 1.5 }}>
               {availableCourses.map((course) => (
@@ -1005,12 +1155,12 @@ export default function ApplicationForm() {
                     transition: "all 0.2s",
                     border: selectedCourse?.courseId === course.courseId ? 2 : 1,
                     borderColor:
-                      selectedCourse?.courseId === course.courseId ? maroonTheme.primary.main : "grey.200",
+                      selectedCourse?.courseId === course.courseId ? maroonTheme.primary.main : alpha(maroonTheme.secondary.main, 0.3),
                     bgcolor:
-                      selectedCourse?.courseId === course.courseId ? maroonTheme.primary.light : "transparent",
+                      selectedCourse?.courseId === course.courseId ? alpha(maroonTheme.secondary.light, 0.1) : "transparent",
                     "&:hover": {
-                      borderColor: "grey.300",
-                      bgcolor: selectedCourse?.courseId === course.courseId ? maroonTheme.primary.light : "grey.50",
+                      borderColor: maroonTheme.primary.main,
+                      bgcolor: selectedCourse?.courseId === course.courseId ? alpha(maroonTheme.secondary.light, 0.15) : alpha(maroonTheme.secondary.light, 0.05),
                     },
                     opacity: checkCourseAlreadySelected(course.courseId) ? 0.5 : 1,
                   }}

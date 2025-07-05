@@ -11,11 +11,26 @@ import {
   Typography,
   Divider,
   Box,
+  Paper,
 } from "@mui/material";
 import logo from "../../assets/logo.png";
 import { useNavigate } from "react-router-dom";
-import { AccountCircle, Logout } from "@mui/icons-material"; // Import logout icon
+import { AccountCircle, Logout, Person as UserIcon, School as GraduationCapIcon } from "@mui/icons-material"; // Import logout icon
 import backgroundImage from "../../assets/login-bg.png";
+
+// Maroon and Gold theme colors
+const maroonTheme = {
+  primary: {
+    main: '#800000', // Deep maroon
+    light: '#A0001A', // Lighter maroon
+    dark: '#600000', // Darker maroon
+  },
+  secondary: {
+    main: '#B8860B', // Dark goldenrod
+    light: '#FFD700', // Gold
+    dark: '#8B6F00' // Darker gold
+  }
+}
 
 const MainLayout = ({ children, userType, data = "Account" }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -63,111 +78,135 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
         justifyContent: "center",
       }}
     >
-      <AppBar
-        position="static"
-        sx={{
-          backgroundColor: "rgba(255, 255, 255, 0.2)",
-          backdropFilter: "blur(10px)",
-          boxShadow: "none",
+      {/* Enhanced Navbar */}
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          borderRadius: 0, 
+          bgcolor: maroonTheme.primary.main,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          boxShadow: `0 4px 20px rgba(128, 0, 0, 0.3)`
         }}
       >
-        <Toolbar>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            width="100%"
-          >
-            {/* Left: Logo */}
-            <img src={logo} alt="Logo" style={{ height: 50 }} />
-
-            {/* Right: Avatar and Popover */}
-            <Stack direction="row" alignItems="center" spacing={2}>
-              {/* TODO: Uncomment when data is already set */}
-              {/* <Typograpbhy variant="subtitle1" sx={{ fontWeight: 500 }}>
-                {data}
-              </Typography> */}
-
-              <IconButton onClick={handleAvatarClick} sx={{ p: 0 }}>
-                <Avatar
-                  sx={{
-                    bgcolor: "#800000", // Maroon color
-                    color: "white",
-                    width: 40,
-                    height: 40,
-                    fontSize: "1rem",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {data ? (
-                    userInitial
-                  ) : (
-                    <AccountCircle sx={{ color: "white" }} />
-                  )}
-                </Avatar>
-              </IconButton>
-
-              <Popover
-                open={open}
-                anchorEl={anchorEl}
-                onClose={handleClosePopover}
-                anchorOrigin={{
-                  vertical: "bottom",
-                  horizontal: "right",
-                }}
-                transformOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
-                }}
-                PaperProps={{
-                  sx: {
-                    width: 220,
-                    borderRadius: 2,
-                    boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
-                    mt: 1.5,
-                  },
+        <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  bgcolor: "white",
+                  borderRadius: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                <Box sx={{ p: 2 }}>
-                  <Typography variant="subtitle1" fontWeight="bold">
-                    {data}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {userType
-                      ? `${
-                          userType.charAt(0).toUpperCase() + userType.slice(1)
-                        } Account`
-                      : "User Account"}
-                  </Typography>
-                </Box>
-
-                <Divider />
-
-                <MenuItem
-                  onClick={handleLogout}
+                <GraduationCapIcon sx={{ color: maroonTheme.primary.main, fontSize: 24 }} />
+              </Box>
+              <Box>
+                <Typography variant="h5" fontWeight="bold" color="white">
+                  ETEEAP PORTAL
+                </Typography>
+                <Typography variant="body2" color="rgba(255,255,255,0.8)">
+                  {userType === "applicant" ? "Applicant Dashboard" : 
+                   userType === "evaluator" ? "Evaluator Dashboard" : 
+                   userType === "admin" ? "Admin Dashboard" : "User Portal"}
+                </Typography>
+              </Box>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box sx={{ textAlign: "right" }}>
+                <Typography variant="body2" fontWeight="medium" color="white">
+                  {data || "Loading..."}
+                </Typography>
+                <Typography variant="caption" color="rgba(255,255,255,0.8)">
+                  {userType
+                    ? `${userType.charAt(0).toUpperCase() + userType.slice(1)} Account`
+                    : "User Account"}
+                </Typography>
+              </Box>
+              <IconButton onClick={handleAvatarClick} sx={{ p: 0 }}>
+                <Box
                   sx={{
-                    py: 1.5,
-                    "&:hover": {
-                      backgroundColor: "rgba(128, 0, 0, 0.08)",
-                    },
+                    width: 32,
+                    height: 32,
+                    bgcolor: "white",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  <Logout
-                    fontSize="small"
-                    sx={{ mr: 1.5, color: "text.secondary" }}
-                  />
-                  <Typography variant="body2">Sign Out</Typography>
-                </MenuItem>
-              </Popover>
-            </Stack>
-          </Stack>
-        </Toolbar>
-      </AppBar>
+                  <UserIcon sx={{ color: maroonTheme.primary.main, fontSize: 16 }} />
+                </Box>
+              </IconButton>
+            </Box>
+          </Box>
+        </Box>
+      </Paper>
+
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={handleClosePopover}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        PaperProps={{
+          sx: {
+            width: 220,
+            borderRadius: 2,
+            boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
+            mt: 1.5,
+            background: `linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(255, 255, 255, 0.98) 100%)`,
+            border: `1px solid rgba(128, 0, 0, 0.2)`,
+          },
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          <Typography variant="subtitle1" fontWeight="bold" sx={{ color: maroonTheme.primary.main }}>
+            {data}
+          </Typography>
+          <Typography variant="body2" sx={{ color: maroonTheme.primary.dark }}>
+            {userType
+              ? `${userType.charAt(0).toUpperCase() + userType.slice(1)} Account`
+              : "User Account"}
+          </Typography>
+        </Box>
+
+        <Divider sx={{ borderColor: `rgba(128, 0, 0, 0.2)` }} />
+
+        <MenuItem
+          onClick={handleLogout}
+          sx={{
+            py: 1.5,
+            "&:hover": {
+              backgroundColor: `rgba(128, 0, 0, 0.08)`,
+            },
+          }}
+        >
+          <Logout
+            fontSize="small"
+            sx={{ mr: 1.5, color: maroonTheme.primary.main }}
+          />
+          <Typography variant="body2" sx={{ color: maroonTheme.primary.dark }}>Sign Out</Typography>
+        </MenuItem>
+      </Popover>
 
       {/* Main content */}
       <Container
         maxWidth="lg"
-        sx={{ py: 4, alignItems: "center", justifyContent: "center" }}
+        sx={{ py: 4, alignItems: "center", justifyContent: "center", paddingTop: "120px" }}
       >
         {children}
       </Container>

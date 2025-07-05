@@ -103,26 +103,7 @@ const ProgramShowcase = () => {
               >
                 Back
               </Button>
-              <Box sx={{ position: "relative" }}>
-                <TextField
-                  size="small"
-                  placeholder="Search programs..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  sx={{
-                    width: 250,
-                    "& .MuiOutlinedInput-root": {
-                      backgroundColor: "rgba(255,255,255,0.9)",
-                      "& fieldset": { border: "none" },
-                      "&:hover": { backgroundColor: "white" },
-                      "&.Mui-focused": { backgroundColor: "white" }
-                    }
-                  }}
-                  InputProps={{
-                    startAdornment: <Search sx={{ color: "gray", mr: 1 }} />
-                  }}
-                />
-              </Box>
+              
             </Box>
             <Button sx={{ color: "white", "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" } }}>
               <Bell />
