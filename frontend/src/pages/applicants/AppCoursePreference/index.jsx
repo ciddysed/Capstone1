@@ -694,7 +694,17 @@ export default function ApplicationForm() {
                                       {preference.course.courseName}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                      {preference.course.department?.departmentName || "Department"}
+                                      {(() => {
+                                        // Try to find the matching course in availableCourses to get the processed department
+                                        const matchingCourse = availableCourses.find(c => c.courseId === preference.course.courseId)
+                                        if (matchingCourse) {
+                                          return matchingCourse.department
+                                        }
+                                        // Fallback to original logic
+                                        return preference.course.department?.departmentName || 
+                                               preference.course.department || 
+                                               "Department"
+                                      })()}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
                                       {preference.course.description || preference.course.courseCode}
