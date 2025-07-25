@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Box, CircularProgress, Card, Stack, alpha, Grid, Chip } from "@mui/material";
+import { Typography, Box, CircularProgress, Card, Stack, alpha, Grid, Chip, Paper } from "@mui/material";
 import { School } from "@mui/icons-material";
 import PropTypes from "prop-types";
 
@@ -73,70 +73,83 @@ const CoursePreferences = ({
             </Typography>
           </Box>
         ) : (
-          <Stack spacing={2.5}>
+          <Stack spacing={2}>
             {coursePreferences.map((preference) => {
               const status = preference.status || "PENDING";
               const statusColor = getStatusColor(status);
               
               return (
-                <Card
+                <Paper
                   key={preference.preferenceId || preference.id}
+                  variant="outlined"
                   sx={{
-                    p: 0,
-                    borderRadius: 1,
+                    p: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
                     border: `1px solid ${alpha('#000', 0.08)}`,
-                    boxShadow: 'none',
-                    overflow: 'hidden'
+                    borderLeft: `4px solid ${
+                      preference.priorityOrder === "FIRST" ||
+                      preference.preferenceOrder === "FIRST" ||
+                      preference.priorityOrder === 1 ||
+                      preference.preferenceOrder === 1 
+                        ? maroon.main 
+                        : gold.main
+                    }`,
+                    "&:hover": { 
+                      bgcolor: alpha('#f5f5f5', 0.7),
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    },
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  <Grid container>
-                    <Grid item xs={12}>
-                      <Box sx={{ 
-                        p: 2, 
-                        borderLeft: `4px solid ${
-                          preference.priorityOrder === "FIRST" ||
-                          preference.preferenceOrder === "FIRST" ||
-                          preference.priorityOrder === 1 ||
-                          preference.preferenceOrder === 1 
-                            ? maroon.main 
-                            : gold.main
-                        }`,
-                        '&:hover': {
-                          backgroundColor: alpha('#f5f5f5', 0.7)
-                        },
-                      }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              {formatPriority(preference.priorityOrder || preference.preferenceOrder)}
-                            </Typography>
-                            <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 0.5 }}>
-                              {getCourseName(preference.course?.courseId || preference.courseId)}
-                            </Typography>
-                            {preference.course?.department?.departmentName && (
-                              <Typography variant="body2" color="text.secondary">
-                                {preference.course.department.departmentName}
-                              </Typography>
-                            )}
-                          </Box>
-                          <Chip
-                            label={status}
-                            size="small"
-                            sx={{
-                              fontWeight: 600,
-                              fontSize: '0.75rem',
-                              backgroundColor: statusColor.bg,
-                              color: statusColor.color,
-                              border: `1px solid ${statusColor.border}`,
-                              minWidth: 80,
-                              height: 24,
-                            }}
-                          />
-                        </Box>
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </Card>
+                  <Chip
+                    label={formatPriority(preference.priorityOrder || preference.preferenceOrder)}
+                    variant="outlined"
+                    size="small"
+                    sx={{ 
+                      minWidth: 80,
+                      backgroundColor: preference.priorityOrder === "FIRST" ||
+                                     preference.preferenceOrder === "FIRST" ||
+                                     preference.priorityOrder === 1 ||
+                                     preference.preferenceOrder === 1 
+                                       ? maroon.main 
+                                       : gold.main,
+                      color: 'white',
+                      borderColor: preference.priorityOrder === "FIRST" ||
+                                  preference.preferenceOrder === "FIRST" ||
+                                  preference.priorityOrder === 1 ||
+                                  preference.preferenceOrder === 1 
+                                    ? maroon.main 
+                                    : gold.main,
+                      fontWeight: 600
+                    }}
+                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" fontWeight="medium">
+                      {getCourseName(preference.course?.courseId || preference.courseId)}
+                    </Typography>
+                    {preference.course?.department?.departmentName && (
+                      <Typography variant="body2" color="text.secondary">
+                        {preference.course.department.departmentName}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Chip
+                    label={status}
+                    size="small"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      backgroundColor: statusColor.bg,
+                      color: statusColor.color,
+                      border: `1px solid ${statusColor.border}`,
+                      minWidth: 80,
+                      height: 24,
+                    }}
+                  />
+                </Paper>
               );
             })}
           </Stack>

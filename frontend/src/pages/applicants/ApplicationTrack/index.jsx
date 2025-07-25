@@ -1,4 +1,4 @@
-import { Assignment, Logout } from "@mui/icons-material";
+import { Assignment, Logout, Person as UserIcon, School as GraduationCapIcon, Description as FileTextIcon, CheckCircle as CheckCircleIcon, Schedule as ClockIcon, Warning as AlertCircleIcon } from "@mui/icons-material";
 import {
   Typography,
   Box,
@@ -9,12 +9,17 @@ import {
   ThemeProvider,
   alpha,
   Card,
+  CardContent,
+  CardHeader,
   createTheme,
   Divider,
   Grow,
   MenuItem,
   Popover,
-  Button
+  Button,
+  Paper,
+  LinearProgress,
+  Chip
 } from "@mui/material";
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -25,15 +30,17 @@ import useResponseHandler from "../../../utils/useResponseHandler";
 import logo from "../../../assets/logo.png";
 
 // Import reusable components and styles from AppCoursePreference
-import ApplicationHeader from "../AppCoursePreference/components/ApplicationHeader";
 import {
   AnimatedPaper,
   InfoBox,
-  SectionTitle
+  SectionTitle,
+  maroon,
+  gold,
+  customTheme
 } from '../AppCoursePreference/styles';
 
 // Import shared component
-import DocumentHandler from "../../../components/shared/DocumentHandler";
+import DocumentHandler from "./DocumentHandler";
 import ApplicantInfo from "./ApplicantInfo";
 import CoursePreferences from "./CoursePreferences";
 
@@ -54,70 +61,6 @@ import {
 
 // API base URL - move to environment config in production
 const API_BASE_URL = "http://localhost:8080/api";
-
-// Custom maroon and gold color palette
-const maroon = {
-  light: "#8D323C",
-  main: "#6A0000",
-  dark: "#450000",
-  contrastText: "#FFFFFF",
-};
-
-const gold = {
-  light: "#FFF0B9",
-  main: "#FFC72C",
-  dark: "#D4A500",
-  contrastText: "#000000",
-};
-
-// Create a custom theme with maroon and gold
-const customTheme = createTheme({
-  palette: {
-    primary: maroon,
-    secondary: gold,
-  },
-  shape: {
-    borderRadius: 8,
-  },
-  typography: {
-    fontFamily: '"Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif',
-    h5: {
-      fontWeight: 700,
-    },
-    h6: {
-      fontWeight: 600,
-    },
-    subtitle1: {
-      fontWeight: 500,
-    },
-  },
-  components: {
-    MuiPaper: {
-      defaultProps: {
-        elevation: 0,
-      },
-      styleOverrides: {
-        root: {
-          backgroundImage: "none",
-        },
-      },
-    },
-    MuiDivider: {
-      styleOverrides: {
-        root: {
-          borderColor: alpha(gold.main, 0.3),
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          fontWeight: 600,
-        },
-      },
-    },
-  },
-});
 
 // Required document types
 const REQUIRED_DOCUMENTS = [
@@ -569,6 +512,19 @@ const ApplicationTracking = () => {
   // Display loading states
   const isLoading = loading.profile || loading.courses || loading.preferences || loading.documents;
 
+  // Calculate completion progress
+  const calculateProgress = () => {
+    let completed = 0;
+    const total = 4; // Personal info, preferences, required docs, application status
+
+    if (userData.name && userData.email) completed++;
+    if (coursePreferences.length > 0) completed++;
+    if (documents.some((f) => f.type === "INFORMATIVE_COPY_OF_TOR")) completed++;
+    if (documents.length >= 3) completed++;
+
+    return (completed / total) * 100;
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("applicantId");
     localStorage.removeItem("evaluatorId");
@@ -591,249 +547,375 @@ const ApplicationTracking = () => {
 
   return (
     <ThemeProvider theme={customTheme}>
-      <MinimalLayout backgroundImage={backgroundImage}>
-        <Stack alignItems="center" spacing={3} sx={{ width: "100%" }}>
-          {/* Header with Logo and User Info */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              width: "100%",
-              maxWidth: 850,
-              mb: 1,
-            }}
-            onClick={handleClick} 
-          >
-            <img src={logo} alt="University Logo" style={{ height: 50 }} />
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <Typography variant="body2" color="text.secondary">
-                  {userData.email}
-                </Typography>
-                <UserAvatar
-                  alt={userData.name}
+      <Box sx={{ 
+        minHeight: "100vh", 
+        background: `linear-gradient(135deg, ${alpha('#B8860B', 0.05)} 0%, ${alpha('#FFD700', 0.03)} 100%)`,
+        bgcolor: "grey.50" 
+      }}>
+        {/* Header - matching AppCoursePreference style */}
+        <Paper elevation={1} sx={{ borderRadius: 0, bgcolor: maroon.main }}>
+          <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box
                   sx={{
-                    bgcolor: maroon.main,
-                    color: maroon.contrastText,
-                    boxShadow: `0 3px 5px ${alpha("#000", 0.2)}`,
+                    width: 40,
+                    height: 40,
+                    bgcolor: "white",
+                    borderRadius: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  {userData.name.charAt(0)}
-                </UserAvatar>
-              </Stack>
+                  <GraduationCapIcon sx={{ color: maroon.main, fontSize: 24 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h5" fontWeight="bold" color="white">
+                    APPLICATION TRACKING DASHBOARD
+                  </Typography>
+                  <Typography variant="body2" color="rgba(255,255,255,0.8)">
+                    Track your application status and manage documents
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ textAlign: "right" }}>
+                  <Typography variant="body2" fontWeight="medium" color="white">
+                    {userData.name || "Loading..."}
+                  </Typography>
+                  <Typography variant="caption" color="rgba(255,255,255,0.8)">
+                    {userData.email || "Loading..."}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    bgcolor: "white",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer"
+                  }}
+                  onClick={handleClick}
+                >
+                  <UserIcon sx={{ color: maroon.main, fontSize: 16 }} />
+                </Box>
+              </Box>
             </Box>
           </Box>
+        </Paper>
 
-          <Popover
-            open={open}
-            anchorEl={anchorEl}
-            onClose={handleClosePopover}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "right",
+        {/* Progress Bar - matching AppCoursePreference style */}
+        <Paper elevation={1} sx={{ borderRadius: 0, background: `linear-gradient(135deg, ${alpha('#FFD700', 0.1)} 0%, ${alpha('#B8860B', 0.08)} 100%)` }}>
+          <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+              <Typography variant="body2" fontWeight="medium" color="text.primary">
+                Application Progress
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {Math.round(calculateProgress())}% Complete
+              </Typography>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={calculateProgress()}
+              sx={{ 
+                height: 8, 
+                borderRadius: 4,
+                backgroundColor: alpha('#FFD700', 0.2),
+                '& .MuiLinearProgress-bar': {
+                  background: `linear-gradient(90deg, ${maroon.main} 0%, ${gold.main} 100%)`
+                }
+              }}
+            />
+          </Box>
+        </Paper>
+
+        {/* User Menu Popover */}
+        <Popover
+          open={open}
+          anchorEl={anchorEl}
+          onClose={handleClosePopover}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "right",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "right",
+          }}
+          PaperProps={{
+            sx: {
+              width: 220,
+              borderRadius: 2,
+              boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
+              mt: 1.5,
+            },
+          }}
+        >
+          <Box sx={{ p: 2 }}>
+            <Typography variant="subtitle1" fontWeight="bold">
+              {userData.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {userType
+                ? `${
+                    userType.charAt(0).toUpperCase() + userType.slice(1)
+                  } Account`
+                : "User Account"}
+            </Typography>
+          </Box>
+
+          <Divider />
+
+          <MenuItem
+            onClick={() => {
+              handleLogout();
+              handleClosePopover();
             }}
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-            PaperProps={{
-              sx: {
-                width: 220,
-                borderRadius: 2,
-                boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
-                mt: 1.5,
+            sx={{
+              py: 1.5,
+              "&:hover": {
+                backgroundColor: "rgba(128, 0, 0, 0.08)",
               },
             }}
           >
-            <Box sx={{ p: 2 }}>
-              <Typography variant="subtitle1" fontWeight="bold">
-                {userData.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {userType
-                  ? `${
-                      userType.charAt(0).toUpperCase() + userType.slice(1)
-                    } Account`
-                  : "User Account"}
-              </Typography>
-            </Box>
+            <Logout
+              fontSize="small"
+              sx={{ mr: 1.5, color: "text.secondary" }}
+            />
+            <Typography variant="body2">Sign Out</Typography>
+          </MenuItem>
+        </Popover>
 
-            <Divider />
-
-            <MenuItem
-              onClick={() => {
-                handleLogout();
-                handleClosePopover();
-              }}
-              sx={{
-                py: 1.5,
-                "&:hover": {
-                  backgroundColor: "rgba(128, 0, 0, 0.08)",
-                },
-              }}
-            >
-              <Logout
-                fontSize="small"
-                sx={{ mr: 1.5, color: "text.secondary" }}
-              />
-              <Typography variant="body2">Sign Out</Typography>
-            </MenuItem>
-          </Popover>
-          
-          <Grow in={true} timeout={500}>
-            <Box sx={{ textAlign: 'center', mb: 1 }}>
-              <Typography variant="h4" fontWeight="bold" color="text.primary" sx={{
-                textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                position: 'relative',
-                display: 'inline-block',
-                '&:after': {
-                  content: '""',
-                  position: 'absolute',
-                  bottom: -8,
-                  left: '25%',
-                  width: '50%',
-                  height: 3,
-                  backgroundColor: gold.main,
-                  borderRadius: 8,
-                }
-              }}>
-                Application Tracking
-              </Typography>
-            </Box>
-          </Grow>
-          
-          {isLoading ? (
-            <Box sx={{ 
-              display: "flex", 
-              flexDirection: 'column',
-              justifyContent: "center", 
-              alignItems: "center",
-              my: 6,
-              backgroundColor: alpha('#FFFFFF', 0.9),
-              p: 4,
-              borderRadius: 4,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-              width: '100%',
-              maxWidth: 400,
-            }}>
-              <CircularProgress size={60} sx={{ color: maroon.main, mb: 3 }} />
-              <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>
-                Loading Application Data
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-                Please wait while we prepare your application...
-              </Typography>
-            </Box>
-          ) : (
-            <Grow in={true} timeout={800}>
-              <AnimatedPaper elevation={3}>
-                {/* Status Header - Using InfoBox style */}
-                <InfoBox sx={{ mb: 3 }}>
-                  <Box sx={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    alignItems: "flex-start", 
-                    flexWrap: "wrap",
-                    gap: 2
-                  }}>
-                    <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                      <Box 
+        {/* Loading State - matching AppCoursePreference style */}
+        {isLoading ? (
+          <Box sx={{ 
+            display: "flex", 
+            flexDirection: 'column',
+            justifyContent: "center", 
+            alignItems: "center",
+            my: 6,
+            backgroundColor: alpha('#FFFFFF', 0.9),
+            p: 4,
+            borderRadius: 4,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            width: '100%',
+            maxWidth: 400,
+            mx: "auto"
+          }}>
+            <CircularProgress size={60} sx={{ color: maroon.main, mb: 3 }} />
+            <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>
+              Loading Application Data
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+              Please wait while we prepare your application...
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            {/* Main Content - matching AppCoursePreference layout */}
+            <Box sx={{ maxWidth: "1400px", mx: "auto", px: 3, py: 4 }}>
+              <Grid container spacing={3}>
+                {/* Left Column - Personal Info & Course Preferences */}
+                <Grid item xs={12} lg={6}>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    {/* Application Status Card */}
+                    <Card elevation={2} sx={{ 
+                      border: `2px solid ${alpha(gold.light, 0.2)}`,
+                      '&:hover': { 
+                        boxShadow: `0 8px 32px ${alpha(maroon.main, 0.12)}`,
+                        transform: 'translateY(-2px)'
+                      },
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <CardHeader
+                        title={
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Assignment sx={{ color: maroon.main, fontSize: 20 }} />
+                              <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>Application Status</Typography>
+                            </Box>
+                            <StatusChip
+                              label={applicationStatus}
+                              status={applicationStatus}
+                              icon={getStatusIcon(applicationStatus)}
+                            />
+                          </Box>
+                        }
+                        subheader="Track your application progress and review details"
                         sx={{ 
-                          bgcolor: alpha(maroon.main, 0.1), 
-                          borderRadius: '50%', 
-                          p: 1.2,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
+                          pb: 2,
+                          background: `linear-gradient(135deg, ${alpha(gold.light, 0.08)} 0%, ${alpha(maroon.main, 0.05)} 100%)`
                         }}
-                      >
-                        <Assignment sx={{ color: maroon.main, fontSize: 28 }} />
-                      </Box>
-                      <Box>
-                        <SectionTitle variant="subtitle1">Application Status</SectionTitle>
-                        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mt: 1 }}>
-                          Track your application progress and view submitted information
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <Box sx={{ display: "flex", alignItems: "flex-start" }}>
-                      <Tooltip
-                        title={`Application Status: ${applicationStatus}`}
-                        arrow
-                        placement="top"
-                      >
-                        <StatusChip
-                          label={applicationStatus}
-                          status={applicationStatus}
-                          icon={getStatusIcon(applicationStatus)}
-                          sx={{ py: 1, px: 1.5 }}
-                        />
-                      </Tooltip>
-                    </Box>
-                  </Box>
-                </InfoBox>
-                
-                <Grid container spacing={4} sx={{ flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
-                  {/* Left Column with Applicant Info and Course Preferences */}
-                  <Grid item md={7} xs={12} sx={{ minWidth: 0, flex: 1 }}>
-                    <Stack spacing={4}>
-                      {/* Personal Information - Using InfoBox style */}
-                      <InfoBox>
-                        <SectionTitle variant="subtitle1">Personal Information</SectionTitle>
-                        <Grid container spacing={2} sx={{ mt: 1 }}>
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
-                              Name
-                            </Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                              {userData.name}
-                            </Typography>
+                      />
+                      <CardContent>
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            {documents.some((f) => f.type === "INFORMATIVE_COPY_OF_TOR") ? (
+                              <CheckCircleIcon sx={{ color: "success.main", fontSize: 16 }} />
+                            ) : (
+                              <AlertCircleIcon sx={{ color: "error.main", fontSize: 16 }} />
+                            )}
+                            <Typography variant="body2">Required Documents</Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            {coursePreferences.length > 0 ? (
+                              <CheckCircleIcon sx={{ color: "success.main", fontSize: 16 }} />
+                            ) : (
+                              <ClockIcon sx={{ color: "warning.main", fontSize: 16 }} />
+                            )}
+                            <Typography variant="body2">Course Preferences</Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            {documents.length >= 3 ? (
+                              <CheckCircleIcon sx={{ color: "success.main", fontSize: 16 }} />
+                            ) : (
+                              <ClockIcon sx={{ color: "warning.main", fontSize: 16 }} />
+                            )}
+                            <Typography variant="body2">Document Count (Min 3)</Typography>
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+
+                    {/* Personal Information Card */}
+                    <Card elevation={2} sx={{ 
+                      border: `2px solid ${alpha(gold.light, 0.2)}`,
+                      '&:hover': { 
+                        boxShadow: `0 8px 32px ${alpha(maroon.main, 0.12)}`,
+                        transform: 'translateY(-2px)'
+                      },
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <CardHeader
+                        title={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <UserIcon sx={{ color: maroon.main, fontSize: 20 }} />
+                            <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>Personal Information</Typography>
+                          </Box>
+                        }
+                        sx={{ 
+                          pb: 2,
+                          background: `linear-gradient(135deg, ${alpha(gold.light, 0.08)} 0%, ${alpha(maroon.main, 0.05)} 100%)`
+                        }}
+                      />
+                      <CardContent>
+                        <Grid container spacing={3}>
+                          <Grid item xs={12} md={6}>
+                            <Box sx={{ mb: 1 }}>
+                              <Typography variant="body2" fontWeight="medium" color="text.primary">
+                                Full Name
+                              </Typography>
+                            </Box>
+                            <Paper variant="outlined" sx={{ 
+                              p: 2, 
+                              background: `linear-gradient(135deg, ${alpha(gold.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
+                              border: `1px solid ${alpha(gold.main, 0.2)}`
+                            }}>
+                              <Typography fontWeight="medium" color="text.primary">
+                                {userData.name}
+                              </Typography>
+                            </Paper>
                           </Grid>
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
-                              Email
-                            </Typography>
-                            <Typography variant="body1">
-                              {userData.email}
-                            </Typography>
+                          <Grid item xs={12} md={6}>
+                            <Box sx={{ mb: 1 }}>
+                              <Typography variant="body2" fontWeight="medium" color="text.primary">
+                                Email Address
+                              </Typography>
+                            </Box>
+                            <Paper variant="outlined" sx={{ 
+                              p: 2, 
+                              background: `linear-gradient(135deg, ${alpha(gold.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
+                              border: `1px solid ${alpha(gold.main, 0.2)}`
+                            }}>
+                              <Typography color="text.primary">{userData.email}</Typography>
+                            </Paper>
                           </Grid>
                         </Grid>
-                      </InfoBox>
-                      
-                      {/* Course Preferences - Using same style as AppCoursePreference */}
-                      <Box>
-                        <SectionTitle variant="subtitle1">Course Preference(s)</SectionTitle>
-                        <Box sx={{
-                          bgcolor: alpha('#FFFFFF', 0.7),
-                          borderRadius: 2,
-                          padding: 2,
-                          boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)'
-                        }}>
-                          <CoursePreferences
-                            isLoading={false}
-                            coursePreferences={coursePreferences}
-                            formatPriority={formatPriority}
-                            getCourseName={getCourseName}
-                            maroon={maroon}
-                            gold={gold}
+                      </CardContent>
+                    </Card>
+
+                    {/* Course Preferences Card */}
+                    <Card elevation={2} sx={{ 
+                      border: `2px solid ${alpha(gold.light, 0.2)}`,
+                      '&:hover': { 
+                        boxShadow: `0 8px 32px ${alpha(maroon.main, 0.12)}`,
+                        transform: 'translateY(-2px)'
+                      },
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <CardHeader
+                        title={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <GraduationCapIcon sx={{ color: maroon.main, fontSize: 20 }} />
+                            <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>Course Preferences</Typography>
+                          </Box>
+                        }
+                        subheader="Your selected course preferences in order of priority"
+                        sx={{ 
+                          pb: 2,
+                          background: `linear-gradient(135deg, ${alpha(gold.light, 0.08)} 0%, ${alpha(maroon.main, 0.05)} 100%)`
+                        }}
+                      />
+                      <CardContent>
+                        <CoursePreferences
+                          isLoading={false}
+                          coursePreferences={coursePreferences}
+                          formatPriority={formatPriority}
+                          getCourseName={getCourseName}
+                          maroon={maroon}
+                          gold={gold}
+                        />
+                      </CardContent>
+                    </Card>
+                  </Box>
+                </Grid>
+
+                {/* Right Column - Documents */}
+                <Grid item xs={12} lg={6}>
+                  <Card elevation={2} sx={{ 
+                    border: `2px solid ${alpha(gold.light, 0.2)}`,
+                    '&:hover': { 
+                      boxShadow: `0 8px 32px ${alpha(maroon.main, 0.12)}`,
+                      transform: 'translateY(-2px)'
+                    },
+                    transition: 'all 0.3s ease',
+                    height: 'fit-content'
+                  }}>
+                    <CardHeader
+                      title={
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <FileTextIcon sx={{ color: maroon.main, fontSize: 20 }} />
+                            <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>Application Documents</Typography>
+                          </Box>
+                          <Chip 
+                            label={documents.length} 
+                            size="small" 
+                            sx={{
+                              backgroundColor: gold.main,
+                              color: 'black',
+                              fontWeight: 600
+                            }}
                           />
                         </Box>
-                      </Box>
-                    </Stack>
-                  </Grid>
-                  
-                  {/* Right Column with Documents - Using shared DocumentHandler */}
-                  <Grid item md={5} xs={12} sx={{ minWidth: 0, flex: 1 }}>
-                    <Box sx={{
-                      bgcolor: alpha('#FFFFFF', 0.7),
-                      borderRadius: 2,
-                      padding: 2,
-                      boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)',
-                      height: 'fit-content'
-                    }}>
+                      }
+                      subheader="Manage your uploaded documents"
+                      sx={{ 
+                        pb: 2,
+                        background: `linear-gradient(135deg, ${alpha(gold.light, 0.08)} 0%, ${alpha(maroon.main, 0.05)} 100%)`
+                      }}
+                    />
+                    <CardContent>
                       <DocumentHandler
+                        isLoading={loading.documents}
                         documents={documents}
+                        documentsByType={documentsByType}
+                        apiBaseUrl={API_BASE_URL}
                         uploadingFiles={uploadingFiles}
                         handleFileUpload={handleFileUpload}
                         handleFileChange={handleFileChange}
@@ -842,72 +924,45 @@ const ApplicationTracking = () => {
                         requiredDocuments={REQUIRED_DOCUMENTS}
                         maroon={maroon}
                         gold={gold}
-                        showPreviewDownload={false}
-                        showSimpleList={false}
-                        apiBaseUrl={API_BASE_URL}
-                        SectionTitle={SectionTitle}
-                        getDocumentTypeLabel={getDocumentTypeLabel}
-                        UploadButton={({ children, ...props }) => (
-                          <Button
-                            variant="contained"
-                            sx={{
-                              backgroundColor: "#222222",
-                              color: "white",
-                              borderRadius: 2,
-                              textTransform: "none",
-                              fontWeight: 500,
-                              width: "100%",
-                              justifyContent: "flex-start",
-                              padding: "8px 16px",
-                              marginBottom: "8px",
-                              transition: 'transform 0.2s, box-shadow 0.2s',
-                              "&:hover": {
-                                backgroundColor: "#000000",
-                                transform: 'translateY(-2px)',
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
-                              }
-                            }}
-                            {...props}
-                          >
-                            {children}
-                          </Button>
-                        )}
-                        documentTab={documentTab}
-                        documentsByType={documentsByType}
-                        handleDocumentTabChange={handleDocumentTabChange}
-                        handlePreviewDocument={handlePreviewDocument}
-                        handleDownloadDocument={handleDownloadDocument}
                       />
-                    </Box>
-                  </Grid>
+                    </CardContent>
+                  </Card>
                 </Grid>
-                
-                {applicationStatus === APPLICATION_STATUS.PENDING && (
-                  <>
-                    <Divider sx={{ my: 3, borderColor: alpha(maroon.main, 0.1) }} />
-                    <InfoBox sx={{ 
-                      bgcolor: alpha(gold.light, 0.2),
-                      border: `1px solid ${alpha(gold.main, 0.3)}`,
-                      textAlign: 'center'
-                    }}>
-                      <Typography variant="subtitle1" color={maroon.dark} gutterBottom sx={{ fontWeight: 600 }}>
-                        Your Application is Under Review
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Our admissions team is currently processing your
-                        application. You will receive an email notification when
-                        there's an update.
-                      </Typography>
-                    </InfoBox>
-                  </>
-                )}
-              </AnimatedPaper>
-            </Grow>
-          )}
-        </Stack>
+              </Grid>
+
+              {/* Status Message */}
+              {applicationStatus === APPLICATION_STATUS.PENDING && (
+                <Box sx={{ mt: 4 }}>
+                  <Card elevation={3} sx={{ 
+                    border: `2px solid ${alpha(gold.light, 0.3)}`,
+                    background: `linear-gradient(135deg, ${alpha(gold.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.95)} 100%)`,
+                    '&:hover': { 
+                      boxShadow: `0 12px 40px ${alpha(maroon.main, 0.15)}`,
+                      transform: 'translateY(-3px)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <CardContent sx={{ pt: 3 }}>
+                      <Box sx={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 2 }}>
+                        <Box>
+                          <Typography variant="h6" fontWeight="600" sx={{ color: maroon.main }}>
+                            Application Under Review
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            Our admissions team is currently processing your application. You will receive an email notification when there's an update.
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Box>
+              )}
+            </Box>
+          </>
+        )}
 
         {snackbar}
-      </MinimalLayout>
+      </Box>
     </ThemeProvider>
   );
 };

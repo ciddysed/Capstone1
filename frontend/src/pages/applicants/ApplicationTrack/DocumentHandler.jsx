@@ -14,14 +14,18 @@ import {
   Button,
   List,
   ListItem,
-  ListItemText
+  ListItemText,
+  Paper
 } from "@mui/material";
 import {
   UploadFile,
+  Description,
+  Visibility,
+  Download
 } from "@mui/icons-material";
 
-// Import reusable styled components from AppCoursePreference
-import { SectionTitle, UploadButton } from "../AppCoursePreference/styles";
+// Import styles from AppCoursePreference for consistency
+import { maroon, gold } from "../AppCoursePreference/styles";
 
 const DocumentHandler = ({
   isLoading,
@@ -34,25 +38,16 @@ const DocumentHandler = ({
   missingDocuments,
   handleMissingFileUpload,
   requiredDocuments,
-  maroon,
-  gold
 }) => {
-  // Handle file replacement
-  const handleFileChangeInternal = useCallback(async (event, documentToReplace) => {
-    // Use the passed handleFileChange prop instead of internal implementation
-    if (handleFileChange) {
-      handleFileChange(event, documentToReplace);
-    }
-  }, [handleFileChange]);
+  // Helper function to get document type label
+  const getDocumentTypeLabel = (type) => {
+    const docType = requiredDocuments.find(doc => doc.value === type);
+    return docType ? docType.label : type || "General Document";
+  };
 
   return (
     <Box>
-      {/* Header using SectionTitle from AppCoursePreference */}
-      <SectionTitle variant="subtitle1" sx={{ mb: 2 }}>
-        Application Documents
-      </SectionTitle>
-      
-      {/* Documents List - Using same style as DocumentList component */}
+      {/* Documents List */}
       {isLoading ? (
         <Box sx={{ 
           display: "flex", 
@@ -74,7 +69,7 @@ const DocumentHandler = ({
           bgcolor: alpha('#FFFFFF', 0.7), 
           borderRadius: 2,
           border: `1px solid ${alpha(maroon.main, 0.1)}`,
-          maxHeight: 200,
+          maxHeight: 300,
           overflow: "auto",
           boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)',
           mb: 3
@@ -110,7 +105,7 @@ const DocumentHandler = ({
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
-                            maxWidth: 180
+                            maxWidth: 200
                           }}
                         >
                           {doc.name}
@@ -136,9 +131,27 @@ const DocumentHandler = ({
                     </Box>
                   }
                   secondary={
-                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                      Uploaded: {doc.uploadDate} • Type: {doc.type}
-                    </Typography>
+                    <Box sx={{ ml: 2.2 }}>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          color: maroon.main, 
+                          fontWeight: 600,
+                          display: 'block',
+                          bgcolor: alpha(maroon.light, 0.08),
+                          px: 1,
+                          py: 0.2,
+                          borderRadius: 1,
+                          width: 'fit-content',
+                          mb: 0.5
+                        }}
+                      >
+                        {getDocumentTypeLabel(doc.type)}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
+                        Uploaded: {doc.uploadDate}
+                      </Typography>
+                    </Box>
                   }
                 />
               </ListItem>
@@ -164,11 +177,6 @@ const DocumentHandler = ({
           </Typography>
         </Box>
       )}
-
-      {/* Upload Section using same style as AppCoursePreference */}
-      <SectionTitle variant="subtitle2" sx={{ mb: 1.5 }}>
-        {documents.length > 0 ? "Upload Additional Documents" : "Upload Required Documents"}
-      </SectionTitle>
 
       {/* Missing Required Documents Section */}
       {missingDocuments && missingDocuments.length > 0 && (
@@ -231,28 +239,6 @@ const DocumentHandler = ({
           </Stack>
         </Box>
       )}
-
-      {/* General Upload Button using AppCoursePreference style */}
-      <UploadButton
-        variant="contained"
-        component="label"
-        startIcon={uploadingFiles ? <CircularProgress size={18} color="inherit" /> : <UploadFile />}
-        size="small"
-        disabled={uploadingFiles}
-      >
-        {uploadingFiles ? "Uploading Files..." : "Upload Documents"}
-        <input
-          type="file"
-          hidden
-          onChange={handleFileUpload}
-          multiple
-          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-          aria-label="Upload application documents"
-        />
-      </UploadButton>
-      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-        Accepted formats: PDF, Word documents, JPEG, PNG images
-      </Typography>
     </Box>
   );
 };
@@ -268,8 +254,6 @@ DocumentHandler.propTypes = {
   missingDocuments: PropTypes.array,
   handleMissingFileUpload: PropTypes.func,
   requiredDocuments: PropTypes.array,
-  maroon: PropTypes.object.isRequired,
-  gold: PropTypes.object.isRequired
 };
 
 export default DocumentHandler;
