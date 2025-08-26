@@ -21,6 +21,8 @@ import Redirecter from "./Redirecter";
 import ApplicantForgotPasswordPage from "../pages/applicants/ForgotPasswordPage"; 
 import EvaluatorResetPasswordPage from "../pages/evaluators/ResetPasswordPage";
 import ApplicantResetPasswordPage from "../pages/applicants/ApplicantResetPasswordPage";
+import CurriculumManagement from "../pages/admin/ApplicantDetailsPage/curriculumManagement";
+import CurriculumRouter from "../pages/admin/ApplicantDetailsPage/curriculumRouter";
 
 const AppRoutes = () => {
   return useRoutes([
@@ -180,6 +182,22 @@ const AppRoutes = () => {
     {
       path: "/applicant/reset-password",
       element: <ApplicantResetPasswordPage />,
+    },
+    {
+      path: "/admin/curriculum-management",
+      element: (
+        <ProtectedRoute>
+          <CurriculumManagement />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/admin/curriculum/:curriculumId",
+      element: (
+        <ProtectedRoute>
+          <CurriculumRouter />
+        </ProtectedRoute>
+      ),
     },
 
      
