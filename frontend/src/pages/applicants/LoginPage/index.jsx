@@ -57,6 +57,7 @@ const LoginPage = () => {
   useEffect(() => {
     const userType = localStorage.getItem("userType");
     const applicantId = localStorage.getItem("applicantId");
+    const programAdminId = localStorage.getItem("programAdminId");
 
     if (userType === "applicant" && applicantId) {
       // Check if applicant has started their application
@@ -67,12 +68,12 @@ const LoginPage = () => {
       });
     } else if (userType === "evaluator") {
       navigate("/evaluator/homepage");
+    } else if (userType === "program-admin" && programAdminId) {
+      navigate("/program-admin/program-management");
     } else if (userType && userType.includes("admin")) {
       // Admin routing
       if (userType === "system-admin") {
         navigate("/system-admin/evaluator-management");
-      } else if (userType === "program-admin") {
-        navigate("/program-admin/homepage");
       } else {
         navigate("/admin");
       }

@@ -2,7 +2,9 @@
 import { useRoutes } from "react-router-dom";
 import OrganizedCourseDialog from "../components/OrganizedCourseDialog";
 import EvaluatorManagementPage from "../pages/SystemAdmin/EvaluatorManagement";
+import SystemAdminLoginPage from "../pages/SystemAdmin/LoginPage";
 import ProgramAdminHomePage from "../pages/ProgramAdmin/HomePage";
+import ProgramAdminLoginPage from "../pages/ProgramAdmin/LoginPage";
 import ProgramShowcase from "../pages/ProgramShowcase";
 import AppCoursePreference from "../pages/applicants/AppCoursePreference";
 import ApplicationTrack from "../pages/applicants/ApplicationTrack";
@@ -82,8 +84,7 @@ const AppRoutes = () => {
         </ProtectedRoute>
       ),
     },
-    // Add a fallback route if needed
-    // {
+    // Evaluator routes
     {
       path: "/evaluator/login",
       element: <EvaluatorsLoginPage />,
@@ -127,11 +128,30 @@ const AppRoutes = () => {
       ),
     },
 
+    // Program Admin routes
+    {
+      path: "/program-admin/login",
+      element: <ProgramAdminLoginPage />,
+    },
     {
       path: "/program-admin/homepage",
       element: (
         <ProtectedRoute>
-          <ProgramAdminHomePage />{" "}
+          <ProgramAdminHomePage />
+        </ProtectedRoute>
+      ),
+    },
+
+    // System Admin routes
+    {
+      path: "/system-admin/login",
+      element: <SystemAdminLoginPage />,
+    },
+    {
+      path: "/system-admin/homepage",
+      element: (
+        <ProtectedRoute>
+          <ProgramAdminHomePage />
         </ProtectedRoute>
       ),
     },
@@ -146,7 +166,7 @@ const AppRoutes = () => {
     },
 
     {
-      path: "/system-admin/program-management",
+      path: "/program-admin/program-management",
       element: (
         <ProtectedRoute>
           <ProgramAdminHomePage />
