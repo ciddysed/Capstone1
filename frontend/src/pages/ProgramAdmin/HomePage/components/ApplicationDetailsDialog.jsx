@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Box,
@@ -39,6 +39,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import EmailIcon from '@mui/icons-material/Email';
 import SchoolIcon from '@mui/icons-material/School';
+import SendIcon from '@mui/icons-material/Send';
 import axios from "axios";
 import { styled } from "@mui/material/styles";
 
@@ -202,10 +203,11 @@ const ApplicationDetailsDialog = ({
   const [newStatus, setNewStatus] = useState("");
   const [updateLoading, setUpdateLoading] = useState(false);
   const [forwardingLoading, setForwardingLoading] = useState(false);
-  const [assignmentResults, setAssignmentResults] = useState(null);
+  // Added missing selectedCourse state
+  const [selectedCourse, setSelectedCourse] = useState("");
 
   // Fetch application details including preferences and documents
-  const fetchApplicationDetails = useCallback(async (applicationId) => {
+  const fetchApplicationDetails = async (applicationId) => {
     setLoadingPreferences(true);
     try {
       const response = await axios.get(`${API_URL}/applications/${applicationId}`);
@@ -269,7 +271,7 @@ const ApplicationDetailsDialog = ({
     } finally {
       setLoadingPreferences(false);
     }
-  }, []); // Empty dependency array since this function doesn't depend on any props or state
+  };
 
   // Fetch evaluation statuses for course preferences
   const fetchEvaluationStatusesForPreferences = async (applicantId, preferences) => {
@@ -305,96 +307,216 @@ const ApplicationDetailsDialog = ({
     }
   };
 
-  // Update application status with automatic course assignments
+  // Update application status
   const updateApplicationStatus = async () => {
     setUpdateLoading(true);
-    setAssignmentResults(null);
-    
     try {
       const applicationId = selectedApplication.applicationId || selectedApplication.id;
       const url = `${API_URL}/applications/${applicationId}/update-status?status=${newStatus}`;
       
       await axios.put(url);
       
-      if (newStatus === "APPROVED" && coursePreferences.length > 0) {
-        const applicantId = selectedApplication.applicant?.applicantId;
-        if (applicantId) {
-          const results = {
-            successful: [],
-            failed: [],
-            total: coursePreferences.length
-          };
-
-          // Assign all course preferences to their respective departments
-          for (const preference of coursePreferences) {
-            try {
-              await axios.post(`${API_URL}/applications/${applicationId}/assign-course`, {
-                applicantId: applicantId,
-                courseId: preference.courseId
-              });
-              
-              results.successful.push({
-                courseName: preference.courseName,
-                department: preference.department,
-                preferenceOrder: preference.preferenceOrder
-              });
-            } catch (courseError) {
-              console.error(`Error assigning course ${preference.courseId}:`, courseError);
-              results.failed.push({
-                courseName: preference.courseName,
-                department: preference.department,
-                preferenceOrder: preference.preferenceOrder,
-                error: courseError.response?.data?.message || courseError.message
-              });
-            }
-          }
-          
-          setAssignmentResults(results);
-          
-          if (results.successful.length > 0) {
-            // Auto-forward successful assignments for evaluation
-            try {
-              setForwardingLoading(true);
-              
-              for (const successfulAssignment of results.successful) {
-                const courseId = coursePreferences.find(p => p.courseName === successfulAssignment.courseName)?.courseId;
-                if (courseId) {
-                  try {
-                    await axios.post(`${EVALUATIONS_API_URL}/forward-application/${applicantId}`, {
-                      courseId: parseInt(courseId, 10),
-                      applicationId: applicationId
-                    }, {
-                      headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                      },
-                      timeout: 30000,
-                    });
-                  } catch (forwardError) {
-                    console.error(`Error forwarding course ${courseId} for evaluation:`, forwardError);
-                  }
-                }
-              }
-            } catch (error) {
-              console.error("Error in auto-forwarding process:", error);
-            } finally {
-              setForwardingLoading(false);
-            }
-          }
-        }
-      }
-      
       await onRefreshApplications();
-      setSelectedApplication(prev => ({
-        ...prev,
-        status: newStatus
-      }));
-      
+      handleCloseDialog();
     } catch (error) {
       console.error("Error updating application status:", error);
       alert(`Failed to update application status: ${error.response?.data?.message || error.message}`);
     } finally {
       setUpdateLoading(false);
+    }
+  };
+
+  // Forward application to department - this function references selectedCourse but needs updating
+  const forwardApplicationToDepartment = async () => {
+    if (!selectedCourse) {
+      alert("Please select a course to forward for evaluation");
+      return;
+    }
+
+    setForwardingLoading(true);
+    try {
+      const applicantId = selectedApplication.applicant?.applicantId;
+      if (!applicantId) {
+        throw new Error("Applicant ID not found");
+      }
+
+      if (!selectedApplication.applicationId && !selectedApplication.id) {
+        throw new Error("Application ID not found");
+      }
+
+      console.log("Forwarding application with data:", {
+        applicantId,
+        courseId: selectedCourse,
+        applicationId: selectedApplication.applicationId || selectedApplication.id
+      });
+      
+      const url = `${EVALUATIONS_API_URL}/forward-application/${applicantId}`;
+      const requestData = { 
+        courseId: parseInt(selectedCourse, 10),
+        applicationId: selectedApplication.applicationId || selectedApplication.id
+      };
+
+      console.log("Making POST request to:", url);
+      console.log("Request payload:", requestData);
+      
+      const response = await axios.post(url, requestData, {
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        timeout: 30000,
+      });
+      
+      console.log("Response received:", response);
+      
+      if (response.status === 200 || response.status === 201) {
+        alert(`Application successfully forwarded for evaluation`);
+        await onRefreshApplications();
+        // Refresh evaluation statuses
+        if (coursePreferences.length > 0) {
+          await fetchEvaluationStatusesForPreferences(applicantId, coursePreferences);
+        }
+        handleCloseDialog();
+      } else {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Error forwarding application:", error);
+      
+      let errorMessage = "Failed to forward application for evaluation.";
+      
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+        console.error("Error response headers:", error.response.headers);
+        
+        if (error.response.status === 500) {
+          errorMessage += " Internal server error occurred. Please check server logs for details.";
+        } else if (error.response.status === 400) {
+          errorMessage += " Invalid request data. Please check the selected course.";
+        } else if (error.response.data) {
+          if (typeof error.response.data === 'string') {
+            errorMessage += ` ${error.response.data}`;
+          } else if (error.response.data.message) {
+            errorMessage += ` ${error.response.data.message}`;
+          } else if (error.response.data.error) {
+            errorMessage += ` ${error.response.data.error}`;
+          } else {
+            errorMessage += ` Server error (${error.response.status})`;
+          }
+        } else {
+          errorMessage += ` Server error (${error.response.status})`;
+        }
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+        errorMessage += " No response from server. Please check your connection and ensure the server is running.";
+      } else {
+        console.error("Request setup error:", error.message);
+        errorMessage += ` ${error.message}`;
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setForwardingLoading(false);
+    }
+  };
+
+  // Forward all course preferences to their respective departments
+  const forwardAllPreferencesToDepartments = async () => {
+    if (!coursePreferences || coursePreferences.length === 0) {
+      alert("No course preferences found to forward");
+      return;
+    }
+
+    setForwardingLoading(true);
+    try {
+      const applicantId = selectedApplication.applicant?.applicantId;
+      if (!applicantId) {
+        throw new Error("Applicant ID not found");
+      }
+
+      if (!selectedApplication.applicationId && !selectedApplication.id) {
+        throw new Error("Application ID not found");
+      }
+
+      console.log("Forwarding all preferences for applicant:", applicantId);
+      
+      // Get courses that haven't been forwarded yet (not evaluated or pending)
+      const coursesToForward = coursePreferences.filter(pref => {
+        const evaluation = preferenceEvaluations[pref.courseId];
+        return !evaluation || evaluation.status === 'PENDING';
+      });
+
+      if (coursesToForward.length === 0) {
+        alert("All course preferences have already been forwarded for evaluation");
+        return;
+      }
+
+      const url = `${EVALUATIONS_API_URL}/forward-all-preferences/${applicantId}`;
+      const requestData = { 
+        applicationId: selectedApplication.applicationId || selectedApplication.id,
+        courseIds: coursesToForward.map(pref => parseInt(pref.courseId, 10))
+      };
+
+      console.log("Making POST request to:", url);
+      console.log("Request payload:", requestData);
+      
+      const response = await axios.post(url, requestData, {
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        timeout: 30000,
+      });
+      
+      console.log("Response received:", response);
+      
+      if (response.status === 200 || response.status === 201) {
+        const forwardedCount = coursesToForward.length;
+        alert(`Successfully forwarded ${forwardedCount} course preference${forwardedCount > 1 ? 's' : ''} for evaluation`);
+        await onRefreshApplications();
+        // Refresh evaluation statuses
+        await fetchEvaluationStatusesForPreferences(applicantId, coursePreferences);
+      } else {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Error forwarding all preferences:", error);
+      
+      let errorMessage = "Failed to forward course preferences for evaluation.";
+      
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+        
+        if (error.response.status === 500) {
+          errorMessage += " Internal server error occurred. Please check server logs for details.";
+        } else if (error.response.status === 400) {
+          errorMessage += " Invalid request data. Please check the course preferences.";
+        } else if (error.response.data) {
+          if (typeof error.response.data === 'string') {
+            errorMessage += ` ${error.response.data}`;
+          } else if (error.response.data.message) {
+            errorMessage += ` ${error.response.data.message}`;
+          } else if (error.response.data.error) {
+            errorMessage += ` ${error.response.data.error}`;
+          } else {
+            errorMessage += ` Server error (${error.response.status})`;
+          }
+        } else {
+          errorMessage += ` Server error (${error.response.status})`;
+        }
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+        errorMessage += " No response from server. Please check your connection and ensure the server is running.";
+      } else {
+        console.error("Request setup error:", error.message);
+        errorMessage += ` ${error.message}`;
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setForwardingLoading(false);
     }
   };
 
@@ -468,12 +590,28 @@ const ApplicationDetailsDialog = ({
     return `${evaluation.status} by ${evaluation.evaluatorName}\n${dateText}${evaluation.comments ? `\nComments: ${evaluation.comments}` : ''}`;
   };
 
+  // Get count of courses that can be forwarded
+  const getForwardableCoursesCount = () => {
+    return coursePreferences.filter(pref => {
+      const evaluation = preferenceEvaluations[pref.courseId];
+      return !evaluation || evaluation.status === 'PENDING';
+    }).length;
+  };
+
+  // Get courses that have already been forwarded
+  const getForwardedCoursesCount = () => {
+    return coursePreferences.filter(pref => {
+      const evaluation = preferenceEvaluations[pref.courseId];
+      return evaluation && evaluation.status !== 'PENDING';
+    }).length;
+  };
+
   // Close dialog
   const handleCloseDialog = () => {
     setSelectedApplication(null);
     setCoursePreferences([]);
     setNewStatus("");
-    setAssignmentResults(null);
+    setSelectedCourse(""); // Reset selected course
     onClose();
   };
 
@@ -486,10 +624,9 @@ const ApplicationDetailsDialog = ({
         applicantName: application.applicantName
       });
       setNewStatus(application.status);
-      setCoursePreferences([]);
       fetchApplicationDetails(application.applicationId || application.id);
     }
-  }, [application, open, fetchApplicationDetails]);
+  }, [application, open]);
 
   return (
     <Dialog 
@@ -812,11 +949,13 @@ const ApplicationDetailsDialog = ({
                         </Select>
                       </FormControl>
 
-                      {(newStatus === "APPROVED" || selectedApplication.status === "APPROVED") && (
+                      {/* Course Forwarding Section */}
+                      {coursePreferences.length > 0 && (
                         <Box>
                           <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
-                            Automatic Course Assignment
+                            Course Evaluation Forwarding
                           </Typography>
+                          
                           <Paper 
                             variant="outlined" 
                             sx={{ 
@@ -826,102 +965,79 @@ const ApplicationDetailsDialog = ({
                               borderRadius: 2
                             }}
                           >
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                              <strong>When approved:</strong> All course preferences will be automatically assigned to their respective departments and forwarded for evaluation.
-                            </Typography>
-                            {coursePreferences.length > 0 ? (
-                              <Box sx={{ mt: 2 }}>
-                                <Typography variant="body2" fontWeight="medium" color={maroon.main} sx={{ mb: 1 }}>
-                                  Courses to be assigned:
-                                </Typography>
-                                {coursePreferences
-                                  .sort((a, b) => {
-                                    const priorityMap = { "FIRST": 1, "SECOND": 2, "THIRD": 3 };
-                                    const orderA = typeof a.preferenceOrder === 'string' && isNaN(a.preferenceOrder) 
-                                      ? priorityMap[a.preferenceOrder] || 999 
-                                      : a.preferenceOrder;
-                                    const orderB = typeof b.preferenceOrder === 'string' && isNaN(b.preferenceOrder) 
-                                      ? priorityMap[b.preferenceOrder] || 999 
-                                      : b.preferenceOrder;
-                                    return orderA - orderB;
-                                  })
-                                  .map((pref) => (
-                                    <Box key={pref.courseId} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                      <Chip
-                                        size="small"
-                                        label={
-                                          pref.preferenceOrder === "FIRST" ? "1st" :
-                                          pref.preferenceOrder === "SECOND" ? "2nd" :
-                                          pref.preferenceOrder === "THIRD" ? "3rd" :
-                                          `${pref.preferenceOrder}${getOrdinalSuffix(pref.preferenceOrder)}`
-                                        }
-                                        color={
-                                          pref.preferenceOrder === "FIRST" || pref.preferenceOrder === 1 ? "primary" :
-                                          pref.preferenceOrder === "SECOND" || pref.preferenceOrder === 2 ? "secondary" : 
-                                          "default"
-                                        }
-                                        variant="outlined"
-                                        sx={{ minWidth: 40 }}
-                                      />
-                                      <Typography variant="body2">
-                                        {pref.courseName} → {pref.department}
+                            <Grid container spacing={2} alignItems="center">
+                              <Grid item xs={12} sm={8}>
+                                <Stack spacing={1}>
+                                  <Typography variant="body2" fontWeight="medium">
+                                    Forward All Course Preferences for Evaluation
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {getForwardableCoursesCount() > 0 ? (
+                                      <>
+                                        {getForwardableCoursesCount()} course{getForwardableCoursesCount() > 1 ? 's' : ''} ready to forward
+                                        {getForwardedCoursesCount() > 0 && (
+                                          <>, {getForwardedCoursesCount()} already forwarded</>
+                                        )}
+                                      </>
+                                    ) : (
+                                      "All course preferences have been forwarded"
+                                    )}
+                                  </Typography>
+                                  
+                                  {/* Show which courses will be forwarded */}
+                                  {getForwardableCoursesCount() > 0 && (
+                                    <Box sx={{ mt: 1 }}>
+                                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                        Courses to be forwarded:
                                       </Typography>
+                                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                        {coursePreferences
+                                          .filter(pref => {
+                                            const evaluation = preferenceEvaluations[pref.courseId];
+                                            return !evaluation || evaluation.status === 'PENDING';
+                                          })
+                                          .map(pref => (
+                                            <Chip
+                                              key={pref.courseId}
+                                              label={`${pref.courseName} (${pref.department})`}
+                                              size="small"
+                                              color="secondary"
+                                              variant="outlined"
+                                              sx={{ fontSize: '0.75rem' }}
+                                            />
+                                          ))}
+                                      </Stack>
                                     </Box>
-                                  ))}
-                              </Box>
-                            ) : (
-                              <Typography variant="body2" color="text.secondary">
-                                No course preferences available for assignment.
-                              </Typography>
-                            )}
-                          </Paper>
-                        </Box>
-                      )}
-
-                      {/* Assignment Results */}
-                      {assignmentResults && (
-                        <Box>
-                          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
-                            Assignment Results
-                          </Typography>
-                          <Paper 
-                            variant="outlined" 
-                            sx={{ 
-                              p: 2, 
-                              bgcolor: assignmentResults.failed.length === 0 ? alpha('#4caf50', 0.1) : alpha('#ff9800', 0.1),
-                              borderColor: assignmentResults.failed.length === 0 ? alpha('#4caf50', 0.3) : alpha('#ff9800', 0.3),
-                              borderRadius: 2
-                            }}
-                          >
-                            <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
-                              {assignmentResults.successful.length} of {assignmentResults.total} courses assigned successfully
-                            </Typography>
-                            
-                            {assignmentResults.successful.length > 0 && (
-                              <Box sx={{ mb: 2 }}>
-                                <Typography variant="body2" color="success.main" fontWeight="medium" sx={{ mb: 1 }}>
-                                  ✓ Successfully Assigned:
-                                </Typography>
-                                {assignmentResults.successful.map((result, index) => (
-                                  <Typography key={index} variant="body2" color="text.secondary" sx={{ ml: 2, mb: 0.5 }}>
-                                    • {result.courseName} ({result.department})
-                                  </Typography>
-                                ))}
-                              </Box>
-                            )}
-                            
-                            {assignmentResults.failed.length > 0 && (
-                              <Box>
-                                <Typography variant="body2" color="error.main" fontWeight="medium" sx={{ mb: 1 }}>
-                                  ✗ Failed Assignments:
-                                </Typography>
-                                {assignmentResults.failed.map((result, index) => (
-                                  <Typography key={index} variant="body2" color="text.secondary" sx={{ ml: 2, mb: 0.5 }}>
-                                    • {result.courseName} ({result.department}) - {result.error}
-                                  </Typography>
-                                ))}
-                              </Box>
-                            )}
+                                  )}
+                                </Stack>
+                              </Grid>
+                              <Grid item xs={12} sm={4}>
+                                <ActionButton 
+                                  variant="contained"
+                                  fullWidth
+                                  onClick={forwardAllPreferencesToDepartments}
+                                  disabled={forwardingLoading || getForwardableCoursesCount() === 0 || loadingPreferences || loadingEvaluations}
+                                  startIcon={forwardingLoading ? <CircularProgress size={20} /> : <SendIcon />}
+                                  sx={{ 
+                                    borderRadius: 2, 
+                                    bgcolor: gold.main,
+                                    color: gold.contrastText,
+                                    '&:hover': {
+                                      bgcolor: gold.dark,
+                                    },
+                                    '&:disabled': {
+                                      bgcolor: alpha(gold.main, 0.5),
+                                      color: alpha(gold.contrastText, 0.7),
+                                    }
+                                  }}
+                                >
+                                  {forwardingLoading ? "Forwarding..." : 
+                                   loadingPreferences || loadingEvaluations ? "Loading..." : 
+                                   getForwardableCoursesCount() === 0 ? "All Forwarded" : 
+                                   `Forward ${getForwardableCoursesCount()} Course${getForwardableCoursesCount() > 1 ? 's' : ''}`}
+                                </ActionButton>
+                              </Grid>
+                            </Grid>
                           </Paper>
                         </Box>
                       )}
@@ -956,13 +1072,7 @@ const ApplicationDetailsDialog = ({
               startIcon={updateLoading ? <CircularProgress size={20} /> : null}
               sx={{ borderRadius: 2, px: 3 }}
             >
-              {updateLoading ? (
-                forwardingLoading ? "Assigning & Forwarding..." : "Updating & Assigning..."
-              ) : (
-                newStatus === "APPROVED" && coursePreferences.length > 0 
-                  ? "Update & Auto-Assign All Courses" 
-                  : "Update Status"
-              )}
+              {updateLoading ? "Updating..." : "Update Status"}
             </ActionButton>
           </DialogActions>
         </>
