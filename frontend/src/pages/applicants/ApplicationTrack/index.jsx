@@ -261,7 +261,8 @@ const ApplicationTracking = () => {
 
       try {
         setLoading((prev) => ({ ...prev, preferences: true }));
-        const response = await api.get(`/preferences/applicant/${applicantId}`);
+        // Use the endpoint that returns evaluationStatus in the DTO
+        const response = await api.get(`/preferences/applicant/${applicantId}/with-evaluation`);
 
         // Sort preferences by priority
         const priorityOrder = {

@@ -15,10 +15,12 @@ const CoursePreferences = ({
   const getStatusColor = (status) => {
     switch(status) {
       case "ACCEPTED":
+      case "APPROVED":
         return { bg: alpha('#4caf50', 0.1), color: '#2e7d32', border: '#4caf50' };
       case "REJECTED":
         return { bg: alpha('#f44336', 0.1), color: '#d32f2f', border: '#f44336' };
       case "REVIEWED":
+      case "UNDER_REVIEW":
         return { bg: alpha('#2196f3', 0.1), color: '#1565c0', border: '#2196f3' };
       case "PENDING":
       default:
@@ -75,7 +77,8 @@ const CoursePreferences = ({
         ) : (
           <Stack spacing={2}>
             {coursePreferences.map((preference) => {
-              const status = preference.status || "PENDING";
+              // Always use evaluationStatus for status display
+              const status = preference.evaluationStatus || "PENDING";
               const statusColor = getStatusColor(status);
               
               return (
