@@ -170,8 +170,14 @@ const EvaluatorManagementPage = () => {
     setLoadingEvaluators(true);
     try {
       const response = await axios.get(`${EVALUATOR_API_URL}`);
-      // Ensure evaluators is always an array
-      setEvaluators(Array.isArray(response.data) ? response.data : []);
+      // Ensure evaluators is always an array and isAdmin is boolean based on 1/0 or true/false
+      const evaluatorsData = Array.isArray(response.data) ? response.data : [];
+      setEvaluators(
+        evaluatorsData.map(e => ({
+          ...e,
+          isAdmin: e.isAdmin === 1 || e.isAdmin === true // strictly check for 1 or true
+        }))
+      );
     } catch (error) {
       console.error("Error fetching evaluators:", error);
       setEvaluators([]); // fallback to empty array on error
