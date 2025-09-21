@@ -6,11 +6,13 @@ const API_BASE = "http://localhost:8080/api";
 
 export default function CurriculumManagement() {
   const [curriculums, setCurriculums] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [newCurriculum, setNewCurriculum] = useState({
     programName: "",
     yearStarted: "",
     description: "",
     isActive: true,
+    department: null,
   });
   const navigate = useNavigate();
 
@@ -21,10 +23,22 @@ export default function CurriculumManagement() {
       .catch(err => console.error(err));
   }, []);
 
+  // Fetch departments for dropdown
+  useEffect(() => {
+    axios.get(`${API_BASE}/departments`)
+      .then(res => setDepartments(res.data))
+      .catch(() => setDepartments([]));
+  }, []);
+
   // Add curriculum
   const handleAddCurriculum = (e) => {
     e.preventDefault();
-    axios.post(`${API_BASE}/curriculums`, newCurriculum)
+    // Only send department if selected
+    const payload = {
+      ...newCurriculum,
+      department: newCurriculum.department ? { departmentId: Number(newCurriculum.department) } : null
+    };
+    axios.post(`${API_BASE}/curriculums`, payload)
       .then(res => {
         setCurriculums([...curriculums, res.data]);
         setNewCurriculum({
@@ -32,6 +46,7 @@ export default function CurriculumManagement() {
           yearStarted: "",
           description: "",
           isActive: true,
+          department: null,
         });
       })
       .catch(err => alert("Error adding curriculum"));
@@ -75,6 +90,19 @@ export default function CurriculumManagement() {
               style={{ marginLeft: 4 }}
             />
           </label>
+          <select
+            value={newCurriculum.department || ""}
+            onChange={e => setNewCurriculum({ ...newCurriculum, department: e.target.value })}
+            required
+            style={{ flex: 1, minWidth: 160, padding: 8, borderRadius: 4, border: '1px solid #ccc' }}
+          >
+            <option value="" disabled>Select Department</option>
+            {departments.map(dep => (
+              <option key={dep.departmentId} value={dep.departmentId}>
+                {dep.departmentName}
+              </option>
+            ))}
+          </select>
           <button type="submit" style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '8px 20px', fontWeight: 600, cursor: 'pointer' }}>
             Add Curriculum
           </button>

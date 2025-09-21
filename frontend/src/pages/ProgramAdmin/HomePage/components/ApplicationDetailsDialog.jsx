@@ -42,6 +42,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import SendIcon from '@mui/icons-material/Send';
 import axios from "axios";
 import { styled } from "@mui/material/styles";
+import DialogContentText from "@mui/material/DialogContentText";
 
 const API_URL = "http://localhost:8080/api/program-admins";
 const EVALUATIONS_API_URL = "http://localhost:8080/api/evaluations";
@@ -203,8 +204,10 @@ const ApplicationDetailsDialog = ({
   const [newStatus, setNewStatus] = useState("");
   const [updateLoading, setUpdateLoading] = useState(false);
   const [forwardingLoading, setForwardingLoading] = useState(false);
-  // Added missing selectedCourse state
   const [selectedCourse, setSelectedCourse] = useState("");
+  const [showAcceptDialog, setShowAcceptDialog] = useState(false);
+  const [acceptRemarks, setAcceptRemarks] = useState("");
+  const [acceptLoading, setAcceptLoading] = useState(false);
 
   // Fetch application details including preferences and documents
   const fetchApplicationDetails = async (applicationId) => {
@@ -628,456 +631,561 @@ const ApplicationDetailsDialog = ({
     }
   }, [application, open]);
 
-  return (
-    <Dialog 
-      open={open} 
-      onClose={handleCloseDialog} 
-      maxWidth="md" 
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 2,
-          boxShadow: '0 8px 40px -12px rgba(106, 0, 0, 0.3)',
-          overflow: 'hidden',
-        }
-      }}
-      fullScreen={isMobile}
-      TransitionComponent={Grow}
-      transitionDuration={300}
-    >
-      {selectedApplication && (
-        <>
-          <DialogTitle sx={{ 
-            bgcolor: maroon.main,
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2
-          }}>
-            <StyledAvatar>
-              {getInitials(selectedApplication.applicantName)}
-            </StyledAvatar>
-            <Box>
-              <Typography variant="h6" fontWeight="bold">
-                Application Details
-              </Typography>
-              <Typography variant="body2">
-                {selectedApplication.applicantName}
-              </Typography>
-            </Box>
-          </DialogTitle>
-          <DialogContent dividers sx={{ p: 3 }}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <DetailHeader>
-                  <Typography variant="h6" color={maroon.main} gutterBottom>
-                    Application Information
-                  </Typography>
-                  <Grid container spacing={3} sx={{ mt: 0.5 }}>
-                    <Grid item xs={12} sm={6}>
-                      <Stack spacing={2}>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <PersonIcon color="primary" />
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              Applicant Name
-                            </Typography>
-                            <Typography variant="body1" fontWeight="medium">
-                              {selectedApplication.applicantName}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                        
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <EmailIcon color="primary" />
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              Email Address
-                            </Typography>
-                            <Typography variant="body1">
-                              {selectedApplication.applicant?.email || selectedApplication.email || 'N/A'}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </Stack>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Stack spacing={2}>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <AccessTimeIcon color="primary" />
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              Application Date
-                            </Typography>
-                            <Typography variant="body1">
-                              {selectedApplication.applicationDate ? 
-                                new Date(selectedApplication.applicationDate).toLocaleDateString(undefined, {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric',
-                                }) : 'N/A'}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                        
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              Current Status
-                            </Typography>
-                            <Box sx={{ mt: 0.5 }}>
-                              <StyledChip 
-                                label={selectedApplication.status} 
-                                color={getStatusChipColor(selectedApplication.status)} 
-                                variant="outlined" 
-                              />
-                            </Box>
-                          </Box>
-                        </Stack>
-                      </Stack>
-                    </Grid>
-                  </Grid>
-                </DetailHeader>
-              </Grid>
+  // Check if any course preference is approved
+  useEffect(() => {
+    if (
+      coursePreferences.some(
+        pref => preferenceEvaluations[pref.courseId]?.status === "APPROVED"
+      )
+    ) {
+      setShowAcceptDialog(true);
+    } else {
+      setShowAcceptDialog(false);
+    }
+  }, [coursePreferences, preferenceEvaluations]);
 
-              {/* Course Preferences Section */}
-              <Grid item xs={12}>
-                <InfoCard>
-                  <CardContent>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-                      <SchoolIcon sx={{ color: maroon.main }} />
-                      <Typography variant="h6" fontWeight="medium" color={maroon.main}>
-                        Course Preferences
-                      </Typography>
-                    </Stack>
-                    <Divider sx={{ mb: 2, borderColor: alpha(gold.main, 0.5) }} />
-                    {loadingPreferences ? (
-                      <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-                        <CircularProgress size={30} />
-                      </Box>
-                    ) : coursePreferences.length > 0 ? (
-                      <TableContainer component={Paper} variant="outlined" sx={{ 
-                        borderRadius: 2,
-                        boxShadow: 'none',
-                        border: `1px solid ${alpha(theme.palette.divider, 0.7)}`
-                      }}>
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <StyledTableCell>Preference</StyledTableCell>
-                              <StyledTableCell>Course</StyledTableCell>
-                              <StyledTableCell>Department</StyledTableCell>
-                              <StyledTableCell>Evaluation Status</StyledTableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {coursePreferences
-                              .sort((a, b) => {
-                                const priorityMap = { "FIRST": 1, "SECOND": 2, "THIRD": 3 };
-                                const orderA = typeof a.preferenceOrder === 'string' && isNaN(a.preferenceOrder) 
-                                  ? priorityMap[a.preferenceOrder] || 999 
-                                  : a.preferenceOrder;
-                                const orderB = typeof b.preferenceOrder === 'string' && isNaN(b.preferenceOrder) 
-                                  ? priorityMap[b.preferenceOrder] || 999 
-                                  : b.preferenceOrder;
-                                return orderA - orderB;
-                              })
-                              .map((preference) => (
-                                <StyledTableRow key={preference.id || preference.preferenceId || `pref-${Math.random()}`}>
-                                  <StyledTableCell sx={{ width: '20%' }}>
-                                    <Chip
-                                      label={
-                                        preference.preferenceOrder === "FIRST" ? "1st Choice" :
-                                        preference.preferenceOrder === "SECOND" ? "2nd Choice" :
-                                        preference.preferenceOrder === "THIRD" ? "3rd Choice" :
-                                        `${preference.preferenceOrder}${getOrdinalSuffix(preference.preferenceOrder)} Choice`
-                                      }
-                                      size="small"
-                                      color={
-                                        preference.preferenceOrder === "FIRST" || preference.preferenceOrder === 1 ? "primary" :
-                                        preference.preferenceOrder === "SECOND" || preference.preferenceOrder === 2 ? "secondary" : 
-                                        "default"
-                                      }
+  // Accept applicant handler
+  const handleAcceptApplicant = async () => {
+    setAcceptLoading(true);
+    try {
+      // Find the first approved course
+      const approvedPref = coursePreferences.find(
+        pref => preferenceEvaluations[pref.courseId]?.status === "APPROVED"
+      );
+      if (!approvedPref) {
+        alert("No approved course found.");
+        setAcceptLoading(false);
+        return;
+      }
+      const applicantId = selectedApplication.applicant?.applicantId;
+      const finalCourseId = approvedPref.courseId;
+      const remarks = acceptRemarks;
+
+      await axios.post(
+        "http://localhost:8080/api/accepted-applicants/accept",
+        null,
+        {
+          params: {
+            applicantId,
+            finalCourseId,
+            remarks,
+          },
+        }
+      );
+      alert("Applicant accepted and recorded.");
+      setShowAcceptDialog(false);
+      setAcceptRemarks("");
+      await onRefreshApplications();
+      handleCloseDialog();
+    } catch (error) {
+      alert("Failed to accept applicant.");
+    } finally {
+      setAcceptLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Dialog 
+        open={open} 
+        onClose={handleCloseDialog} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: '0 8px 40px -12px rgba(106, 0, 0, 0.3)',
+            overflow: 'hidden',
+          }
+        }}
+        fullScreen={isMobile}
+        TransitionComponent={Grow}
+        transitionDuration={300}
+      >
+        {selectedApplication && (
+          <>
+            <DialogTitle sx={{ 
+              bgcolor: maroon.main,
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2
+            }}>
+              <StyledAvatar>
+                {getInitials(selectedApplication.applicantName)}
+              </StyledAvatar>
+              <Box>
+                <Typography variant="h6" fontWeight="bold">
+                  Application Details
+                </Typography>
+                <Typography variant="body2">
+                  {selectedApplication.applicantName}
+                </Typography>
+              </Box>
+            </DialogTitle>
+            <DialogContent dividers sx={{ p: 3 }}>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <DetailHeader>
+                    <Typography variant="h6" color={maroon.main} gutterBottom>
+                      Application Information
+                    </Typography>
+                    <Grid container spacing={3} sx={{ mt: 0.5 }}>
+                      <Grid item xs={12} sm={6}>
+                        <Stack spacing={2}>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <PersonIcon color="primary" />
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">
+                                Applicant Name
+                              </Typography>
+                              <Typography variant="body1" fontWeight="medium">
+                                {selectedApplication.applicantName}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                          
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <EmailIcon color="primary" />
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">
+                                Email Address
+                              </Typography>
+                              <Typography variant="body1">
+                                {selectedApplication.applicant?.email || selectedApplication.email || 'N/A'}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </Stack>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Stack spacing={2}>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <AccessTimeIcon color="primary" />
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">
+                                Application Date
+                              </Typography>
+                              <Typography variant="body1">
+                                {selectedApplication.applicationDate ? 
+                                  new Date(selectedApplication.applicationDate).toLocaleDateString(undefined, {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                  }) : 'N/A'}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                          
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">
+                                Current Status
+                              </Typography>
+                              <Box sx={{ mt: 0.5 }}>
+                                <StyledChip 
+                                  label={selectedApplication.status} 
+                                  color={getStatusChipColor(selectedApplication.status)} 
+                                  variant="outlined" 
+                                />
+                              </Box>
+                            </Box>
+                          </Stack>
+                        </Stack>
+                      </Grid>
+                    </Grid>
+                  </DetailHeader>
+                </Grid>
+
+                {/* Course Preferences Section */}
+                <Grid item xs={12}>
+                  <InfoCard>
+                    <CardContent>
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+                        <SchoolIcon sx={{ color: maroon.main }} />
+                        <Typography variant="h6" fontWeight="medium" color={maroon.main}>
+                          Course Preferences
+                        </Typography>
+                      </Stack>
+                      <Divider sx={{ mb: 2, borderColor: alpha(gold.main, 0.5) }} />
+                      {loadingPreferences ? (
+                        <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+                          <CircularProgress size={30} />
+                        </Box>
+                      ) : coursePreferences.length > 0 ? (
+                        <TableContainer component={Paper} variant="outlined" sx={{ 
+                          borderRadius: 2,
+                          boxShadow: 'none',
+                          border: `1px solid ${alpha(theme.palette.divider, 0.7)}`
+                        }}>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow>
+                                <StyledTableCell>Preference</StyledTableCell>
+                                <StyledTableCell>Course</StyledTableCell>
+                                <StyledTableCell>Department</StyledTableCell>
+                                <StyledTableCell>Evaluation Status</StyledTableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {coursePreferences
+                                .sort((a, b) => {
+                                  const priorityMap = { "FIRST": 1, "SECOND": 2, "THIRD": 3 };
+                                  const orderA = typeof a.preferenceOrder === 'string' && isNaN(a.preferenceOrder) 
+                                    ? priorityMap[a.preferenceOrder] || 999 
+                                    : a.preferenceOrder;
+                                  const orderB = typeof b.preferenceOrder === 'string' && isNaN(b.preferenceOrder) 
+                                    ? priorityMap[b.preferenceOrder] || 999 
+                                    : b.preferenceOrder;
+                                  return orderA - orderB;
+                                })
+                                .map((preference) => (
+                                  <StyledTableRow key={preference.id || preference.preferenceId || `pref-${Math.random()}`}>
+                                    <StyledTableCell sx={{ width: '20%' }}>
+                                      <Chip
+                                        label={
+                                          preference.preferenceOrder === "FIRST" ? "1st Choice" :
+                                          preference.preferenceOrder === "SECOND" ? "2nd Choice" :
+                                          preference.preferenceOrder === "THIRD" ? "3rd Choice" :
+                                          `${preference.preferenceOrder}${getOrdinalSuffix(preference.preferenceOrder)} Choice`
+                                        }
+                                        size="small"
+                                        color={
+                                          preference.preferenceOrder === "FIRST" || preference.preferenceOrder === 1 ? "primary" :
+                                          preference.preferenceOrder === "SECOND" || preference.preferenceOrder === 2 ? "secondary" : 
+                                          "default"
+                                        }
+                                        variant="outlined"
+                                      />
+                                    </StyledTableCell>
+                                    <StyledTableCell sx={{ fontWeight: 'medium' }}>{preference.courseName}</StyledTableCell>
+                                    <StyledTableCell>{preference.department}</StyledTableCell>
+                                    <StyledTableCell>
+                                      <Tooltip 
+                                        title={getEvaluationTooltipText(preference.courseId)}
+                                        arrow
+                                        placement="top"
+                                      >
+                                        <Box sx={{ display: 'inline-block' }}>
+                                          {loadingEvaluations ? (
+                                            <CircularProgress size={20} thickness={5} />
+                                          ) : (
+                                            getEvaluationStatusChip(preference.courseId)
+                                          )
+                                          }
+                                        </Box>
+                                      </Tooltip>
+                                    </StyledTableCell>
+                                  </StyledTableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                          No course preferences found
+                        </Typography>
+                      )}
+                    </CardContent>
+                  </InfoCard>
+                </Grid>
+
+                {/* Documents Section */}
+                <Grid item xs={12}>
+                  <InfoCard>
+                    <CardContent>
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+                        <Typography variant="h6" fontWeight="medium" color={maroon.main}>
+                          Submitted Documents
+                        </Typography>
+                      </Stack>
+                      <Divider sx={{ mb: 2, borderColor: alpha(gold.main, 0.5) }} />
+                      {selectedApplication.documents && selectedApplication.documents.length > 0 ? (
+                        <TableContainer sx={{ 
+                          borderRadius: 2,
+                          border: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+                          maxHeight: 300,
+                          overflowY: 'auto'
+                        }}>
+                          <Table size="small" stickyHeader>
+                            <TableHead>
+                              <TableRow>
+                                <StyledTableCell>Document Type</StyledTableCell>
+                                <StyledTableCell>File Name</StyledTableCell>
+                                <StyledTableCell>Upload Date</StyledTableCell>
+                                <StyledTableCell align="center">Actions</StyledTableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {selectedApplication.documents.map((document) => (
+                                <StyledTableRow key={document.documentId}>
+                                  <StyledTableCell>
+                                    <Chip 
+                                      label={document.documentType} 
+                                      size="small" 
+                                      color={document.documentType === "Required" ? "secondary" : "default"}
                                       variant="outlined"
                                     />
                                   </StyledTableCell>
-                                  <StyledTableCell sx={{ fontWeight: 'medium' }}>{preference.courseName}</StyledTableCell>
-                                  <StyledTableCell>{preference.department}</StyledTableCell>
+                                  <StyledTableCell sx={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {document.fileName}
+                                  </StyledTableCell>
                                   <StyledTableCell>
-                                    <Tooltip 
-                                      title={getEvaluationTooltipText(preference.courseId)}
-                                      arrow
-                                      placement="top"
-                                    >
-                                      <Box sx={{ display: 'inline-block' }}>
-                                        {loadingEvaluations ? (
-                                          <CircularProgress size={20} thickness={5} />
-                                        ) : (
-                                          getEvaluationStatusChip(preference.courseId)
-                                        )}
-                                      </Box>
-                                    </Tooltip>
+                                    {document.uploadDate ? new Date(document.uploadDate).toLocaleDateString() : 'N/A'}
+                                  </StyledTableCell>
+                                  <StyledTableCell align="center">
+                                    <Stack direction="row" spacing={1} justifyContent="center">
+                                      <Tooltip title="Preview Document">
+                                        <IconButton 
+                                          size="small"
+                                          color="primary"
+                                          onClick={() => handlePreviewDocument(document.documentId)}
+                                          sx={{ 
+                                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                            '&:hover': {
+                                              backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                                            }
+                                          }}
+                                        >
+                                          <VisibilityIcon fontSize="small" />
+                                        </IconButton>
+                                      </Tooltip>
+                                      <Tooltip title="Download Document">
+                                        <IconButton 
+                                          size="small"
+                                          onClick={() => handleDownloadDocument(document.documentId, document.fileName)}
+                                          sx={{ 
+                                            backgroundColor: alpha(theme.palette.grey[700], 0.1),
+                                            color: theme.palette.grey[700],
+                                            '&:hover': {
+                                              backgroundColor: alpha(theme.palette.grey[700], 0.2),
+                                            }
+                                          }}
+                                        >
+                                          <DownloadIcon fontSize="small" />
+                                        </IconButton>
+                                      </Tooltip>
+                                    </Stack>
                                   </StyledTableCell>
                                 </StyledTableRow>
                               ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                        No course preferences found
-                      </Typography>
-                    )}
-                  </CardContent>
-                </InfoCard>
-              </Grid>
-
-              {/* Documents Section */}
-              <Grid item xs={12}>
-                <InfoCard>
-                  <CardContent>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-                      <Typography variant="h6" fontWeight="medium" color={maroon.main}>
-                        Submitted Documents
-                      </Typography>
-                    </Stack>
-                    <Divider sx={{ mb: 2, borderColor: alpha(gold.main, 0.5) }} />
-                    {selectedApplication.documents && selectedApplication.documents.length > 0 ? (
-                      <TableContainer sx={{ 
-                        borderRadius: 2,
-                        border: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
-                        maxHeight: 300,
-                        overflowY: 'auto'
-                      }}>
-                        <Table size="small" stickyHeader>
-                          <TableHead>
-                            <TableRow>
-                              <StyledTableCell>Document Type</StyledTableCell>
-                              <StyledTableCell>File Name</StyledTableCell>
-                              <StyledTableCell>Upload Date</StyledTableCell>
-                              <StyledTableCell align="center">Actions</StyledTableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {selectedApplication.documents.map((document) => (
-                              <StyledTableRow key={document.documentId}>
-                                <StyledTableCell>
-                                  <Chip 
-                                    label={document.documentType} 
-                                    size="small" 
-                                    color={document.documentType === "Required" ? "secondary" : "default"}
-                                    variant="outlined"
-                                  />
-                                </StyledTableCell>
-                                <StyledTableCell sx={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {document.fileName}
-                                </StyledTableCell>
-                                <StyledTableCell>
-                                  {document.uploadDate ? new Date(document.uploadDate).toLocaleDateString() : 'N/A'}
-                                </StyledTableCell>
-                                <StyledTableCell align="center">
-                                  <Stack direction="row" spacing={1} justifyContent="center">
-                                    <Tooltip title="Preview Document">
-                                      <IconButton 
-                                        size="small"
-                                        color="primary"
-                                        onClick={() => handlePreviewDocument(document.documentId)}
-                                        sx={{ 
-                                          backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                          '&:hover': {
-                                            backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                                          }
-                                        }}
-                                      >
-                                        <VisibilityIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Download Document">
-                                      <IconButton 
-                                        size="small"
-                                        onClick={() => handleDownloadDocument(document.documentId, document.fileName)}
-                                        sx={{ 
-                                          backgroundColor: alpha(theme.palette.grey[700], 0.1),
-                                          color: theme.palette.grey[700],
-                                          '&:hover': {
-                                            backgroundColor: alpha(theme.palette.grey[700], 0.2),
-                                          }
-                                        }}
-                                      >
-                                        <DownloadIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
-                                  </Stack>
-                                </StyledTableCell>
-                              </StyledTableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    ) : (
-                      <Box sx={{ py: 3, textAlign: 'center', bgcolor: alpha(theme.palette.background.default, 0.5), borderRadius: 2 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          No documents found
-                        </Typography>
-                      </Box>
-                    )}
-                  </CardContent>
-                </InfoCard>
-              </Grid>
-
-              {/* Status Update Section */}
-              <Grid item xs={12}>
-                <InfoCard>
-                  <CardContent>
-                    <Typography variant="h6" fontWeight="medium" color={maroon.main} gutterBottom>
-                      Update Application Status
-                    </Typography>
-                    <Divider sx={{ mb: 3, borderColor: alpha(gold.main, 0.5) }} />
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                      <FormControl fullWidth variant="outlined">
-                        <InputLabel>Status</InputLabel>
-                        <Select
-                          value={newStatus}
-                          label="Status"
-                          onChange={(e) => setNewStatus(e.target.value)}
-                        >
-                          <MenuItem value="PENDING">PENDING</MenuItem>
-                          <MenuItem value="APPROVED">APPROVED</MenuItem>
-                          <MenuItem value="REJECTED">REJECTED</MenuItem>
-                          <MenuItem value="WAITLISTED">WAITLISTED</MenuItem>
-                          <MenuItem value="UNDER_REVIEW">UNDER_REVIEW</MenuItem>
-                        </Select>
-                      </FormControl>
-
-                      {/* Course Forwarding Section */}
-                      {coursePreferences.length > 0 && (
-                        <Box>
-                          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
-                            Course Evaluation Forwarding
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      ) : (
+                        <Box sx={{ py: 3, textAlign: 'center', bgcolor: alpha(theme.palette.background.default, 0.5), borderRadius: 2 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            No documents found
                           </Typography>
-                          
-                          <Paper 
-                            variant="outlined" 
-                            sx={{ 
-                              p: 2, 
-                              bgcolor: alpha(gold.light, 0.1),
-                              borderColor: alpha(gold.main, 0.3),
-                              borderRadius: 2
-                            }}
-                          >
-                            <Grid container spacing={2} alignItems="center">
-                              <Grid item xs={12} sm={8}>
-                                <Stack spacing={1}>
-                                  <Typography variant="body2" fontWeight="medium">
-                                    Forward All Course Preferences for Evaluation
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    {getForwardableCoursesCount() > 0 ? (
-                                      <>
-                                        {getForwardableCoursesCount()} course{getForwardableCoursesCount() > 1 ? 's' : ''} ready to forward
-                                        {getForwardedCoursesCount() > 0 && (
-                                          <>, {getForwardedCoursesCount()} already forwarded</>
-                                        )}
-                                      </>
-                                    ) : (
-                                      "All course preferences have been forwarded"
-                                    )}
-                                  </Typography>
-                                  
-                                  {/* Show which courses will be forwarded */}
-                                  {getForwardableCoursesCount() > 0 && (
-                                    <Box sx={{ mt: 1 }}>
-                                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                                        Courses to be forwarded:
-                                      </Typography>
-                                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                                        {coursePreferences
-                                          .filter(pref => {
-                                            const evaluation = preferenceEvaluations[pref.courseId];
-                                            return !evaluation || evaluation.status === 'PENDING';
-                                          })
-                                          .map(pref => (
-                                            <Chip
-                                              key={pref.courseId}
-                                              label={`${pref.courseName} (${pref.department})`}
-                                              size="small"
-                                              color="secondary"
-                                              variant="outlined"
-                                              sx={{ fontSize: '0.75rem' }}
-                                            />
-                                          ))}
-                                      </Stack>
-                                    </Box>
-                                  )}
-                                </Stack>
-                              </Grid>
-                              <Grid item xs={12} sm={4}>
-                                <ActionButton 
-                                  variant="contained"
-                                  fullWidth
-                                  onClick={forwardAllPreferencesToDepartments}
-                                  disabled={forwardingLoading || getForwardableCoursesCount() === 0 || loadingPreferences || loadingEvaluations}
-                                  startIcon={forwardingLoading ? <CircularProgress size={20} /> : <SendIcon />}
-                                  sx={{ 
-                                    borderRadius: 2, 
-                                    bgcolor: gold.main,
-                                    color: gold.contrastText,
-                                    '&:hover': {
-                                      bgcolor: gold.dark,
-                                    },
-                                    '&:disabled': {
-                                      bgcolor: alpha(gold.main, 0.5),
-                                      color: alpha(gold.contrastText, 0.7),
-                                    }
-                                  }}
-                                >
-                                  {forwardingLoading ? "Forwarding..." : 
-                                   loadingPreferences || loadingEvaluations ? "Loading..." : 
-                                   getForwardableCoursesCount() === 0 ? "All Forwarded" : 
-                                   `Forward ${getForwardableCoursesCount()} Course${getForwardableCoursesCount() > 1 ? 's' : ''}`}
-                                </ActionButton>
-                              </Grid>
-                            </Grid>
-                          </Paper>
                         </Box>
                       )}
-                    </Box>
-                  </CardContent>
-                </InfoCard>
+                    </CardContent>
+                  </InfoCard>
+                </Grid>
+
+                {/* Status Update Section */}
+                <Grid item xs={12}>
+                  <InfoCard>
+                    <CardContent>
+                      <Typography variant="h6" fontWeight="medium" color={maroon.main} gutterBottom>
+                        Update Application Status
+                      </Typography>
+                      <Divider sx={{ mb: 3, borderColor: alpha(gold.main, 0.5) }} />
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                        <FormControl fullWidth variant="outlined">
+                          <InputLabel>Status</InputLabel>
+                          <Select
+                            value={newStatus}
+                            label="Status"
+                            onChange={(e) => setNewStatus(e.target.value)}
+                          >
+                            <MenuItem value="PENDING">PENDING</MenuItem>
+                            <MenuItem value="APPROVED">APPROVED</MenuItem>
+                            <MenuItem value="REJECTED">REJECTED</MenuItem>
+                            <MenuItem value="WAITLISTED">WAITLISTED</MenuItem>
+                            <MenuItem value="UNDER_REVIEW">UNDER_REVIEW</MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        {/* Course Forwarding Section */}
+                        {coursePreferences.length > 0 && (
+                          <Box>
+                            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+                              Course Evaluation Forwarding
+                            </Typography>
+                            
+                            <Paper 
+                              variant="outlined" 
+                              sx={{ 
+                                p: 2, 
+                                bgcolor: alpha(gold.light, 0.1),
+                                borderColor: alpha(gold.main, 0.3),
+                                borderRadius: 2
+                              }}
+                            >
+                              <Grid container spacing={2} alignItems="center">
+                                <Grid item xs={12} sm={8}>
+                                  <Stack spacing={1}>
+                                    <Typography variant="body2" fontWeight="medium">
+                                      Forward All Course Preferences for Evaluation
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      {getForwardableCoursesCount() > 0 ? (
+                                        <>
+                                          {getForwardableCoursesCount()} course{getForwardableCoursesCount() > 1 ? 's' : ''} ready to forward
+                                          {getForwardedCoursesCount() > 0 && (
+                                            <>, {getForwardedCoursesCount()} already forwarded</>
+                                          )}
+                                        </>
+                                      ) : (
+                                        "All course preferences have been forwarded"
+                                      )}
+                                    </Typography>
+                                    
+                                    {/* Show which courses will be forwarded */}
+                                    {getForwardableCoursesCount() > 0 && (
+                                      <Box sx={{ mt: 1 }}>
+                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                          Courses to be forwarded:
+                                        </Typography>
+                                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                          {coursePreferences
+                                            .filter(pref => {
+                                              const evaluation = preferenceEvaluations[pref.courseId];
+                                              return !evaluation || evaluation.status === 'PENDING';
+                                            })
+                                            .map(pref => (
+                                              <Chip
+                                                key={pref.courseId}
+                                                label={`${pref.courseName} (${pref.department})`}
+                                                size="small"
+                                                color="secondary"
+                                                variant="outlined"
+                                                sx={{ fontSize: '0.75rem' }}
+                                              />
+                                            ))}
+                                        </Stack>
+                                      </Box>
+                                    )}
+                                  </Stack>
+                                </Grid>
+                                <Grid item xs={12} sm={4}>
+                                  <ActionButton 
+                                    variant="contained"
+                                    fullWidth
+                                    onClick={forwardAllPreferencesToDepartments}
+                                    disabled={forwardingLoading || getForwardableCoursesCount() === 0 || loadingPreferences || loadingEvaluations}
+                                    startIcon={forwardingLoading ? <CircularProgress size={20} /> : <SendIcon />}
+                                    sx={{ 
+                                      borderRadius: 2, 
+                                      bgcolor: gold.main,
+                                      color: gold.contrastText,
+                                      '&:hover': {
+                                        bgcolor: gold.dark,
+                                      },
+                                      '&:disabled': {
+                                        bgcolor: alpha(gold.main, 0.5),
+                                        color: alpha(gold.contrastText, 0.7),
+                                      }
+                                    }}
+                                  >
+                                    {forwardingLoading ? "Forwarding..." : 
+                                     loadingPreferences || loadingEvaluations ? "Loading..." : 
+                                     getForwardableCoursesCount() === 0 ? "All Forwarded" : 
+                                     `Forward ${getForwardableCoursesCount()} Course${getForwardableCoursesCount() > 1 ? 's' : ''}`}
+                                  </ActionButton>
+                                </Grid>
+                              </Grid>
+                            </Paper>
+                          </Box>
+                        )}
+                      </Box>
+                    </CardContent>
+                  </InfoCard>
+                </Grid>
               </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions sx={{ p: 2.5, bgcolor: alpha(gold.light, 0.2) }}>
-            <Button 
-              onClick={handleCloseDialog} 
-              variant="outlined"
-              sx={{ 
-                borderRadius: 2, 
-                textTransform: 'none', 
-                px: 3, 
-                borderColor: maroon.main,
-                color: maroon.main,
-                '&:hover': {
-                  borderColor: maroon.dark,
-                  backgroundColor: alpha(maroon.light, 0.1),
-                }
-              }}
-            >
-              Cancel
-            </Button>
-            <ActionButton 
-              variant="contained"
-              onClick={updateApplicationStatus}
-              disabled={updateLoading || newStatus === selectedApplication.status}
-              startIcon={updateLoading ? <CircularProgress size={20} /> : null}
-              sx={{ borderRadius: 2, px: 3 }}
-            >
-              {updateLoading ? "Updating..." : "Update Status"}
-            </ActionButton>
-          </DialogActions>
-        </>
-      )}
-    </Dialog>
+            </DialogContent>
+            <DialogActions sx={{ p: 2.5, bgcolor: alpha(gold.light, 0.2) }}>
+              <Button 
+                onClick={handleCloseDialog} 
+                variant="outlined"
+                sx={{ 
+                  borderRadius: 2, 
+                  textTransform: 'none', 
+                  px: 3, 
+                  borderColor: maroon.main,
+                  color: maroon.main,
+                  '&:hover': {
+                    borderColor: maroon.dark,
+                    backgroundColor: alpha(maroon.light, 0.1),
+                  }
+                }}
+              >
+                Cancel
+              </Button>
+              <ActionButton 
+                variant="contained"
+                onClick={updateApplicationStatus}
+                disabled={updateLoading || newStatus === selectedApplication.status}
+                startIcon={updateLoading ? <CircularProgress size={20} /> : null}
+                sx={{ borderRadius: 2, px: 3 }}
+              >
+                {updateLoading ? "Updating..." : "Update Status"}
+              </ActionButton>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={showAcceptDialog}
+        onClose={() => setShowAcceptDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Accept Applicant</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {(() => {
+              const approvedPref = coursePreferences.find(
+                pref => preferenceEvaluations[pref.courseId]?.status === "APPROVED"
+              );
+              const courseName = approvedPref ? approvedPref.courseName : "the approved course";
+              return (
+                <>
+                  Applicant has been evaluated and approved for <b>{courseName}</b>. You may now accept this applicant.
+                </>
+              );
+            })()}
+          </DialogContentText>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              Remarks (optional):
+            </Typography>
+            <textarea
+              value={acceptRemarks}
+              onChange={e => setAcceptRemarks(e.target.value)}
+              rows={3}
+              style={{ width: "100%", borderRadius: 4, border: "1px solid #ccc", padding: 8 }}
+              placeholder="Enter remarks for acceptance..."
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowAcceptDialog(false)} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAcceptApplicant}
+            variant="contained"
+            color="primary"
+            disabled={acceptLoading}
+          >
+            {acceptLoading ? "Accepting..." : "Accept Applicant"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 

@@ -7,36 +7,20 @@ const API_BASE = "http://localhost:8080/api";
 export default function CurriculumRouter() {
   const { curriculumId } = useParams();
   const [curriculum, setCurriculum] = useState(null);
-  const [semesters, setSemesters] = useState([]);
   const [newSemester, setNewSemester] = useState({
     yearLevel: "",
     semesterNumber: "",
     description: "",
   });
-  const [subjects, setSubjects] = useState({});
   const [newSubject, setNewSubject] = useState({});
   const [selectedSemesterId, setSelectedSemesterId] = useState(null);
 
-  // Fetch curriculum details
+  // Fetch curriculum details (with semesters and subjects organized correctly)
   useEffect(() => {
     axios.get(`${API_BASE}/curriculums/${curriculumId}`)
       .then(res => setCurriculum(res.data))
       .catch(() => setCurriculum(null));
   }, [curriculumId]);
-
-  // Fetch semesters for this curriculum
-  useEffect(() => {
-    axios.get(`${API_BASE}/semesters?curriculumId=${curriculumId}`)
-      .then(res => setSemesters(res.data))
-      .catch(() => setSemesters([]));
-  }, [curriculumId]);
-
-  // Fetch subjects for a semester
-  const fetchSubjects = (semesterId) => {
-    axios.get(`${API_BASE}/subjects?semesterId=${semesterId}`)
-      .then(res => setSubjects(prev => ({ ...prev, [semesterId]: res.data })))
-      .catch(() => setSubjects(prev => ({ ...prev, [semesterId]: [] })));
-  };
 
   // Add semester
   const handleAddSemester = (e) => {
@@ -45,7 +29,10 @@ export default function CurriculumRouter() {
       ...newSemester,
       curriculum: { id: Number(curriculumId) }
     }).then(res => {
-      setSemesters([...semesters, res.data]);
+      setCurriculum(prev => ({
+        ...prev,
+        semesters: [...(prev.semesters || []), { ...res.data, subjects: [] }]
+      }));
       setNewSemester({ yearLevel: "", semesterNumber: "", description: "" });
     }).catch(() => alert("Error adding semester"));
   };
@@ -57,9 +44,13 @@ export default function CurriculumRouter() {
       ...newSubject,
       semester: { id: selectedSemesterId }
     }).then(res => {
-      setSubjects(prev => ({
+      setCurriculum(prev => ({
         ...prev,
-        [selectedSemesterId]: [...(prev[selectedSemesterId] || []), res.data]
+        semesters: prev.semesters.map(sem =>
+          sem.id === selectedSemesterId
+            ? { ...sem, subjects: [...(sem.subjects || []), res.data] }
+            : sem
+        )
       }));
       setNewSubject({});
     }).catch(() => alert("Error adding subject"));
@@ -103,7 +94,7 @@ export default function CurriculumRouter() {
       </div>
       <div style={{ background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px #e0e0e0', padding: 24 }}>
         <h3 style={{ marginBottom: 16, color: '#333' }}>Semesters</h3>
-        {semesters.length === 0 && (
+        {(!curriculum || !curriculum.semesters || curriculum.semesters.length === 0) && (
           <div style={{ color: '#888', padding: 24, textAlign: 'center' }}>No semesters found.</div>
         )}
         <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24 }}>
@@ -116,7 +107,7 @@ export default function CurriculumRouter() {
             </tr>
           </thead>
           <tbody>
-            {semesters.map(s => (
+            {curriculum && curriculum.semesters && curriculum.semesters.map(s => (
               <React.Fragment key={s.id}>
                 <tr style={{ borderBottom: '1px solid #eee' }}>
                   <td style={{ padding: 10 }}>{s.yearLevel}</td>
@@ -134,10 +125,7 @@ export default function CurriculumRouter() {
                         cursor: 'pointer',
                         textDecoration: 'none',
                       }}
-                      onClick={() => {
-                        setSelectedSemesterId(s.id);
-                        fetchSubjects(s.id);
-                      }}
+                      onClick={() => setSelectedSemesterId(selectedSemesterId === s.id ? null : s.id)}
                     >
                       {selectedSemesterId === s.id ? 'Hide Subjects' : 'View Subjects'}
                     </button>
@@ -219,12 +207,12 @@ export default function CurriculumRouter() {
                           </tr>
                         </thead>
                         <tbody>
-                          {(subjects[s.id] || []).length === 0 && (
+                          {(s.subjects || []).length === 0 && (
                             <tr>
                               <td colSpan={7} style={{ textAlign: 'center', color: '#888', padding: 16 }}>No subjects found.</td>
                             </tr>
                           )}
-                          {(subjects[s.id] || []).map(sub => (
+                          {(s.subjects || []).map(sub => (
                             <tr key={sub.id} style={{ borderBottom: '1px solid #eee' }}>
                               <td style={{ padding: 8 }}>{sub.subjectCode}</td>
                               <td style={{ padding: 8 }}>{sub.descriptiveTitle}</td>
@@ -248,3 +236,4 @@ export default function CurriculumRouter() {
     </div>
   );
 }
+                    

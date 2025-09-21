@@ -22,6 +22,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import MainLayout from "../../../templates/MainLayout";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
+import VerifiedIcon from "@mui/icons-material/Verified"; // Add an icon for accreditations
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { useNavigate } from "react-router-dom";
 
@@ -389,6 +390,26 @@ const EvaluatorHomePage = () => {
                 </Typography>
               </Box>
             )}
+          </Paper>
+        </Grid>
+
+        {/* Accreditations Section */}
+        <Grid item xs={12}>
+          <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <VerifiedIcon color="success" />
+              <Typography variant="h6" sx={{ flex: 1 }}>
+                Accreditations (Accepted Applicants)
+              </Typography>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => navigate("/evaluator/accreditations")}
+                sx={{ borderRadius: 2 }}
+              >
+                View Accreditations
+              </Button>
+            </Box>
           </Paper>
         </Grid>
       </Grid>

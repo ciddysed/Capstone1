@@ -27,6 +27,9 @@ import EvaluatorResetPasswordPage from "../pages/evaluators/ResetPasswordPage";
 import ApplicantResetPasswordPage from "../pages/applicants/ApplicantResetPasswordPage";
 import CurriculumManagement from "../pages/admin/ApplicantDetailsPage/curriculumManagement";
 import CurriculumRouter from "../pages/admin/ApplicantDetailsPage/curriculumRouter";
+import Accreditations from "../pages/evaluators/Accreditations/Accreditations";
+import GradedAccreditation from "../pages/evaluators/Accreditations/GradedAccreditation";
+import AccreditedAccounts from "../pages/evaluators/Accreditations/AccreditedAccounts";
 
 const AppRoutes = () => {
   return useRoutes([
@@ -128,6 +131,30 @@ const AppRoutes = () => {
       element: (
         <ProtectedRoute>
           <EvaluatorHomePage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/evaluator/accreditations",
+      element: (
+        <ProtectedRoute>
+          <Accreditations />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/evaluator/graded-accreditation",
+      element: (
+        <ProtectedRoute>
+          <GradedAccreditation />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/evaluator/accredited-accounts",
+      element: (
+        <ProtectedRoute>
+          <AccreditedAccounts />
         </ProtectedRoute>
       ),
     },
