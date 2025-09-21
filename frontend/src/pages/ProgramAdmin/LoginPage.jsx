@@ -57,19 +57,7 @@ const ProgramAdminLoginPage = () => {
     setError('');
 
     try {
-      // For development/testing - you can replace this with actual API call
-      if (email && password) {
-        // Mock successful login
-        localStorage.setItem('userType', 'program-admin');
-        localStorage.setItem('programAdminId', 'admin-1');
-        navigate('/program-admin/program-management');
-      } else {
-        throw new Error('Please fill in all fields');
-      }
-
-      /* 
-      // Uncomment and modify this section for actual API integration
-      const response = await fetch('/api/program-admin/login', {
+      const response = await fetch('http://localhost:8080/api/program-admins/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,11 +70,13 @@ const ProgramAdminLoginPage = () => {
       if (response.ok && data.adminId) {
         localStorage.setItem('userType', 'program-admin');
         localStorage.setItem('programAdminId', data.adminId);
+        localStorage.setItem('programAdminName', data.name);
+        localStorage.setItem('programAdminEmail', data.email);
         navigate('/program-admin/program-management');
       } else {
-        throw new Error('Admin ID missing in response');
+        const errorMessage = typeof data === 'string' ? data : 'Invalid email or password';
+        throw new Error(errorMessage);
       }
-      */
     } catch (error) {
       console.error('Login error:', error.message);
       handleError(

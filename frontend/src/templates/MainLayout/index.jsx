@@ -43,23 +43,22 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
   const handleClosePopover = () => {
     setAnchorEl(null);
   };
-  const handleLogout = () => {
-    localStorage.removeItem("applicantId");
-    localStorage.removeItem("evaluatorId");
-    localStorage.removeItem("userType");
-
-    // Redirect AFTER a brief delay or state update
-    setTimeout(() => {
-      if (userType === "applicant") {
-        navigate("/login", { replace: true });
-      } else if (userType === "evaluator") {
-        navigate("/evaluator/login", { replace: true });
-      } else if (userType === "admin") {
-        navigate("/admin/login", { replace: true });
-      } else {
-        navigate("/login", { replace: true });
-      }
-    }, 0);
+    const onLogout = () => {
+    const userType = localStorage.getItem("userType");
+    
+    // Clear all localStorage data
+    localStorage.clear();
+    
+    // Redirect based on user type
+    if (userType === "evaluator") {
+      navigate("/evaluator/login");
+    } else if (userType === "program-admin") {
+      navigate("/program-admin/login");
+    } else if (userType === "system-admin") {
+      navigate("/system-admin/login");
+    } else {
+      navigate("/login");
+    }
   };
 
   const open = Boolean(anchorEl);
@@ -187,7 +186,7 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
         <Divider sx={{ borderColor: `rgba(128, 0, 0, 0.2)` }} />
 
         <MenuItem
-          onClick={handleLogout}
+          onClick={onLogout}
           sx={{
             py: 1.5,
             "&:hover": {

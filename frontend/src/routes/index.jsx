@@ -19,6 +19,8 @@ import EvaluatorHomePage from "../pages/evaluators/HomePage";
 import EvaluatorsLoginPage from "../pages/evaluators/LoginPage";
 import ViewApplicantPage from "../pages/evaluators/ViewApplicantPage";
 import ProtectedRoute from "./ProtectedRoutes";
+import ProgramAdminProtectedRoute from "./ProgramAdminProtectedRoutes";
+import SystemAdminProtectedRoute from "./SystemAdminProtectedRoutes";
 import Redirecter from "./Redirecter";
 import ApplicantForgotPasswordPage from "../pages/applicants/ForgotPasswordPage"; 
 import EvaluatorResetPasswordPage from "../pages/evaluators/ResetPasswordPage";
@@ -138,9 +140,9 @@ const AppRoutes = () => {
     {
       path: "/program-admin/homepage",
       element: (
-        <ProtectedRoute>
+        <ProgramAdminProtectedRoute>
           <ProgramAdminHomePage />
-        </ProtectedRoute>
+        </ProgramAdminProtectedRoute>
       ),
     },
 
@@ -152,36 +154,36 @@ const AppRoutes = () => {
     {
       path: "/system-admin/homepage",
       element: (
-        <ProtectedRoute>
+        <SystemAdminProtectedRoute>
           <ProgramAdminHomePage />
-        </ProtectedRoute>
+        </SystemAdminProtectedRoute>
       ),
     },
 
     {
       path: "/system-admin/evaluator-management",
       element: (
-        <ProtectedRoute>
+        <SystemAdminProtectedRoute>
           <EvaluatorManagementPage />
-        </ProtectedRoute>
+        </SystemAdminProtectedRoute>
       ),
     },
 
     {
       path: "/program-admin/program-management",
       element: (
-        <ProtectedRoute>
+        <ProgramAdminProtectedRoute>
           <ProgramAdminHomePage />
-        </ProtectedRoute>
+        </ProgramAdminProtectedRoute>
       ),
     },
 
      {
       path: "/system-admin/course-management",
       element: (
-        <ProtectedRoute>
+        <SystemAdminProtectedRoute>
           <ProgramAdminHomePage />
-        </ProtectedRoute>
+        </SystemAdminProtectedRoute>
       ),
     },
     {
