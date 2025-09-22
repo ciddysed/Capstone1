@@ -17,17 +17,86 @@ import {
   Select,
   MenuItem,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  Card,
+  CardContent,
+  Grow,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
+import { styled } from "@mui/material/styles";
+import SchoolIcon from '@mui/icons-material/School';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 const API_URL = "http://localhost:8080/api/accepted-applicants";
 const EVALUATOR_API = "http://localhost:8080/api/evaluators";
 
-const Accreditations = () => {
+// Custom maroon and gold color palette
+const maroon = {
+  light: '#8D323C',
+  main: '#6A0000',
+  dark: '#450000',
+  contrastText: '#FFFFFF',
+};
+
+const gold = {
+  light: '#FFF0B9',
+  main: '#FFC72C',
+  dark: '#D4A500',
+  contrastText: '#000000',
+};
+
+// Styled components
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  fontWeight: 500,
+  '&.MuiTableCell-head': {
+    backgroundColor: maroon.main,
+    color: maroon.contrastText,
+    fontSize: 14,
+    fontWeight: 600,
+  },
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  '&:nth-of-type(odd)': {
+    backgroundColor: alpha(gold.light, 0.15),
+  },
+  '&:hover': {
+    backgroundColor: alpha(gold.light, 0.3),
+    transition: 'background-color 0.2s ease',
+  },
+  '&:last-child td, &:last-child th': {
+    border: 0,
+  },
+}));
+
+const InfoCard = styled(Card)(({ theme }) => ({
+  height: '100%',
+  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
+  borderRadius: theme.shape.borderRadius * 1.5,
+  transition: 'box-shadow 0.3s ease',
+  '&:hover': {
+    boxShadow: '0 4px 20px rgba(106, 0, 0, 0.15)',
+  },
+  borderTop: `3px solid ${maroon.main}`,
+}));
+
+const ActionButton = styled(Button)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius * 1.5,
+  textTransform: 'none',
+  fontWeight: 600,
+  boxShadow: 'none',
+  backgroundColor: maroon.main,
+  '&:hover': {
+    backgroundColor: maroon.dark,
+    boxShadow: '0 4px 12px rgba(106, 0, 0, 0.25)',
+  },
+}));
+
+const Accreditations = ({ onNavigateToGraded }) => {
   const theme = useTheme();
   const evaluatorId = localStorage.getItem("evaluatorId");
   const [acceptedApplicants, setAcceptedApplicants] = useState([]);
@@ -39,7 +108,7 @@ const Accreditations = () => {
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [curriculums, setCurriculums] = useState([]);
   const [selectedCurriculumId, setSelectedCurriculumId] = useState("");
-  const navigate = useNavigate();
+  const [accreditLoading, setAccreditLoading] = useState(false);
 
   useEffect(() => {
     // Fetch evaluator department
@@ -126,45 +195,78 @@ const Accreditations = () => {
   };
 
   const handleConfirmAccredit = async () => {
-    setConfirmOpen(false);
-    if (selectedApplicant && selectedCurriculumId) {
-      try {
-        const applicantId = selectedApplicant.applicant?.applicantId;
-        const params = new URLSearchParams({ curriculumId: selectedCurriculumId });
-        const url = `http://localhost:8080/api/applicants/${applicantId}/create-curriculum-record?${params.toString()}`;
-        const response = await fetch(url, { method: "POST" });
-        if (!response.ok) {
-          const errorText = await response.text();
-          alert(`Failed to create curriculum record: ${response.status} ${errorText}`);
-        }
-      } catch (err) {
-        alert("Network error while creating curriculum record.");
+    if (!selectedApplicant || !selectedCurriculumId) {
+      alert("Please select a curriculum before proceeding.");
+      return;
+    }
+
+    setAccreditLoading(true);
+    
+    try {
+      const applicantId = selectedApplicant.applicant?.applicantId;
+      const params = new URLSearchParams({ curriculumId: selectedCurriculumId });
+      const url = `http://localhost:8080/api/applicants/${applicantId}/create-curriculum-record?${params.toString()}`;
+      
+      const response = await fetch(url, { method: "POST" });
+      
+      if (response.ok) {
+        // Success - navigate to graded accreditation using the callback
+        onNavigateToGraded(selectedApplicant.applicant?.applicantId, selectedCurriculumId);
+      } else {
+        const errorText = await response.text();
+        alert(`Failed to create curriculum record: ${response.status} ${errorText}`);
       }
-      navigate("/evaluator/graded-accreditation", {
-        state: {
-          applicantId: selectedApplicant.applicant?.applicantId,
-          curriculumId: selectedCurriculumId,
-        },
-      });
-    } else {
-      alert("Please select a curriculum.");
+    } catch (err) {
+      console.error("Error creating curriculum record:", err);
+      alert("Network error while creating curriculum record. Please try again.");
+    } finally {
+      setAccreditLoading(false);
+      setConfirmOpen(false);
     }
   };
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
-        Accepted Applicants (Accreditations)
-      </Typography>
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="body2" sx={{ mb: 1 }}>
+    <Box sx={{ p: 3 }}>
+      {/* Header */}
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
+        <SchoolIcon sx={{ color: maroon.main, fontSize: 32 }} />
+        <Typography variant="h5" fontWeight="bold" color={maroon.dark}>
+          Start Accreditation Process
+        </Typography>
+      </Stack>
+
+      {/* Info Card */}
+      <InfoCard sx={{ mb: 3 }}>
+        <CardContent>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <PersonAddIcon sx={{ color: gold.main, fontSize: 24 }} />
+            <Box>
+              <Typography variant="h6" fontWeight="bold" color={maroon.main}>
+                Ready for Accreditation
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Select accepted applicants from your department to begin the accreditation process
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </InfoCard>
+
+      {/* Course Filter */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
           Filter by Course:
         </Typography>
         <Select
           value={selectedCourse}
           onChange={e => setSelectedCourse(e.target.value)}
           displayEmpty
-          sx={{ minWidth: 220 }}
+          sx={{ 
+            minWidth: 220,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+            }
+          }}
         >
           <MenuItem value="">All Courses</MenuItem>
           {courses.map(course => (
@@ -174,117 +276,186 @@ const Accreditations = () => {
           ))}
         </Select>
       </Box>
-      <Paper sx={{ mt: 2, p: 2, borderRadius: 2 }}>
-        {loading ? (
-          <Box sx={{ textAlign: "center", py: 6 }}>
-            <CircularProgress />
-            <Typography sx={{ mt: 2 }}>
-              Loading accepted applicants...
-            </Typography>
-          </Box>
-        ) : displayedApplicants.length > 0 ? (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Applicant Name</TableCell>
-                <TableCell>Course</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Acceptance Date</TableCell>
-                <TableCell>Remarks</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {displayedApplicants.map(app => (
-                <TableRow key={app.acceptedApplicantId}>
-                  <TableCell>
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Avatar sx={{ bgcolor: "primary.main" }}>
-                        {app.applicant?.firstName?.charAt(0)}
-                      </Avatar>
-                      <Typography>
-                        {`${app.applicant?.firstName || ""} ${app.applicant?.lastName || ""}`}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>{app.finalCourse?.courseName}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={app.status}
-                      color={
-                        app.status === "ACCEPTED"
-                          ? "success"
-                          : app.status === "ENROLLED"
-                          ? "info"
-                          : "error"
-                      }
-                      variant="outlined"
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {app.acceptanceDate
-                      ? new Date(app.acceptanceDate).toLocaleDateString()
-                      : "-"}
-                  </TableCell>
-                  <TableCell>{app.remarks || "-"}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                      onClick={() => handleAccreditClick(app)}
-                    >
-                      Accredit
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <Typography sx={{ py: 4, textAlign: "center" }}>
-            No accepted applicants found for your department.
+
+      {/* Main Content */}
+      <Grow in={true} timeout={500}>
+        <InfoCard>
+          <CardContent sx={{ p: 0 }}>
+            <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <AssignmentIcon sx={{ color: maroon.main }} />
+                <Box>
+                  <Typography variant="h6" fontWeight="bold" color={maroon.main}>
+                    Accepted Applicants ({displayedApplicants.length})
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Choose applicants to begin their academic journey through ETEEAP
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
+
+            {loading ? (
+              <Box sx={{ textAlign: "center", py: 6 }}>
+                <CircularProgress />
+                <Typography sx={{ mt: 2 }}>
+                  Loading accepted applicants...
+                </Typography>
+              </Box>
+            ) : displayedApplicants.length > 0 ? (
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <StyledTableCell>Applicant Name</StyledTableCell>
+                    <StyledTableCell>Course</StyledTableCell>
+                    <StyledTableCell>Status</StyledTableCell>
+                    <StyledTableCell>Acceptance Date</StyledTableCell>
+                    <StyledTableCell>Remarks</StyledTableCell>
+                    <StyledTableCell align="center">Actions</StyledTableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {displayedApplicants.map(app => (
+                    <StyledTableRow key={app.acceptedApplicantId}>
+                      <StyledTableCell>
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                          <Avatar sx={{ bgcolor: maroon.main }}>
+                            {app.applicant?.firstName?.charAt(0)}
+                          </Avatar>
+                          <Typography variant="body2" fontWeight={500}>
+                            {`${app.applicant?.firstName || ""} ${app.applicant?.lastName || ""}`}
+                          </Typography>
+                        </Stack>
+                      </StyledTableCell>
+                      <StyledTableCell>{app.finalCourse?.courseName}</StyledTableCell>
+                      <StyledTableCell>
+                        <Chip
+                          label={app.status}
+                          color={
+                            app.status === "ACCEPTED"
+                              ? "success"
+                              : app.status === "ENROLLED"
+                              ? "info"
+                              : "error"
+                          }
+                          variant="outlined"
+                          size="small"
+                        />
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        {app.acceptanceDate
+                          ? new Date(app.acceptanceDate).toLocaleDateString()
+                          : "-"}
+                      </StyledTableCell>
+                      <StyledTableCell>{app.remarks || "-"}</StyledTableCell>
+                      <StyledTableCell align="center">
+                        <ActionButton
+                          variant="contained"
+                          size="small"
+                          onClick={() => handleAccreditClick(app)}
+                        >
+                          Start Accreditation
+                        </ActionButton>
+                      </StyledTableCell>
+                    </StyledTableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <Box sx={{ 
+                textAlign: "center", 
+                py: 6,
+                px: 3
+              }}>
+                <SchoolIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No accepted applicants found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  No accepted applicants available for accreditation in your department.
+                </Typography>
+              </Box>
+            )}
+          </CardContent>
+        </InfoCard>
+      </Grow>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ bgcolor: maroon.main, color: "white", pb: 2 }}>
+          Confirm Accreditation Process
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            You are about to start the accreditation process for:
           </Typography>
-        )}
-      </Paper>
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Confirm Accreditation</DialogTitle>
-        <DialogContent>
-          Are you sure you want to accredit this applicant? This will proceed to
-          the graded accreditation process.
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              Select Curriculum:
-            </Typography>
-            <Select
-              value={selectedCurriculumId}
-              onChange={e => setSelectedCurriculumId(e.target.value)}
-              displayEmpty
-              fullWidth
-              sx={{ minWidth: 220 }}
-            >
-              <MenuItem value="" disabled>
-                Choose curriculum
+          {selectedApplicant && (
+            <Box sx={{ p: 2, bgcolor: alpha(gold.light, 0.2), borderRadius: 1, mb: 3 }}>
+              <Typography variant="subtitle1" fontWeight="bold">
+                {`${selectedApplicant.applicant?.firstName || ""} ${selectedApplicant.applicant?.lastName || ""}`}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Course: {selectedApplicant.finalCourse?.courseName}
+              </Typography>
+            </Box>
+          )}
+          <Typography variant="body2" sx={{ mb: 2, fontWeight: 500 }}>
+            Please select the curriculum that will be used for this accreditation:
+          </Typography>
+          <Select
+            value={selectedCurriculumId}
+            onChange={e => setSelectedCurriculumId(e.target.value)}
+            displayEmpty
+            fullWidth
+            sx={{ 
+              minWidth: 220,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+              }
+            }}
+          >
+            <MenuItem value="" disabled>
+              <em>Choose curriculum...</em>
+            </MenuItem>
+            {curriculums.map(cur => (
+              <MenuItem key={cur.id} value={cur.id}>
+                <Box>
+                  <Typography variant="body2" fontWeight="medium">
+                    {cur.programName}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Started: {cur.yearStarted}
+                  </Typography>
+                </Box>
               </MenuItem>
-              {curriculums.map(cur => (
-                <MenuItem key={cur.id} value={cur.id}>
-                  {cur.programName} ({cur.yearStarted})
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
+            ))}
+          </Select>
+          {!selectedCurriculumId && (
+            <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: "block" }}>
+              * Curriculum selection is required to proceed
+            </Typography>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
-          <Button
+        <DialogActions sx={{ p: 3, pt: 2 }}>
+          <Button 
+            onClick={() => setConfirmOpen(false)}
+            variant="outlined"
+            sx={{ borderRadius: 2 }}
+          >
+            Cancel
+          </Button>
+          <ActionButton
             onClick={handleConfirmAccredit}
             variant="contained"
-            color="primary"
-            disabled={!selectedCurriculumId}
+            disabled={!selectedCurriculumId || accreditLoading}
+            sx={{ 
+              borderRadius: 2,
+              px: 3,
+              bgcolor: (!selectedCurriculumId || accreditLoading) ? "grey.300" : maroon.main
+            }}
           >
-            Proceed
-          </Button>
+            {accreditLoading ? "Creating Records..." : "Start Accreditation Process"}
+          </ActionButton>
         </DialogActions>
       </Dialog>
     </Box>

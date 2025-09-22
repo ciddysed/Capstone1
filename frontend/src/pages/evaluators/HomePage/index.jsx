@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import MainLayout from "../../../templates/MainLayout";
+import EvaluatorNavigation from "../../../components/Navigation/EvaluatorNavigation";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import VerifiedIcon from "@mui/icons-material/Verified"; // Add an icon for accreditations
@@ -111,15 +111,11 @@ const EvaluatorHomePage = () => {
 
   if (evaluatorStatus !== "APPROVED") {
     return (
-      <MainLayout
-        //TODO: fetch user data for login then put it here
-        data={""}
-        userType={"evaluator"}
-      >
+      <EvaluatorNavigation>
         <Stack
           sx={{
             display: "flex",
-
+            justifyContent: "center",
             alignItems: "center",
             height: "100vh",
           }}
@@ -200,13 +196,13 @@ const EvaluatorHomePage = () => {
             </Box>
           </Paper>
         </Stack>
-      </MainLayout>
+      </EvaluatorNavigation>
     );
   }
 
   // If approved, show the dashboard
   return (
-    <MainLayout>
+    <EvaluatorNavigation>
       <Typography variant="h5" sx={{ mb: 3, fontWeight: 500 }}>
         Evaluator Dashboard
       </Typography>
@@ -413,7 +409,7 @@ const EvaluatorHomePage = () => {
           </Paper>
         </Grid>
       </Grid>
-    </MainLayout>
+    </EvaluatorNavigation>
   );
 };
 

@@ -175,6 +175,18 @@ const EvaluationsPage = () => {
     navigate("/evaluator/applicants");
   };
 
+  const handleNavigateToAccreditations = () => {
+    navigate("/evaluator/accreditations");
+  };
+
+  const handleNavigateToAccreditedApplicants = () => {
+    navigate("/evaluator/accredited-applicants");
+  };
+
+  const handleNavigateToGradedAccreditation = () => {
+    navigate("/evaluator/graded-accreditation");
+  };
+
   const handleNavigateToEvaluations = () => {
     navigate("/evaluator/evaluations");
   };
