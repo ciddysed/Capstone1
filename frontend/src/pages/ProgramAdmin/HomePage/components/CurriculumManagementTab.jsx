@@ -37,6 +37,8 @@ import {
 import SchoolIcon from '@mui/icons-material/School';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import BookIcon from '@mui/icons-material/Book';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
@@ -120,7 +122,8 @@ const CurriculumManagementTab = () => {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openCurriculumDialog, setOpenCurriculumDialog] = useState(false);
-  const [editingCurriculum, setEditingCurriculum] = useState(null);
+  const [editingCurriculumId, setEditingCurriculumId] = useState(null);
+  const [editingCurriculumData, setEditingCurriculumData] = useState({});
   const [newCurriculum, setNewCurriculum] = useState({
     programName: "",
     yearStarted: "",
@@ -188,13 +191,8 @@ const CurriculumManagementTab = () => {
         department: newCurriculum.department ? { departmentId: Number(newCurriculum.department) } : null
       };
 
-      if (editingCurriculum) {
-        await axios.put(`${API_BASE}/curriculums/${editingCurriculum.id}`, payload);
-        setAlertMessage({ type: "success", text: "Curriculum updated successfully" });
-      } else {
-        await axios.post(`${API_BASE}/curriculums`, payload);
-        setAlertMessage({ type: "success", text: "Curriculum created successfully" });
-      }
+      await axios.post(`${API_BASE}/curriculums`, payload);
+      setAlertMessage({ type: "success", text: "Curriculum created successfully" });
 
       fetchCurriculums();
       setOpenCurriculumDialog(false);
@@ -202,6 +200,26 @@ const CurriculumManagementTab = () => {
     } catch (error) {
       console.error("Error saving curriculum:", error);
       setAlertMessage({ type: "error", text: "Failed to save curriculum" });
+    }
+  };
+
+  // Update curriculum inline
+  const handleUpdateCurriculum = async (curriculumId) => {
+    try {
+      const payload = {
+        ...editingCurriculumData,
+        department: editingCurriculumData.department ? { departmentId: Number(editingCurriculumData.department) } : null
+      };
+
+      await axios.put(`${API_BASE}/curriculums/${curriculumId}`, payload);
+      setAlertMessage({ type: "success", text: "Curriculum updated successfully" });
+      
+      fetchCurriculums();
+      setEditingCurriculumId(null);
+      setEditingCurriculumData({});
+    } catch (error) {
+      console.error("Error updating curriculum:", error);
+      setAlertMessage({ type: "error", text: "Failed to update curriculum" });
     }
   };
 
@@ -259,7 +277,7 @@ const CurriculumManagementTab = () => {
       isActive: true,
       department: null,
     });
-    setEditingCurriculum(null);
+    setEditingCurriculumId(null);
   };
 
   // Handle tab change
@@ -268,17 +286,22 @@ const CurriculumManagementTab = () => {
     setAlertMessage({ type: "", text: "" });
   };
 
-  // Handle edit curriculum
+  // Handle edit curriculum - start inline editing
   const handleEditCurriculum = (curriculum) => {
-    setEditingCurriculum(curriculum);
-    setNewCurriculum({
+    setEditingCurriculumId(curriculum.id);
+    setEditingCurriculumData({
       programName: curriculum.programName,
       yearStarted: curriculum.yearStarted,
       description: curriculum.description || "",
       isActive: curriculum.isActive,
       department: curriculum.department?.departmentId || null,
     });
-    setOpenCurriculumDialog(true);
+  };
+
+  // Cancel inline editing
+  const handleCancelEdit = () => {
+    setEditingCurriculumId(null);
+    setEditingCurriculumData({});
   };
 
   // Handle view curriculum
@@ -410,63 +433,177 @@ const CurriculumManagementTab = () => {
                   {curriculums.map((curriculum) => (
                     <StyledTableRow key={curriculum.id}>
                       <StyledTableCell>
-                        <Typography variant="body2" fontWeight={600}>
-                          {curriculum.programName}
-                        </Typography>
+                        {editingCurriculumId === curriculum.id ? (
+                          <TextField
+                            size="small"
+                            value={editingCurriculumData.programName}
+                            onChange={(e) => setEditingCurriculumData({
+                              ...editingCurriculumData,
+                              programName: e.target.value
+                            })}
+                            variant="outlined"
+                            fullWidth
+                          />
+                        ) : (
+                          <Typography variant="body2" fontWeight={600}>
+                            {curriculum.programName}
+                          </Typography>
+                        )}
                       </StyledTableCell>
-                      <StyledTableCell>{curriculum.yearStarted}</StyledTableCell>
                       <StyledTableCell>
-                        {curriculum.department?.departmentName || 'N/A'}
+                        {editingCurriculumId === curriculum.id ? (
+                          <TextField
+                            size="small"
+                            type="number"
+                            value={editingCurriculumData.yearStarted}
+                            onChange={(e) => setEditingCurriculumData({
+                              ...editingCurriculumData,
+                              yearStarted: e.target.value
+                            })}
+                            variant="outlined"
+                            fullWidth
+                          />
+                        ) : (
+                          curriculum.yearStarted
+                        )}
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        {editingCurriculumId === curriculum.id ? (
+                          <FormControl size="small" fullWidth>
+                            <Select
+                              value={editingCurriculumData.department || ""}
+                              onChange={(e) => setEditingCurriculumData({
+                                ...editingCurriculumData,
+                                department: e.target.value
+                              })}
+                            >
+                              {departments.map((dep) => (
+                                <MenuItem key={dep.departmentId} value={dep.departmentId}>
+                                  {dep.departmentName}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        ) : (
+                          curriculum.department?.departmentName || 'N/A'
+                        )}
                       </StyledTableCell>
                       <StyledTableCell sx={{ maxWidth: 200 }}>
-                        <Typography variant="body2" sx={{ 
-                          overflow: 'hidden', 
-                          textOverflow: 'ellipsis', 
-                          whiteSpace: 'nowrap' 
-                        }}>
-                          {curriculum.description || 'No description'}
-                        </Typography>
+                        {editingCurriculumId === curriculum.id ? (
+                          <TextField
+                            size="small"
+                            multiline
+                            rows={2}
+                            value={editingCurriculumData.description}
+                            onChange={(e) => setEditingCurriculumData({
+                              ...editingCurriculumData,
+                              description: e.target.value
+                            })}
+                            variant="outlined"
+                            fullWidth
+                          />
+                        ) : (
+                          <Typography variant="body2" sx={{ 
+                            overflow: 'hidden', 
+                            textOverflow: 'ellipsis', 
+                            whiteSpace: 'nowrap' 
+                          }}>
+                            {curriculum.description || 'No description'}
+                          </Typography>
+                        )}
                       </StyledTableCell>
                       <StyledTableCell>
-                        <Chip 
-                          label={curriculum.isActive ? 'Active' : 'Inactive'} 
-                          color={curriculum.isActive ? 'success' : 'error'} 
-                          variant="outlined" 
-                          size="small"
-                        />
+                        {editingCurriculumId === curriculum.id ? (
+                          <FormControl size="small" fullWidth>
+                            <Select
+                              value={editingCurriculumData.isActive}
+                              onChange={(e) => setEditingCurriculumData({
+                                ...editingCurriculumData,
+                                isActive: e.target.value
+                              })}
+                            >
+                              <MenuItem value={true}>Active</MenuItem>
+                              <MenuItem value={false}>Inactive</MenuItem>
+                            </Select>
+                          </FormControl>
+                        ) : (
+                          <Chip 
+                            label={curriculum.isActive ? 'Active' : 'Inactive'} 
+                            color={curriculum.isActive ? 'success' : 'error'} 
+                            variant="outlined" 
+                            size="small"
+                          />
+                        )}
                       </StyledTableCell>
                       <StyledTableCell align="center">
                         <Stack direction="row" spacing={1} justifyContent="center">
-                          <Tooltip title="View Details">
-                            <IconButton 
-                              size="small"
-                              color="primary"
-                              onClick={() => handleViewCurriculum(curriculum)}
-                              sx={{ 
-                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                '&:hover': {
-                                  backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                                }
-                              }}
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Edit Curriculum">
-                            <IconButton 
-                              size="small"
-                              onClick={() => handleEditCurriculum(curriculum)}
-                              sx={{ 
-                                backgroundColor: alpha(gold.main, 0.1),
-                                color: gold.dark,
-                                '&:hover': {
-                                  backgroundColor: alpha(gold.main, 0.2),
-                                }
-                              }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                          {editingCurriculumId === curriculum.id ? (
+                            <>
+                              <Tooltip title="Save Changes">
+                                <IconButton 
+                                  size="small"
+                                  color="success"
+                                  onClick={() => handleUpdateCurriculum(curriculum.id)}
+                                  sx={{ 
+                                    backgroundColor: alpha(theme.palette.success.main, 0.1),
+                                    '&:hover': {
+                                      backgroundColor: alpha(theme.palette.success.main, 0.2),
+                                    }
+                                  }}
+                                >
+                                  <SaveIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Cancel">
+                                <IconButton 
+                                  size="small"
+                                  color="error"
+                                  onClick={handleCancelEdit}
+                                  sx={{ 
+                                    backgroundColor: alpha(theme.palette.error.main, 0.1),
+                                    '&:hover': {
+                                      backgroundColor: alpha(theme.palette.error.main, 0.2),
+                                    }
+                                  }}
+                                >
+                                  <CancelIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </>
+                          ) : (
+                            <>
+                              <Tooltip title="View Details">
+                                <IconButton 
+                                  size="small"
+                                  color="primary"
+                                  onClick={() => handleViewCurriculum(curriculum)}
+                                  sx={{ 
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                    '&:hover': {
+                                      backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                                    }
+                                  }}
+                                >
+                                  <VisibilityIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Edit Curriculum">
+                                <IconButton 
+                                  size="small"
+                                  onClick={() => handleEditCurriculum(curriculum)}
+                                  sx={{ 
+                                    backgroundColor: alpha(gold.main, 0.1),
+                                    color: gold.dark,
+                                    '&:hover': {
+                                      backgroundColor: alpha(gold.main, 0.2),
+                                    }
+                                  }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </>
+                          )}
                         </Stack>
                       </StyledTableCell>
                     </StyledTableRow>
@@ -660,7 +797,7 @@ const CurriculumManagementTab = () => {
         </>
       )}
 
-      {/* Add/Edit Curriculum Dialog */}
+      {/* Add Curriculum Dialog - Only for new curriculums */}
       <Dialog 
         open={openCurriculumDialog} 
         onClose={() => setOpenCurriculumDialog(false)}
@@ -671,7 +808,7 @@ const CurriculumManagementTab = () => {
         }}
       >
         <DialogTitle sx={{ bgcolor: maroon.main, color: 'white' }}>
-          {editingCurriculum ? 'Edit Curriculum' : 'Add New Curriculum'}
+          Add New Curriculum
         </DialogTitle>
         <DialogContent dividers sx={{ p: 3 }}>
           <Grid container spacing={3}>
@@ -744,7 +881,7 @@ const CurriculumManagementTab = () => {
             onClick={handleSaveCurriculum}
             disabled={!newCurriculum.programName || !newCurriculum.yearStarted || !newCurriculum.department}
           >
-            {editingCurriculum ? 'Update' : 'Create'} Curriculum
+            Create Curriculum
           </ActionButton>
         </DialogActions>
       </Dialog>

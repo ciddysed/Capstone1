@@ -672,12 +672,18 @@ const ApplicationDetailsDialog = ({
           },
         }
       );
+      
+      // Update the application status to APPROVED
+      const applicationId = selectedApplication.applicationId || selectedApplication.id;
+      await axios.put(`${API_URL}/applications/${applicationId}/update-status?status=APPROVED`);
+      
       alert("Applicant accepted and recorded.");
       setShowAcceptDialog(false);
       setAcceptRemarks("");
       await onRefreshApplications();
       handleCloseDialog();
     } catch (error) {
+      console.error("Error accepting applicant:", error);
       alert("Failed to accept applicant.");
     } finally {
       setAcceptLoading(false);

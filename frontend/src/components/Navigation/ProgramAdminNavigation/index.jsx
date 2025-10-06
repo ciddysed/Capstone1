@@ -155,13 +155,11 @@ const ProgramAdminNavigation = ({ children }) => {
     setActiveButton(item);
 
     if (item === "Logout") {
-      const userType = localStorage.getItem("userType");
+      // Clear all localStorage data
       localStorage.clear();
-      if (userType === "program-admin") {
-        navigate("/program-admin/login");
-      } else {
-        navigate("/login");
-      }
+      
+      // Redirect to program-admin login page
+      navigate("/program-admin/login");
     }
   };
 
@@ -171,14 +169,29 @@ const ProgramAdminNavigation = ({ children }) => {
     try {
       const response = await axios.get(`${API_URL}/applications`);
       
-      // Normalize the data to ensure consistent property naming
-      const normalizedApplications = response.data.map(app => ({
-        ...app,
-        id: app.applicationId || app.id,
-        applicantName: app.applicantName || (app.applicant ? 
-          `${app.applicant.firstName || ''} ${app.applicant.lastName || ''}`.trim() : 'Unknown'),
-        applicationDate: app.uploadDate || app.dateSubmitted || app.applicationDate || new Date().toISOString()
-      }));
+      // Fetch accepted applicants to filter them out
+      let acceptedApplicantIds = [];
+      try {
+        const acceptedResponse = await axios.get("http://localhost:8080/api/accepted-applicants");
+        acceptedApplicantIds = acceptedResponse.data.map(accepted => accepted.applicant?.applicantId).filter(Boolean);
+      } catch (error) {
+        console.error("Error fetching accepted applicants:", error);
+      }
+      
+      // Normalize the data and filter out accepted applicants
+      const normalizedApplications = response.data
+        .filter(app => {
+          const applicantId = app.applicant?.applicantId;
+          // Exclude applications where the applicant has been accepted
+          return applicantId && !acceptedApplicantIds.includes(applicantId);
+        })
+        .map(app => ({
+          ...app,
+          id: app.applicationId || app.id,
+          applicantName: app.applicantName || (app.applicant ? 
+            `${app.applicant.firstName || ''} ${app.applicant.lastName || ''}`.trim() : 'Unknown'),
+          applicationDate: app.uploadDate || app.dateSubmitted || app.applicationDate || new Date().toISOString()
+        }));
       
       setApplications(normalizedApplications);
     } catch (error) {
