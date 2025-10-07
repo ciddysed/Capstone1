@@ -103,6 +103,7 @@ const Homepage = () => {
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const { handleSuccess, handleError, snackbar } = useResponseHandler();
   const [userData, setUserData] = useState();
+  const [isAccepted, setIsAccepted] = useState(false);
 
   useEffect(() => {
     const applicantId = localStorage.getItem("applicantId");
@@ -114,6 +115,7 @@ const Homepage = () => {
 
     const fetchUserData = async () => {
       try {
+        // Fetch applicant data
         const response = await axios.get(
           `http://localhost:8080/api/applicants/${applicantId}`
         );
@@ -136,6 +138,22 @@ const Homepage = () => {
 
         setUserFullName(`${data.firstName} ${data.lastName}`);
         setUserData(data);
+        
+        // Check if applicant is accepted
+        try {
+          const acceptedResponse = await axios.get(
+            `http://localhost:8080/api/accepted-applicants/by-applicant/${applicantId}`
+          );
+          
+          if (acceptedResponse.data && acceptedResponse.data.status === "ACCEPTED") {
+            setIsAccepted(true);
+            // Redirect to the accepted dashboard
+            navigate("/accepted-dashboard");
+          }
+        } catch (error) {
+          // Not accepted, continue with regular homepage
+          console.log("Applicant not yet accepted");
+        }
       } catch (error) {
         handleError("Failed to fetch user data");
         console.error("Homepage error:", error);
@@ -144,7 +162,7 @@ const Homepage = () => {
     };
 
     fetchUserData();
-  }, [navigate, handleError]);
+  }, [navigate, handleError, handleSuccess]);
 
   const handleStartApplication = async () => {
     const applicantId = localStorage.getItem("applicantId");

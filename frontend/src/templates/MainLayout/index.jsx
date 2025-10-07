@@ -17,6 +17,7 @@ import logo from "../../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { AccountCircle, Logout, Person as UserIcon, School as GraduationCapIcon } from "@mui/icons-material"; // Import logout icon
 import backgroundImage from "../../assets/login-bg.png";
+import NotificationCenter from "../../components/Notifications/NotificationCenter";
 
 // Maroon and Gold theme colors
 const maroonTheme = {
@@ -63,6 +64,22 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
 
   const open = Boolean(anchorEl);
   const userInitial = data?.charAt(0)?.toUpperCase() || "A";
+
+  // Get user ID based on userType
+  const getUserId = () => {
+    if (userType === 'applicant') {
+      return localStorage.getItem('applicantId');
+    } else if (userType === 'evaluator') {
+      return localStorage.getItem('evaluatorId');
+    } else if (userType === 'system-admin') {
+      return localStorage.getItem('systemAdminId');
+    } else if (userType === 'program-admin') {
+      return localStorage.getItem('programAdminId');
+    }
+    return null;
+  };
+  
+  const userId = getUserId();
 
   return (
     <Stack
@@ -119,6 +136,11 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
               </Box>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {/* Add NotificationCenter for signed-in users */}
+              {userId && (
+                <NotificationCenter userType={userType} userId={userId} />
+              )}
+              
               <Box sx={{ textAlign: "right" }}>
                 <Typography variant="body2" fontWeight="medium" color="white">
                   {data || "Loading..."}

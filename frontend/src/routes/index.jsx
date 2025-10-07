@@ -1,5 +1,5 @@
 // src/routes/AppRoutes.jsx
-import { useRoutes } from "react-router-dom";
+import { useRoutes, Navigate } from "react-router-dom";
 import OrganizedCourseDialog from "../components/OrganizedCourseDialog";
 import EvaluatorManagementPage from "../pages/SystemAdmin/EvaluatorManagement";
 import SystemAdminLoginPage from "../pages/SystemAdmin/LoginPage";
@@ -31,6 +31,39 @@ import Accreditations from "../pages/evaluators/Accreditations/Accreditations";
 import GradedAccreditation from "../pages/evaluators/Accreditations/GradedAccreditation";
 import AccreditedAccounts from "../pages/evaluators/Accreditations/AccreditedAccounts";
 import SystemAdminNavigation from "../components/Navigation/SystemAdminNavigation";
+import AcceptedDashboard from "../pages/applicants/AcceptedDashboard";
+import { Box, Typography, Button } from "@mui/material";
+
+const UnderConstruction = ({ pageName }) => (
+  <Box
+    sx={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "100vh",
+      textAlign: "center",
+      p: 3,
+    }}
+  >
+    <Typography variant="h4" sx={{ mb: 2, color: "#800000" }}>
+      {pageName}
+    </Typography>
+    <Typography variant="h6" sx={{ mb: 4 }}>
+      This page is under construction
+    </Typography>
+    <Button
+      variant="contained"
+      onClick={() => window.history.back()}
+      sx={{
+        bgcolor: "#800000",
+        "&:hover": { bgcolor: "#600000" },
+      }}
+    >
+      Go Back
+    </Button>
+  </Box>
+);
 
 const AppRoutes = () => {
   return useRoutes([
@@ -260,12 +293,34 @@ const AppRoutes = () => {
         </ProtectedRoute>
       ),
     },
-
-     
-
-    //   path: "*",
-    //   element: <NotFoundPage />,
-    // },
+    {
+      path: "/accepted-dashboard",
+      element: <AcceptedDashboard />,
+    },
+    {
+      path: "/enrollment-payment",
+      element: <UnderConstruction pageName="Enrollment Payment" />,
+    },
+    {
+      path: "/orientation",
+      element: <UnderConstruction pageName="Orientation" />,
+    },
+    {
+      path: "/course-registration",
+      element: <UnderConstruction pageName="Course Registration" />,
+    },
+    {
+      path: "/system-admin/curriculum/:curriculumId",
+      element: (
+        <SystemAdminNavigation activeTab="Curriculum Management">
+          <CurriculumRouter />
+        </SystemAdminNavigation>
+      ),
+    },
+    {
+      path: "*",
+      element: <Navigate to="/login" />,
+    },
   ]);
 };
 

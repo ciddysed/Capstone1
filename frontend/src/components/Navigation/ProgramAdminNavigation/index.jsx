@@ -45,6 +45,7 @@ import axios from "axios";
 // Import the tab components
 import AcceptedStudentsTab from "../../../pages/ProgramAdmin/HomePage/components/AcceptedStudentsTab";
 import ApplicationDetailsDialog from "../../../pages/ProgramAdmin/HomePage/components/ApplicationDetailsDialog";
+import NotificationCenter from "../../Notifications/NotificationCenter";
 
 const API_URL = "http://localhost:8080/api/program-admins";
 
@@ -410,6 +411,9 @@ const ProgramAdminNavigation = ({ children }) => {
     return activeButton === "Applications";
   };
 
+  // Get program admin ID from localStorage
+  const programAdminId = localStorage.getItem("programAdminId");
+
   return (
     <Box
       sx={{
@@ -505,9 +509,10 @@ const ProgramAdminNavigation = ({ children }) => {
                     sx: { borderRadius: 5, bgcolor: "#fff" },
                   }}
                 />
-                <IconButton>
-                  <NotificationsIcon />
-                </IconButton>
+                
+                {/* Replace the notification icon with the NotificationCenter component */}
+                <NotificationCenter userType="program-admin" userId={programAdminId} />
+                
               </Box>
             </Toolbar>
           </AppBar>

@@ -25,6 +25,7 @@ import { useNavigate } from "react-router-dom";
 import Accreditations from "../../../pages/evaluators/Accreditations/Accreditations";
 import AccreditedAccounts from "../../../pages/evaluators/Accreditations/AccreditedAccounts";
 import GradedAccreditation from "../../../pages/evaluators/Accreditations/GradedAccreditation";
+import NotificationCenter from "../../Notifications/NotificationCenter";
 
 const EvaluatorNavigation = ({ children, initialGradedState = null }) => {
   const [activeButton, setActiveButton] = useState("Applicants");
@@ -85,6 +86,9 @@ const EvaluatorNavigation = ({ children, initialGradedState = null }) => {
   const shouldShowFilters = () => {
     return activeButton === "Applicants";
   };
+
+  // Get evaluator ID from localStorage
+  const evaluatorId = localStorage.getItem("evaluatorId");
 
   return (
     <Box
@@ -169,9 +173,10 @@ const EvaluatorNavigation = ({ children, initialGradedState = null }) => {
                     sx: { borderRadius: 5, bgcolor: "#fff" },
                   }}
                 />
-                <IconButton>
-                  <NotificationsIcon />
-                </IconButton>
+                
+                {/* Replace the notification icon with the NotificationCenter component */}
+                <NotificationCenter userType="evaluator" userId={evaluatorId} />
+                
               </Box>
             </Toolbar>
           </AppBar>

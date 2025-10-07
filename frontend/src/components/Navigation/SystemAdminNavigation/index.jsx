@@ -42,6 +42,7 @@ import backgroundImage from "../../../assets/login-bg.png";
 // Import the content components
 import EvaluatorManagementContent from "../../../pages/SystemAdmin/EvaluatorManagement/EvaluatorManagementContent";
 import CurriculumManagement from "../../../pages/SystemAdmin/ApplicantDetailsPage/curriculumManagement";
+import NotificationCenter from "../../Notifications/NotificationCenter";
 
 const API_URL = "http://localhost:8080/api/program-admins";
 
@@ -171,6 +172,9 @@ const SystemAdminNavigation = ({ children, activeTab = "Evaluator Management" })
     return activeButton;
   };
 
+  // Get system admin ID from localStorage
+  const systemAdminId = localStorage.getItem("systemAdminId");
+
   return (
     <Box
       sx={{
@@ -254,9 +258,10 @@ const SystemAdminNavigation = ({ children, activeTab = "Evaluator Management" })
                     sx: { borderRadius: 5, bgcolor: "#fff" },
                   }}
                 />
-                <IconButton>
-                  <NotificationsIcon />
-                </IconButton>
+                
+                {/* Replace the notification icon with the NotificationCenter component */}
+                <NotificationCenter userType="system-admin" userId={systemAdminId} />
+                
               </Box>
             </Toolbar>
           </AppBar>
