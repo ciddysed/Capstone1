@@ -75,7 +75,7 @@ const SystemAdminLoginPage = () => {
         localStorage.setItem('systemAdminId', SYSTEM_ADMIN.adminId);
         localStorage.setItem('systemAdminName', SYSTEM_ADMIN.name);
         localStorage.setItem('systemAdminEmail', SYSTEM_ADMIN.email);
-        navigate('/system-admin/evaluator-management');
+        navigate('/system-admin/evaluator-management'); // Updated path
       } else {
         throw new Error('Invalid email or password');
       }

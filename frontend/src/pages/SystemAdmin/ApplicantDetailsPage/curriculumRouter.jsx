@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -27,6 +27,7 @@ import {
   ExpandLess as ExpandLessIcon,
   School as SchoolIcon,
   Book as BookIcon,
+  ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import axios from "axios";
@@ -98,6 +99,7 @@ const ActionButton = styled(Button)(({ theme }) => ({
 export default function CurriculumRouter() {
   const theme = useTheme();
   const { curriculumId } = useParams();
+  const navigate = useNavigate();
   const [curriculum, setCurriculum] = useState(null);
   const [newSemester, setNewSemester] = useState({
     yearLevel: "",
@@ -111,12 +113,22 @@ export default function CurriculumRouter() {
 
   // Fetch curriculum details (with semesters and subjects organized correctly)
   useEffect(() => {
-    axios.get(`${API_BASE}/curriculums/${curriculumId}`)
-      .then(res => setCurriculum(res.data))
-      .catch(() => {
-        setCurriculum(null);
-        setAlertMessage({ type: "error", text: "Failed to load curriculum" });
-      });
+    if (curriculumId) {
+      axios.get(`${API_BASE}/curriculums/${curriculumId}`)
+        .then(res => {
+          setCurriculum(res.data);
+          // Ensure we have the semesters with subjects loaded
+          if (res.data && (!res.data.semesters || res.data.semesters.length === 0)) {
+            // If curriculum has no semesters yet, set an empty array
+            setCurriculum({...res.data, semesters: []});
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching curriculum details:", err);
+          setAlertMessage({ type: "error", text: "Failed to load curriculum details" });
+          setCurriculum(null);
+        });
+    }
   }, [curriculumId]);
 
   // Add semester
@@ -160,13 +172,24 @@ export default function CurriculumRouter() {
     });
   };
 
+  // Fix the back navigation to go to evaluator management page with curriculum tab active
+  const handleBackToCurriculumList = () => {
+    // Navigate to the system admin page with curriculum management tab active
+    navigate('/system-admin/evaluator-management', { 
+      state: { defaultTab: 'Curriculum Management' }
+    });
+  };
+
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', p: 4 }}>
-      {/* Header */}
+      {/* Header with back button */}
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 4 }}>
+        <IconButton onClick={handleBackToCurriculumList}>
+          <ArrowBackIcon />
+        </IconButton>
         <SchoolIcon sx={{ color: maroon.main, fontSize: 32 }} />
         <Typography variant="h4" fontWeight="bold" color={maroon.dark}>
-          Manage Curriculum {curriculum ? `- ${curriculum.programName}` : ''}
+          {curriculum ? `Manage ${curriculum.programName} Curriculum` : 'Loading Curriculum...'}
         </Typography>
       </Stack>
 
@@ -458,4 +481,3 @@ export default function CurriculumRouter() {
     </Box>
   );
 }
-                    

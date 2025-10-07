@@ -1,7 +1,9 @@
 import React from "react";
-import { BrowserRouter as Router } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import AppRoutes from "./routes";
+import SystemAdminNavigation from "./components/Navigation/SystemAdminNavigation";
+import CurriculumRouter from "./pages/SystemAdmin/ApplicantDetailsPage/curriculumRouter";
 
 // Optional: Create a custom theme
 const theme = createTheme({
@@ -23,7 +25,17 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <AppRoutes />
+        <Routes>
+          <Route
+            path="/system-admin/curriculum/:curriculumId"
+            element={
+              <SystemAdminNavigation activeTab="Curriculum Management">
+                <CurriculumRouter />
+              </SystemAdminNavigation>
+            }
+          />
+          <AppRoutes />
+        </Routes>
       </Router>
     </ThemeProvider>
   );

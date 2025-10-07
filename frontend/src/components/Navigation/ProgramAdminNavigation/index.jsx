@@ -44,7 +44,6 @@ import axios from "axios";
 
 // Import the tab components
 import AcceptedStudentsTab from "../../../pages/ProgramAdmin/HomePage/components/AcceptedStudentsTab";
-import CurriculumManagementTab from "../../../pages/ProgramAdmin/HomePage/components/CurriculumManagementTab";
 import ApplicationDetailsDialog from "../../../pages/ProgramAdmin/HomePage/components/ApplicationDetailsDialog";
 
 const API_URL = "http://localhost:8080/api/program-admins";
@@ -140,7 +139,7 @@ const getStatusChipColor = (status) => {
 const ProgramAdminNavigation = ({ children }) => {
   const theme = useTheme();
   const [activeButton, setActiveButton] = useState("Applications");
-  const navItems = ["Applications", "Accepted Students", "Curriculum Management", "Logout"];
+  const navItems = ["Applications", "Accepted Students", "Logout"];
   const navigate = useNavigate();
 
   // Application management state
@@ -389,8 +388,6 @@ const ProgramAdminNavigation = ({ children }) => {
         );
       case "Accepted Students":
         return <AcceptedStudentsTab />;
-      case "Curriculum Management":
-        return <CurriculumManagementTab />;
       default:
         return children;
     }
@@ -403,8 +400,6 @@ const ProgramAdminNavigation = ({ children }) => {
         return "Applications Management";
       case "Accepted Students":
         return "Accepted Students";
-      case "Curriculum Management":
-        return "Curriculum Management";
       default:
         return "Program Administration";
     }

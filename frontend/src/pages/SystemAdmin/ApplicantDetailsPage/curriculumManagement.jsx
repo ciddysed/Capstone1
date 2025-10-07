@@ -37,6 +37,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import axios from "axios";
 import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
+import CurriculumRouterModal from "./CurriculumRouterModal";
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -104,6 +105,7 @@ const API_BASE = "http://localhost:8080/api";
 
 export default function CurriculumManagement() {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [curriculums, setCurriculums] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,7 +119,8 @@ export default function CurriculumManagement() {
     isActive: true,
     department: null,
   });
-  const navigate = useNavigate();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedCurriculumId, setSelectedCurriculumId] = useState(null);
 
   // Fetch curriculums
   const fetchCurriculums = async () => {
@@ -193,6 +196,12 @@ export default function CurriculumManagement() {
       department: curriculum.department?.departmentId || null,
     });
     setOpenDialog(true);
+  };
+
+  // Manage curriculum with modal approach
+  const handleManageCurriculum = (curriculumId) => {
+    setSelectedCurriculumId(curriculumId);
+    setModalOpen(true);
   };
 
   return (
@@ -324,7 +333,7 @@ export default function CurriculumManagement() {
                             <IconButton 
                               size="small"
                               color="primary"
-                              onClick={() => navigate(`/admin/curriculum/${c.id}`)}
+                              onClick={() => handleManageCurriculum(c.id)}
                               sx={{ 
                                 backgroundColor: alpha(theme.palette.primary.main, 0.1),
                                 '&:hover': {
@@ -449,6 +458,15 @@ export default function CurriculumManagement() {
           </ActionButton>
         </DialogActions>
       </Dialog>
+
+      {/* Add the Curriculum Router Modal */}
+      <CurriculumRouterModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        curriculumId={selectedCurriculumId}
+      />
     </Box>
   );
 }
+
+

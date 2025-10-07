@@ -10,10 +10,6 @@ import {
   Chip,
   Button,
   TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Stack,
   CircularProgress,
   MenuItem,
@@ -26,10 +22,14 @@ import {
   AccordionDetails,
   IconButton,
   Tooltip,
+  Select,
+  FormControl,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 import GradeIcon from '@mui/icons-material/Grade';
 import SchoolIcon from '@mui/icons-material/School';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -122,14 +122,12 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
 const GradedAccreditation = ({ applicantId, curriculumId }) => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [editingRecordId, setEditingRecordId] = useState(null);
   const [editFields, setEditFields] = useState({
     grade: "",
-    processOfAccreditation: "",
-    substantiveBasis: "",
     status: "",
   });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (applicantId) {
@@ -161,34 +159,71 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
     }
   };
 
-  // Edit record dialog handlers
+  // Start editing a record
   const handleEditClick = (record) => {
-    setSelectedRecord(record);
+    setEditingRecordId(record.id);
     setEditFields({
       grade: record.grade || "",
-      processOfAccreditation: record.processOfAccreditation || "",
-      substantiveBasis: record.substantiveBasis || "",
       status: record.status || "",
     });
-    setEditDialogOpen(true);
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setEditingRecordId(null);
+    setEditFields({
+      grade: "",
+      status: "",
+    });
   };
 
   const handleEditFieldChange = (field, value) => {
     setEditFields((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveEdit = async () => {
-    if (!selectedRecord) return;
+  const handleSaveEdit = async (recordId) => {
+    setSaving(true);
     try {
-      await axios.put(`${API_BASE}/applicant-subject-records/${selectedRecord.id}`, editFields);
-      setEditDialogOpen(false);
-      // Refresh records
-      axios
-        .get(`${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`)
-        .then((res) => setRecords(res.data));
-      alert("Record updated.");
+      const params = new URLSearchParams();
+      
+      if (editFields.grade !== null && editFields.grade !== undefined && editFields.grade !== "") {
+        params.append('grade', editFields.grade);
+      }
+      if (editFields.status !== null && editFields.status !== undefined && editFields.status !== "") {
+        params.append('status', editFields.status);
+      }
+
+      await axios.put(
+        `${API_BASE}/applicant-subject-records/${recordId}?${params.toString()}`,
+        null,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        }
+      );
+      
+      const refreshResponse = await axios.get(
+        `${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`
+      );
+      setRecords(refreshResponse.data);
+      
+      setEditingRecordId(null);
+      setEditFields({
+        grade: "",
+        status: "",
+      });
+      
+      alert("Record updated successfully.");
     } catch (err) {
-      alert("Failed to update record.");
+      console.error("Failed to update record:", err);
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data || 
+                          err.message || 
+                          "Unknown error occurred";
+      alert(`Failed to update record: ${errorMessage}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -267,73 +302,146 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
                   <Table>
                     <TableHead>
                       <TableRow>
-                        <StyledTableCell>Subject</StyledTableCell>
-                        <StyledTableCell>Grade</StyledTableCell>
-                        <StyledTableCell>Process</StyledTableCell>
-                        <StyledTableCell>Basis</StyledTableCell>
-                        <StyledTableCell>Status</StyledTableCell>
-                        <StyledTableCell align="center">Actions</StyledTableCell>
+                        <StyledTableCell sx={{ minWidth: 250 }}>Subject</StyledTableCell>
+                        <StyledTableCell sx={{ minWidth: 120 }}>Grade</StyledTableCell>
+                        <StyledTableCell sx={{ minWidth: 120 }}>Status</StyledTableCell>
+                        <StyledTableCell align="center" sx={{ minWidth: 150 }}>Actions</StyledTableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {records[semester].map((rec) => (
-                        <StyledTableRow key={rec.id}>
-                          <StyledTableCell>
-                            <Box>
-                              <Typography variant="body2" fontWeight={500}>
-                                {rec.subject?.descriptiveTitle}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {rec.subject?.subjectCode}
-                              </Typography>
-                            </Box>
-                          </StyledTableCell>
-                          <StyledTableCell>
-                            <Typography 
-                              variant="body2" 
-                              fontWeight={rec.grade ? 600 : 400}
-                              color={rec.grade ? 'text.primary' : 'text.secondary'}
-                            >
-                              {rec.grade || "Not graded"}
-                            </Typography>
-                          </StyledTableCell>
-                          <StyledTableCell>
-                            <Typography variant="body2">
-                              {rec.processOfAccreditation || "-"}
-                            </Typography>
-                          </StyledTableCell>
-                          <StyledTableCell>
-                            <Typography variant="body2">
-                              {rec.substantiveBasis || "-"}
-                            </Typography>
-                          </StyledTableCell>
-                          <StyledTableCell>
-                            <Chip
-                              label={rec.status}
-                              color={getStatusColor(rec.status)}
-                              variant="outlined"
-                              size="small"
-                            />
-                          </StyledTableCell>
-                          <StyledTableCell align="center">
-                            <Tooltip title="Edit Record">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleEditClick(rec)}
-                                sx={{
-                                  color: maroon.main,
-                                  backgroundColor: alpha(maroon.main, 0.1),
-                                  '&:hover': {
-                                    backgroundColor: alpha(maroon.main, 0.2),
-                                  }
-                                }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </StyledTableCell>
-                        </StyledTableRow>
-                      ))}
+                      {records[semester].map((rec) => {
+                        const isEditing = editingRecordId === rec.id;
+                        
+                        return (
+                          <StyledTableRow key={rec.id}>
+                            <StyledTableCell>
+                              <Box>
+                                <Typography variant="body2" fontWeight={500}>
+                                  {rec.subject?.descriptiveTitle}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {rec.subject?.subjectCode}
+                                </Typography>
+                              </Box>
+                            </StyledTableCell>
+                            
+                            {/* Grade Cell */}
+                            <StyledTableCell>
+                              {isEditing ? (
+                                <TextField
+                                  size="small"
+                                  value={editFields.grade}
+                                  onChange={(e) => handleEditFieldChange("grade", e.target.value)}
+                                  fullWidth
+                                  placeholder="Enter grade"
+                                  sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                      borderRadius: 1,
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <Typography 
+                                  variant="body2" 
+                                  fontWeight={rec.grade ? 600 : 400}
+                                  color={rec.grade ? 'text.primary' : 'text.secondary'}
+                                >
+                                  {rec.grade || "Not graded"}
+                                </Typography>
+                              )}
+                            </StyledTableCell>
+                            
+                            {/* Status Cell */}
+                            <StyledTableCell>
+                              {isEditing ? (
+                                <FormControl fullWidth size="small">
+                                  <Select
+                                    value={editFields.status}
+                                    onChange={(e) => handleEditFieldChange("status", e.target.value)}
+                                    sx={{
+                                      borderRadius: 1,
+                                    }}
+                                  >
+                                    <MenuItem value="PENDING">PENDING</MenuItem>
+                                    <MenuItem value="APPROVED">APPROVED</MenuItem>
+                                    <MenuItem value="REJECTED">REJECTED</MenuItem>
+                                  </Select>
+                                </FormControl>
+                              ) : (
+                                <Chip
+                                  label={rec.status}
+                                  color={getStatusColor(rec.status)}
+                                  variant="outlined"
+                                  size="small"
+                                />
+                              )}
+                            </StyledTableCell>
+                            
+                            {/* Actions Cell */}
+                            <StyledTableCell align="center">
+                              {isEditing ? (
+                                <Stack direction="row" spacing={1} justifyContent="center">
+                                  <Tooltip title="Save Changes">
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => handleSaveEdit(rec.id)}
+                                      disabled={saving}
+                                      sx={{
+                                        color: '#2e7d32',
+                                        backgroundColor: alpha('#2e7d32', 0.1),
+                                        '&:hover': {
+                                          backgroundColor: alpha('#2e7d32', 0.2),
+                                        },
+                                        '&:disabled': {
+                                          backgroundColor: alpha('#2e7d32', 0.05),
+                                        }
+                                      }}
+                                    >
+                                      {saving ? (
+                                        <CircularProgress size={16} sx={{ color: '#2e7d32' }} />
+                                      ) : (
+                                        <SaveIcon fontSize="small" />
+                                      )}
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Cancel">
+                                    <IconButton
+                                      size="small"
+                                      onClick={handleCancelEdit}
+                                      disabled={saving}
+                                      sx={{
+                                        color: '#d32f2f',
+                                        backgroundColor: alpha('#d32f2f', 0.1),
+                                        '&:hover': {
+                                          backgroundColor: alpha('#d32f2f', 0.2),
+                                        }
+                                      }}
+                                    >
+                                      <CancelIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Stack>
+                              ) : (
+                                <Tooltip title="Edit Record">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => handleEditClick(rec)}
+                                    sx={{
+                                      color: maroon.main,
+                                      backgroundColor: alpha(maroon.main, 0.1),
+                                      '&:hover': {
+                                        backgroundColor: alpha(maroon.main, 0.2),
+                                      }
+                                    }}
+                                  >
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </StyledTableCell>
+                          </StyledTableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </AccordionDetails>
@@ -363,95 +471,9 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
           </CardContent>
         </InfoCard>
       )}
-
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ bgcolor: maroon.main, color: "white", pb: 2 }}>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <EditIcon />
-            <Typography variant="h6">Edit Subject Record</Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Stack spacing={3}>
-            <TextField
-              label="Grade"
-              value={editFields.grade}
-              onChange={(e) => handleEditFieldChange("grade", e.target.value)}
-              fullWidth
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-            />
-            <TextField
-              label="Process of Accreditation"
-              value={editFields.processOfAccreditation}
-              onChange={(e) => handleEditFieldChange("processOfAccreditation", e.target.value)}
-              fullWidth
-              multiline
-              rows={3}
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-            />
-            <TextField
-              label="Substantive Basis"
-              value={editFields.substantiveBasis}
-              onChange={(e) => handleEditFieldChange("substantiveBasis", e.target.value)}
-              fullWidth
-              multiline
-              rows={3}
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-            />
-            <TextField
-              label="Status"
-              value={editFields.status}
-              onChange={(e) => handleEditFieldChange("status", e.target.value)}
-              fullWidth
-              select
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-            >
-              <MenuItem value="PENDING">PENDING</MenuItem>
-              <MenuItem value="APPROVED">APPROVED</MenuItem>
-              <MenuItem value="REJECTED">REJECTED</MenuItem>
-            </TextField>
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 2 }}>
-          <Button 
-            onClick={() => setEditDialogOpen(false)}
-            variant="outlined"
-            sx={{ borderRadius: 2 }}
-          >
-            Cancel
-          </Button>
-          <ActionButton 
-            onClick={handleSaveEdit} 
-            variant="contained"
-            sx={{ borderRadius: 2 }}
-          >
-            Save Changes
-          </ActionButton>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };
 
 export default GradedAccreditation;
+                                      

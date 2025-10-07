@@ -37,8 +37,7 @@ import {
 import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
-import MainLayout from "../../../templates/MainLayout";
-import backgroundImage from "../../../assets/login-bg.png";
+import SystemAdminNavigation from "../../../components/Navigation/SystemAdminNavigation";
 import axios from "axios";
 import { styled } from "@mui/material/styles";
 
@@ -269,8 +268,8 @@ const EvaluatorManagementPage = () => {
     : [];
 
   return (
-    <ThemeProvider theme={customTheme}>
-      <MainLayout background={backgroundImage}>
+    <SystemAdminNavigation activeTab="Evaluator Management">
+      <ThemeProvider theme={customTheme}>
         {/* Evaluators Management Section */}
         <Grow in={true} timeout={500}>
           <AnimatedPaper elevation={3} sx={{ p: 3, my: 2, overflow: 'hidden' }}>
@@ -590,8 +589,8 @@ const EvaluatorManagementPage = () => {
             </>
           )}
         </Dialog>
-      </MainLayout>
-    </ThemeProvider>
+      </ThemeProvider>
+    </SystemAdminNavigation>
   );
 };
 
