@@ -192,27 +192,51 @@ const ApplicantsListPage = () => {
             courseId: ev.course?.courseId || ev.courseId
           }));
           
-          setEvaluations(processedEvaluations);
-          
-          // Extract applicant and course IDs for fetching additional data
+          // Get all applicantIds from evaluations
           const applicantIds = [...new Set(
             processedEvaluations
               .map((ev) => ev.applicant?.applicantId || ev.applicantId)
               .filter(Boolean)
           )];
           
+          // Check which applicants are already in accepted applicants
+          let excludedIds = [];
+          if (applicantIds.length > 0) {
+            const acceptedApplicantPromises = applicantIds.map(id =>
+              fetch(`http://localhost:8080/api/accepted-applicants/applicant/${id}`)
+                .then(res => res.ok ? res.json() : null)
+                .catch(() => null)
+            );
+            const acceptedApplicantResults = await Promise.all(acceptedApplicantPromises);
+            excludedIds = applicantIds.filter((id, idx) => acceptedApplicantResults[idx] !== null);
+          }
+          
+          // Filter out applicants who are already in accepted applicants
+          const filteredEvaluations = processedEvaluations.filter(
+            ev => !excludedIds.includes(ev.applicant?.applicantId || ev.applicantId)
+          );
+          
+          setEvaluations(filteredEvaluations);
+          
+          // Extract remaining applicant and course IDs for fetching additional data
+          const remainingApplicantIds = [...new Set(
+            filteredEvaluations
+              .map((ev) => ev.applicant?.applicantId || ev.applicantId)
+              .filter(Boolean)
+          )];
+          
           const courseIds = [...new Set(
-            processedEvaluations
+            filteredEvaluations
               .map((ev) => ev.course?.courseId || ev.courseId)
               .filter(Boolean)
           )];
           
-          console.log("Applicant IDs to fetch:", applicantIds);
+          console.log("Filtered Applicant IDs to fetch:", remainingApplicantIds);
           console.log("Course IDs to fetch:", courseIds);
           
-          // Fetch applicants
-          if (applicantIds.length > 0) {
-            const applicantPromises = applicantIds.map(async id => {
+          // Fetch applicants (only those not in accepted applicants)
+          if (remainingApplicantIds.length > 0) {
+            const applicantPromises = remainingApplicantIds.map(async id => {
               const applicant = await fetchApplicant(id);
               return [id, applicant];
             });

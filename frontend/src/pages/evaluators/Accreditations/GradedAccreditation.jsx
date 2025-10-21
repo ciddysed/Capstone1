@@ -34,6 +34,8 @@ import GradeIcon from '@mui/icons-material/Grade';
 import SchoolIcon from '@mui/icons-material/School';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import BookIcon from '@mui/icons-material/Book';
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 import axios from "axios";
 
 const API_BASE = "http://localhost:8080/api";
@@ -125,7 +127,8 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
   const [editingRecordId, setEditingRecordId] = useState(null);
   const [editFields, setEditFields] = useState({
     grade: "",
-    status: "",
+    processOfAccreditation: "",
+    substantiveBasis: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -164,7 +167,8 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
     setEditingRecordId(record.id);
     setEditFields({
       grade: record.grade || "",
-      status: record.status || "",
+      processOfAccreditation: record.processOfAccreditation || "",
+      substantiveBasis: record.substantiveBasis || "",
     });
   };
 
@@ -173,7 +177,8 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
     setEditingRecordId(null);
     setEditFields({
       grade: "",
-      status: "",
+      processOfAccreditation: "",
+      substantiveBasis: "",
     });
   };
 
@@ -189,8 +194,11 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
       if (editFields.grade !== null && editFields.grade !== undefined && editFields.grade !== "") {
         params.append('grade', editFields.grade);
       }
-      if (editFields.status !== null && editFields.status !== undefined && editFields.status !== "") {
-        params.append('status', editFields.status);
+      if (editFields.processOfAccreditation !== null && editFields.processOfAccreditation !== undefined && editFields.processOfAccreditation !== "") {
+        params.append('processOfAccreditation', editFields.processOfAccreditation);
+      }
+      if (editFields.substantiveBasis !== null && editFields.substantiveBasis !== undefined && editFields.substantiveBasis !== "") {
+        params.append('substantiveBasis', editFields.substantiveBasis);
       }
 
       await axios.put(
@@ -211,7 +219,8 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
       setEditingRecordId(null);
       setEditFields({
         grade: "",
-        status: "",
+        processOfAccreditation: "",
+        substantiveBasis: "",
       });
       
       alert("Record updated successfully.");
@@ -224,6 +233,37 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
       alert(`Failed to update record: ${errorMessage}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Toggle lock/unlock status
+  const handleToggleLock = async (recordId, currentStatus) => {
+    const newStatus = currentStatus === "APPROVED" ? "PENDING" : "APPROVED";
+    
+    try {
+      const params = new URLSearchParams();
+      params.append('status', newStatus);
+
+      await axios.put(
+        `${API_BASE}/applicant-subject-records/${recordId}?${params.toString()}`,
+        null,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        }
+      );
+      
+      const refreshResponse = await axios.get(
+        `${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`
+      );
+      setRecords(refreshResponse.data);
+      
+      // Removed alert - just update silently
+    } catch (err) {
+      console.error("Failed to toggle lock:", err);
+      // Only show alert on error
+      alert("Failed to toggle lock status.");
     }
   };
 
@@ -303,14 +343,16 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
                     <TableHead>
                       <TableRow>
                         <StyledTableCell sx={{ minWidth: 250 }}>Subject</StyledTableCell>
-                        <StyledTableCell sx={{ minWidth: 120 }}>Grade</StyledTableCell>
-                        <StyledTableCell sx={{ minWidth: 120 }}>Status</StyledTableCell>
-                        <StyledTableCell align="center" sx={{ minWidth: 150 }}>Actions</StyledTableCell>
+                        <StyledTableCell sx={{ minWidth: 100 }}>Grade</StyledTableCell>
+                        <StyledTableCell sx={{ minWidth: 200 }}>Process of Accreditation</StyledTableCell>
+                        <StyledTableCell sx={{ minWidth: 200 }}>Substantive Basis</StyledTableCell>
+                        <StyledTableCell align="center" sx={{ minWidth: 150 }}>Lock/Unlock Record</StyledTableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {records[semester].map((rec) => {
                         const isEditing = editingRecordId === rec.id;
+                        const isLocked = rec.status === "APPROVED";
                         
                         return (
                           <StyledTableRow key={rec.id}>
@@ -327,11 +369,30 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
                             
                             {/* Grade Cell */}
                             <StyledTableCell>
-                              {isEditing ? (
+                              {!isLocked ? (
                                 <TextField
                                   size="small"
-                                  value={editFields.grade}
-                                  onChange={(e) => handleEditFieldChange("grade", e.target.value)}
+                                  value={rec.grade || ""}
+                                  onChange={(e) => {
+                                    // Auto-save on change
+                                    const newGrade = e.target.value;
+                                    const params = new URLSearchParams();
+                                    if (newGrade) params.append('grade', newGrade);
+                                    
+                                    axios.put(
+                                      `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
+                                      null,
+                                      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+                                    ).then(() => {
+                                      // Update local state
+                                      setRecords(prev => ({
+                                        ...prev,
+                                        [semester]: prev[semester].map(r => 
+                                          r.id === rec.id ? { ...r, grade: newGrade } : r
+                                        )
+                                      }));
+                                    });
+                                  }}
                                   fullWidth
                                   placeholder="Enter grade"
                                   sx={{
@@ -345,99 +406,145 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
                                   variant="body2" 
                                   fontWeight={rec.grade ? 600 : 400}
                                   color={rec.grade ? 'text.primary' : 'text.secondary'}
+                                  sx={{
+                                    backgroundColor: alpha(gold.light, 0.3),
+                                    padding: 1,
+                                    borderRadius: 1,
+                                    border: `1px solid ${alpha(gold.main, 0.5)}`
+                                  }}
                                 >
                                   {rec.grade || "Not graded"}
                                 </Typography>
                               )}
                             </StyledTableCell>
                             
-                            {/* Status Cell */}
+                            {/* Process of Accreditation Cell */}
                             <StyledTableCell>
-                              {isEditing ? (
-                                <FormControl fullWidth size="small">
-                                  <Select
-                                    value={editFields.status}
-                                    onChange={(e) => handleEditFieldChange("status", e.target.value)}
-                                    sx={{
-                                      borderRadius: 1,
-                                    }}
-                                  >
-                                    <MenuItem value="PENDING">PENDING</MenuItem>
-                                    <MenuItem value="APPROVED">APPROVED</MenuItem>
-                                    <MenuItem value="REJECTED">REJECTED</MenuItem>
-                                  </Select>
-                                </FormControl>
-                              ) : (
-                                <Chip
-                                  label={rec.status}
-                                  color={getStatusColor(rec.status)}
-                                  variant="outlined"
+                              {!isLocked ? (
+                                <TextField
                                   size="small"
+                                  value={rec.processOfAccreditation || ""}
+                                  onChange={(e) => {
+                                    // Auto-save on change
+                                    const newProcess = e.target.value;
+                                    const params = new URLSearchParams();
+                                    if (newProcess) params.append('processOfAccreditation', newProcess);
+                                    
+                                    axios.put(
+                                      `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
+                                      null,
+                                      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+                                    ).then(() => {
+                                      // Update local state
+                                      setRecords(prev => ({
+                                        ...prev,
+                                        [semester]: prev[semester].map(r => 
+                                          r.id === rec.id ? { ...r, processOfAccreditation: newProcess } : r
+                                        )
+                                      }));
+                                    });
+                                  }}
+                                  fullWidth
+                                  multiline
+                                  rows={2}
+                                  placeholder="Enter process"
+                                  sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                      borderRadius: 1,
+                                    }
+                                  }}
                                 />
+                              ) : (
+                                <Typography 
+                                  variant="body2"
+                                  color={rec.processOfAccreditation ? 'text.primary' : 'text.secondary'}
+                                  sx={{
+                                    backgroundColor: alpha(gold.light, 0.3),
+                                    padding: 1,
+                                    borderRadius: 1,
+                                    border: `1px solid ${alpha(gold.main, 0.5)}`,
+                                    maxWidth: 200,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                  }}
+                                >
+                                  {rec.processOfAccreditation || "Not specified"}
+                                </Typography>
+                              )}
+                            </StyledTableCell>
+                            
+                            {/* Substantive Basis Cell */}
+                            <StyledTableCell>
+                              {!isLocked ? (
+                                <TextField
+                                  size="small"
+                                  value={rec.substantiveBasis || ""}
+                                  onChange={(e) => {
+                                    // Auto-save on change
+                                    const newBasis = e.target.value;
+                                    const params = new URLSearchParams();
+                                    if (newBasis) params.append('substantiveBasis', newBasis);
+                                    
+                                    axios.put(
+                                      `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
+                                      null,
+                                      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+                                    ).then(() => {
+                                      // Update local state
+                                      setRecords(prev => ({
+                                        ...prev,
+                                        [semester]: prev[semester].map(r => 
+                                          r.id === rec.id ? { ...r, substantiveBasis: newBasis } : r
+                                        )
+                                      }));
+                                    });
+                                  }}
+                                  fullWidth
+                                  multiline
+                                  rows={2}
+                                  placeholder="Enter basis"
+                                  sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                      borderRadius: 1,
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <Typography 
+                                  variant="body2"
+                                  color={rec.substantiveBasis ? 'text.primary' : 'text.secondary'}
+                                  sx={{
+                                    backgroundColor: alpha(gold.light, 0.3),
+                                    padding: 1,
+                                    borderRadius: 1,
+                                    border: `1px solid ${alpha(gold.main, 0.5)}`,
+                                    maxWidth: 200,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                  }}
+                                >
+                                  {rec.substantiveBasis || "Not specified"}
+                                </Typography>
                               )}
                             </StyledTableCell>
                             
                             {/* Actions Cell */}
                             <StyledTableCell align="center">
-                              {isEditing ? (
-                                <Stack direction="row" spacing={1} justifyContent="center">
-                                  <Tooltip title="Save Changes">
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleSaveEdit(rec.id)}
-                                      disabled={saving}
-                                      sx={{
-                                        color: '#2e7d32',
-                                        backgroundColor: alpha('#2e7d32', 0.1),
-                                        '&:hover': {
-                                          backgroundColor: alpha('#2e7d32', 0.2),
-                                        },
-                                        '&:disabled': {
-                                          backgroundColor: alpha('#2e7d32', 0.05),
-                                        }
-                                      }}
-                                    >
-                                      {saving ? (
-                                        <CircularProgress size={16} sx={{ color: '#2e7d32' }} />
-                                      ) : (
-                                        <SaveIcon fontSize="small" />
-                                      )}
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Cancel">
-                                    <IconButton
-                                      size="small"
-                                      onClick={handleCancelEdit}
-                                      disabled={saving}
-                                      sx={{
-                                        color: '#d32f2f',
-                                        backgroundColor: alpha('#d32f2f', 0.1),
-                                        '&:hover': {
-                                          backgroundColor: alpha('#d32f2f', 0.2),
-                                        }
-                                      }}
-                                    >
-                                      <CancelIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Stack>
-                              ) : (
-                                <Tooltip title="Edit Record">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleEditClick(rec)}
-                                    sx={{
-                                      color: maroon.main,
-                                      backgroundColor: alpha(maroon.main, 0.1),
-                                      '&:hover': {
-                                        backgroundColor: alpha(maroon.main, 0.2),
-                                      }
-                                    }}
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
+                              <Tooltip title={isLocked ? "Unlock Record" : "Lock Record"}>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleToggleLock(rec.id, rec.status)}
+                                  sx={{
+                                    color: isLocked ? '#ff9800' : '#4caf50',
+                                    backgroundColor: alpha(isLocked ? '#ff9800' : '#4caf50', 0.1),
+                                    '&:hover': {
+                                      backgroundColor: alpha(isLocked ? '#ff9800' : '#4caf50', 0.2),
+                                    }
+                                  }}
+                                >
+                                  {isLocked ? <LockIcon fontSize="small" /> : <LockOpenIcon fontSize="small" />}
+                                </IconButton>
+                              </Tooltip>
                             </StyledTableCell>
                           </StyledTableRow>
                         );
@@ -476,4 +583,3 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
 };
 
 export default GradedAccreditation;
-                                      
