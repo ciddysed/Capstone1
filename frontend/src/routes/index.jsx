@@ -30,6 +30,7 @@ import CurriculumRouter from "../pages/admin/ApplicantDetailsPage/curriculumRout
 import Accreditations from "../pages/evaluators/Accreditations/Accreditations";
 import GradedAccreditation from "../pages/evaluators/Accreditations/GradedAccreditation";
 import AccreditedAccounts from "../pages/evaluators/Accreditations/AccreditedAccounts";
+import AcceptedDashboard from "../pages/applicants/AcceptedDashboard";
 
 const AppRoutes = () => {
   return useRoutes([
@@ -88,6 +89,14 @@ const AppRoutes = () => {
       element: (
         <ProtectedRoute>
           <ApplicationTrack />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/accepted-dashboard",
+      element: (
+        <ProtectedRoute>
+          <AcceptedDashboard />
         </ProtectedRoute>
       ),
     },

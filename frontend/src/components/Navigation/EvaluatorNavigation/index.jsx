@@ -26,6 +26,7 @@ import Accreditations from "../../../pages/evaluators/Accreditations/Accreditati
 import AccreditedAccounts from "../../../pages/evaluators/Accreditations/AccreditedAccounts";
 import GradedAccreditation from "../../../pages/evaluators/Accreditations/GradedAccreditation";
 import NotificationCenter from "../../Notifications/NotificationCenter";
+import { handleLogout } from "../../../utils/logoutUtils";
 
 const EvaluatorNavigation = ({ children, initialGradedState = null }) => {
   const [activeButton, setActiveButton] = useState("Applicants");
@@ -37,7 +38,7 @@ const EvaluatorNavigation = ({ children, initialGradedState = null }) => {
     setActiveButton(item);
 
     if (item === "Logout") {
-      navigate("/evaluator/login");
+      handleLogout(navigate);
     }
   };
 

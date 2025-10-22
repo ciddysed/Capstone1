@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { AccountCircle, Logout, Person as UserIcon, School as GraduationCapIcon } from "@mui/icons-material"; // Import logout icon
 import backgroundImage from "../../assets/login-bg.png";
 import NotificationCenter from "../../components/Notifications/NotificationCenter";
+import { handleLogout } from "../../utils/logoutUtils";
 
 // Maroon and Gold theme colors
 const maroonTheme = {
@@ -44,22 +45,9 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
   const handleClosePopover = () => {
     setAnchorEl(null);
   };
-    const onLogout = () => {
-    const userType = localStorage.getItem("userType");
-    
-    // Clear all localStorage data
-    localStorage.clear();
-    
-    // Redirect based on user type
-    if (userType === "evaluator") {
-      navigate("/evaluator/login");
-    } else if (userType === "program-admin") {
-      navigate("/program-admin/login");
-    } else if (userType === "system-admin") {
-      navigate("/system-admin/login");
-    } else {
-      navigate("/login");
-    }
+  
+  const onLogout = () => {
+    handleLogout(navigate);
   };
 
   const open = Boolean(anchorEl);
