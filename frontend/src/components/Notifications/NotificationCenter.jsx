@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, Typography, Badge, Menu, MenuItem, IconButton, 
   List, ListItem, ListItemText, Divider, CircularProgress, 
@@ -7,6 +7,7 @@ import {
 import { Notifications as NotificationsIcon, Circle } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import * as localNotificationService from '../../services/localNotificationService';
+import notificationService from '../../services/notificationService';
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -43,33 +44,62 @@ const NotificationCenter = ({ userType, userId }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [error, setError] = useState(null);
   
-  // Fetch notifications from localStorage
-  const fetchNotifications = () => {
+  // Fetch notifications from backend or localStorage (fallback)
+  const fetchNotifications = useCallback(() => {
     if (!userId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Get notifications from localStorage
-      const userNotifications = localNotificationService.getNotifications(userType, userId);
-      setNotifications(userNotifications || []);
-      setLoading(false);
+      // Try backend first, fallback to localStorage on error
+      notificationService.getNotifications(userType, userId)
+        .then(data => {
+          setNotifications(data || []);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.warn('Notification API unavailable, falling back to localStorage', err);
+          const userNotifications = localNotificationService.getNotifications(userType, userId);
+          setNotifications(userNotifications || []);
+          setLoading(false);
+        });
     } catch (err) {
       console.error('Error fetching notifications:', err);
       setError('Failed to load notifications');
       setLoading(false);
     }
-  };
+  }, [userId, userType]);
   
   useEffect(() => {
     fetchNotifications();
-    
+
     // Set up polling for new notifications (every minute in development)
     const intervalId = setInterval(fetchNotifications, 60000);
-    
-    return () => clearInterval(intervalId);
-  }, [userId, userType]);
+
+    // Listen for notification updates dispatched elsewhere (optimistic create reconciliation)
+    const handler = (e) => {
+      try {
+        const detail = e?.detail || {};
+        // If detail contains userType/userId, only refresh for that user
+        if (detail.userType && detail.userId) {
+          if (String(detail.userType) !== String(userType) || String(detail.userId) !== String(userId)) {
+            return;
+          }
+        }
+        fetchNotifications();
+      } catch (err) {
+        console.warn('notifications:updated handler error', err);
+      }
+    };
+
+    window.addEventListener('notifications:updated', handler);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('notifications:updated', handler);
+    };
+  }, [fetchNotifications, userType, userId]);
 
   // Menu handlers
   const handleOpenMenu = (event) => {
@@ -81,23 +111,39 @@ const NotificationCenter = ({ userType, userId }) => {
   };
   
   const handleMarkAsRead = (notificationId) => {
-    // Mark notification as read in localStorage
-    localNotificationService.markAsRead(notificationId);
-    
-    // Update state
-    setNotifications(notifications.map(notification => 
-      notification.id === notificationId 
-        ? { ...notification, read: true } 
-        : notification
-    ));
+    // Try backend first
+    notificationService.markAsRead(notificationId)
+      .then(ok => {
+        if (!ok) throw new Error('API markAsRead failed');
+        setNotifications(notifications.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, read: true } 
+            : notification
+        ));
+      })
+      .catch(() => {
+        // Fallback to localStorage
+        localNotificationService.markAsRead(notificationId);
+        setNotifications(notifications.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, read: true } 
+            : notification
+        ));
+      });
   };
   
   const handleMarkAllAsRead = () => {
-    // Mark all notifications as read in localStorage
-    localNotificationService.markAllAsRead(userType, userId);
-    
-    // Update state
-    setNotifications(notifications.map(notification => ({ ...notification, read: true })));
+    // Try backend first
+    notificationService.markAllAsRead(userType, userId)
+      .then(ok => {
+        if (!ok) throw new Error('API markAllAsRead failed');
+        setNotifications(notifications.map(notification => ({ ...notification, read: true })));
+      })
+      .catch(() => {
+        // Fallback to localStorage
+        localNotificationService.markAllAsRead(userType, userId);
+        setNotifications(notifications.map(notification => ({ ...notification, read: true })));
+      });
   };
   
   // Format relative time

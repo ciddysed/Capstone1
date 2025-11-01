@@ -45,6 +45,10 @@ import DocumentHandler from "./DocumentHandler";
 import ApplicantInfo from "./ApplicantInfo";
 import CoursePreferences from "./CoursePreferences";
 
+// Notifications
+import NotificationCenter from '../../../components/Notifications/NotificationCenter';
+import useSubjectNotifications from '../../../hooks/useSubjectNotifications';
+
 import {
   TrackingPaper,
   StatusChip,
@@ -91,6 +95,7 @@ const ApplicationTracking = () => {
   );
   const [coursePreferences, setCoursePreferences] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [subjectsList, setSubjectsList] = useState([]);
   const [availableCourses, setAvailableCourses] = useState([]);
   const [loading, setLoading] = useState({
     profile: true,
@@ -212,6 +217,26 @@ const ApplicationTracking = () => {
     [api, getInitials, handleError]
   );
 
+    // Fetch all subjects for notification tracking
+    const fetchAllSubjects = useCallback(async () => {
+      const id = localStorage.getItem('applicantId');
+      if (!id) return [];
+
+      try {
+        const response = await api.get(`/applicant-subject-records/applicant/${id}/organized-clean`);
+        const allSubjects = [];
+        Object.values(response.data).forEach(semesterSubjects => {
+          allSubjects.push(...semesterSubjects);
+        });
+        setSubjectsList(allSubjects);
+        return allSubjects;
+      } catch (err) {
+        console.warn('Failed to fetch subjects for notifications', err);
+        setSubjectsList([]);
+        return [];
+      }
+    }, [api]);
+
   const fetchDocuments = useCallback(async (applicantId) => {
     if (!applicantId) return;
     
@@ -256,6 +281,20 @@ const ApplicationTracking = () => {
       setLoading((prev) => ({ ...prev, courses: false }));
     }
   }, [api]);
+
+  // Initialize subject-level notifications (real-time polling and toasts)
+  // Initialize subject-level notifications (real-time polling and toasts)
+  useSubjectNotifications(
+    localStorage.getItem('applicantId'),
+    subjectsList,
+    fetchAllSubjects,
+    {
+      enablePolling: true,
+      pollingInterval: 30000,
+      showToast: true,
+      autoInitialize: true
+    }
+  );
 
   const fetchCoursePreferences = useCallback(
     async (applicantId) => {
@@ -347,6 +386,8 @@ const ApplicationTracking = () => {
           fetchCourses();
           fetchCoursePreferences(applicantId);
           fetchDocuments(applicantId);
+            // Also fetch subject records to enable subject-level notifications
+            fetchAllSubjects();
         }
       });
     }
@@ -637,6 +678,9 @@ const ApplicationTracking = () => {
                 </Box>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                {/* Notification icon */}
+                <NotificationCenter userType={userType} userId={applicantId} />
+
                 <Box sx={{ textAlign: "right" }}>
                   <Typography variant="body2" fontWeight="medium" color="white">
                     {userData.name || "Loading..."}

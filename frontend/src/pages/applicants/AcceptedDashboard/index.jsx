@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
   Box, Typography, Stack, Paper, Grid, Card, CardContent, 
   Button, Divider, Chip, CircularProgress, Avatar, alpha,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Accordion, AccordionSummary, AccordionDetails, LinearProgress
+  Accordion, AccordionSummary, AccordionDetails, LinearProgress, Badge
 } from "@mui/material";
 import { 
   School as SchoolIcon, 
@@ -11,18 +11,21 @@ import {
   Celebration as CelebrationIcon,
   AccountBalance as AccountBalanceIcon,
   EmojiEvents as EmojiEventsIcon,
-  ArrowForward as ArrowForwardIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   HourglassEmpty as PendingIcon,
   ExpandMore as ExpandMoreIcon,
-  Warning as WarningIcon
+  Warning as WarningIcon,
+  Notifications as NotificationsIcon,
+  Refresh as RefreshIcon
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import MainLayout from "../../../templates/MainLayout";
 import backgroundImage from "../../../assets/login-bg.png";
 import useResponseHandler from "../../../utils/useResponseHandler";
+import SubjectDetailModal from "./SubjectDetailModal";
+import useSubjectNotifications from "../../../hooks/useSubjectNotifications";
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -77,6 +80,53 @@ const AcceptedDashboard = () => {
   const [subjectRecords, setSubjectRecords] = useState({});
   const [curriculumSummary, setCurriculumSummary] = useState(null);
   const [expandedSemester, setExpandedSemester] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Function to fetch all subjects (flattened from organized data)
+  const fetchAllSubjects = useCallback(async () => {
+    const applicantId = localStorage.getItem("applicantId");
+    if (!applicantId) return [];
+    
+    try {
+      // Using the actual working API endpoint
+      const response = await axios.get(
+        `http://localhost:8080/api/applicant-subject-records/applicant/${applicantId}/organized-clean`
+      );
+      
+      // Flatten the organized data into a single array
+      const allSubjects = [];
+      Object.values(response.data).forEach(semesterSubjects => {
+        allSubjects.push(...semesterSubjects);
+      });
+      
+      return allSubjects;
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+      return [];
+    }
+  }, []);
+
+  // Get all subjects in a flat array for notification tracking
+  const allSubjectsFlat = Object.values(subjectRecords).flat();
+
+  // Initialize real-time notification system
+  const {
+    isTracking,
+    notificationCount,
+    summary: notificationSummary,
+    checkNow,
+    refreshSummary
+  } = useSubjectNotifications(
+    localStorage.getItem("applicantId"),
+    allSubjectsFlat,
+    fetchAllSubjects,
+    {
+      enablePolling: true,
+      showToast: true,
+      autoInitialize: true
+    }
+  );
 
   useEffect(() => {
     const applicantId = localStorage.getItem("applicantId");
@@ -107,15 +157,21 @@ const AcceptedDashboard = () => {
           return;
         }
         
-        // Fetch subject records organized by semester
+        // Fetch subject records organized by semester (using working API)
         const subjectRecordsResponse = await axios.get(
-          `http://localhost:8080/api/applicant-subject-records/applicant/${applicantId}/organized`
+          `http://localhost:8080/api/applicant-subject-records/applicant/${applicantId}/organized-clean`
         );
         
-        // Fetch curriculum summary
-        const summaryResponse = await axios.get(
-          `http://localhost:8080/api/applicant-subject-records/applicant/${applicantId}/summary`
-        );
+        // Calculate curriculum summary from the fetched data
+        const allRecords = Object.values(subjectRecordsResponse.data).flat();
+        const summaryResponse = {
+          data: {
+            totalSubjects: allRecords.length,
+            approvedCount: allRecords.filter(r => r.status === 'APPROVED').length,
+            pendingCount: allRecords.filter(r => r.status === 'PENDING').length,
+            rejectedCount: allRecords.filter(r => r.status === 'REJECTED').length
+          }
+        };
         
         setApplicantData(applicantResponse.data);
         setAcceptanceData(acceptedResponse.data);
@@ -133,7 +189,7 @@ const AcceptedDashboard = () => {
     };
     
     fetchData();
-  }, [navigate, handleError, handleSuccess]);
+  }, [navigate, handleError, handleSuccess, fetchAllSubjects]);
   
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -170,6 +226,16 @@ const AcceptedDashboard = () => {
 
   const handleAccordionChange = (panel) => (event, isExpanded) => {
     setExpandedSemester(isExpanded ? panel : false);
+  };
+
+  const handleSubjectClick = (record) => {
+    setSelectedSubject(record);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedSubject(null);
   };
   
   if (loading) {
@@ -232,25 +298,89 @@ const AcceptedDashboard = () => {
           </Grid>
           <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
             <EmojiEventsIcon sx={{ fontSize: 80, color: maroon.main, mb: 1 }} />
-            <Button 
-              variant="contained" 
-              endIcon={<ArrowForwardIcon />}
-              onClick={() => navigate("/ApplicationTrack")}
-              sx={{ 
-                bgcolor: maroon.main, 
-                '&:hover': { bgcolor: maroon.dark },
-                borderRadius: 5,
-                px: 3,
-                py: 1.5,
-                fontSize: 16,
-                fontWeight: 600
-              }}
-            >
-              View Application
-            </Button>
+            {/* Removed redundant 'View Application' button to avoid duplicate CTAs. Use the main navigation or page header to access application tracking. */}
           </Grid>
         </Grid>
       </Paper>
+
+      {/* Real-Time Notifications Status Bar */}
+      {isTracking && (
+        <Paper
+          elevation={1}
+          sx={{
+            p: 2,
+            mb: 3,
+            borderRadius: 2,
+            bgcolor: alpha('#2196f3', 0.05),
+            border: `1px solid ${alpha('#2196f3', 0.2)}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Badge 
+              badgeContent={notificationCount} 
+              color="error"
+              max={99}
+            >
+              <NotificationsIcon sx={{ color: '#2196f3', fontSize: 32 }} />
+            </Badge>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ color: '#2196f3' }}>
+                Real-Time Notifications Active
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                You'll be notified immediately when subject evaluations are completed
+              </Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {notificationSummary && (
+              <Box sx={{ display: 'flex', gap: 2, mr: 2 }}>
+                <Chip 
+                  size="small" 
+                  label={`${notificationSummary.approved} Approved`}
+                  sx={{ bgcolor: alpha('#4caf50', 0.1), color: '#4caf50', fontWeight: 600 }}
+                />
+                <Chip 
+                  size="small" 
+                  label={`${notificationSummary.pending} Pending`}
+                  sx={{ bgcolor: alpha('#ff9800', 0.1), color: '#ff9800', fontWeight: 600 }}
+                />
+                {notificationSummary.rejected > 0 && (
+                  <Chip 
+                    size="small" 
+                    label={`${notificationSummary.rejected} Rejected`}
+                    sx={{ bgcolor: alpha('#f44336', 0.1), color: '#f44336', fontWeight: 600 }}
+                  />
+                )}
+              </Box>
+            )}
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<RefreshIcon />}
+              onClick={async () => {
+                await checkNow();
+                refreshSummary();
+              }}
+              sx={{ 
+                borderColor: '#2196f3',
+                color: '#2196f3',
+                '&:hover': {
+                  borderColor: '#1976d2',
+                  bgcolor: alpha('#2196f3', 0.05)
+                }
+              }}
+            >
+              Check Now
+            </Button>
+          </Box>
+        </Paper>
+      )}
 
       <Grid container spacing={3}>
         {/* Left column - Subject Records */}
@@ -377,7 +507,18 @@ const AcceptedDashboard = () => {
                             </TableHead>
                             <TableBody>
                               {records.map((record) => (
-                                <TableRow key={record.id} hover>
+                                <TableRow 
+                                  key={record.id} 
+                                  hover
+                                  onClick={() => handleSubjectClick(record)}
+                                  sx={{ 
+                                    cursor: 'pointer',
+                                    '&:hover': {
+                                      bgcolor: alpha(maroon.light, 0.08),
+                                      transition: 'background-color 0.2s'
+                                    }
+                                  }}
+                                >
                                   <TableCell>{record.subject?.subjectCode || 'N/A'}</TableCell>
                                   <TableCell>{record.subject?.descriptiveTitle || 'N/A'}</TableCell>
                                   <TableCell align="center">
@@ -531,6 +672,14 @@ const AcceptedDashboard = () => {
           </Stack>
         </Grid>
       </Grid>
+
+      {/* Subject Detail Modal */}
+      <SubjectDetailModal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        subjectRecord={selectedSubject}
+      />
+
       {snackbar}
     </MainLayout>
   );

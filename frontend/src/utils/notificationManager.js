@@ -1,4 +1,5 @@
-import { createNotification } from '../services/localNotificationService';
+import * as localNotificationService from '../services/localNotificationService';
+import notificationService from '../services/notificationService';
 
 /**
  * Add a notification for a specific user
@@ -10,11 +11,58 @@ import { createNotification } from '../services/localNotificationService';
  * @returns {Object|null} The created notification or null if creation failed
  */
 export const addNotification = (userType, userId, title, message, type = 'info') => {
-  return createNotification(userType, userId, {
+  // Create the notification locally (optimistic/fallback) with a clientTempId
+  const clientTempId = `temp_${Date.now()}`;
+  const local = localNotificationService.createNotification(userType, userId, {
     title,
     message,
-    type
+    type,
+    clientTempId
   });
+
+  // Attempt to persist the notification to the backend in the background.
+  // Payload shape expected by backend: { applicant: { applicantId: <id> }, title, message, type }
+  try {
+    const applicantId = Number(userId);
+    const payload = {
+      applicant: { applicantId: applicantId },
+      title,
+      message,
+      // Backend expects enum values like SUCCESS, INFO, WARNING, ERROR
+      type: (type || 'info').toString().toUpperCase(),
+      // Attach temp id so we can reconcile when server responds; ignored by server if unknown
+      clientTempId
+    };
+
+    // fire-and-forget, but reconcile local copy when server returns
+    notificationService.createNotification(payload)
+      .then(serverCreated => {
+        try {
+          // Replace local optimistic notification with server-provided representation
+          localNotificationService.replaceLocalNotification(clientTempId, userType, userId, serverCreated);
+          // Notify any listeners (e.g., NotificationCenter) that notifications have been updated
+          try {
+            window.dispatchEvent(new CustomEvent('notifications:updated', {
+              detail: { userType, userId, notification: serverCreated }
+            }));
+          } catch (evtErr) {
+            // Ignore dispatch errors
+            console.warn('Failed to dispatch notifications:updated event', evtErr);
+          }
+        } catch (e) {
+          console.warn('Failed to reconcile server notification with local copy:', e);
+        }
+      })
+      .catch(err => {
+        // If backend create fails, keep local notification as-is. Log for diagnostics.
+        console.warn('Failed to persist notification to backend, using local storage only.', err);
+      });
+  } catch (err) {
+    // Parsing or unexpected errors should not block the UI; local notification is already created.
+    console.warn('Notification persistence background task failed to start.', err);
+  }
+
+  return local;
 };
 
 /**

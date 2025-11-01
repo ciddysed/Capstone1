@@ -1,73 +1,18 @@
 const LOCAL_STORAGE_KEY = 'eteeap_notifications';
 
-// Generate random mock notifications for a user
-const generateMockNotifications = (userId, userType) => {
-  const types = ['success', 'info', 'warning', 'error'];
-  const now = new Date();
-  
-  // Different notifications based on user type
-  let templates = [];
-  
-  if (userType === 'applicant') {
-    templates = [
-      { title: 'Application Status Update', message: 'Your application has been approved!' },
-      { title: 'Document Reminder', message: 'Please upload your TOR within 7 days.' },
-      { title: 'Interview Scheduled', message: 'You have an interview scheduled for tomorrow at 10:00 AM.' },
-      { title: 'Evaluation Complete', message: 'Your application has been evaluated. Check your status.' },
-    ];
-  } else if (userType === 'evaluator') {
-    templates = [
-      { title: 'New Application Assigned', message: 'You have a new application to evaluate.' },
-      { title: 'Evaluation Deadline', message: 'Please complete your pending evaluations by Friday.' },
-      { title: 'Department Meeting', message: 'Program committee meeting scheduled for next week.' },
-      { title: 'Document Updated', message: 'An applicant has updated their documents.' },
-    ];
-  } else {
-    // Admin notifications
-    templates = [
-      { title: 'System Update', message: 'System maintenance scheduled for tonight at 10:00 PM.' },
-      { title: 'New Applicants', message: '5 new applications received this week.' },
-      { title: 'Evaluator Assignment', message: 'Please assign evaluators to pending applications.' },
-      { title: 'Report Ready', message: 'Monthly application report is ready for review.' },
-    ];
-  }
-  
-  // Generate 3-7 random notifications
-  const count = Math.floor(Math.random() * 5) + 3;
-  const notifications = [];
-  
-  for (let i = 0; i < count; i++) {
-    const template = templates[Math.floor(Math.random() * templates.length)];
-    const type = types[Math.floor(Math.random() * types.length)];
-    const daysAgo = Math.floor(Math.random() * 7);
-    
-    notifications.push({
-      id: i + 1,
-      title: template.title,
-      message: template.message,
-      createdAt: new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000)).toISOString(),
-      read: Math.random() > 0.4, // 40% chance of being unread
-      type,
-    });
-  }
-  
-  return notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-};
+// Note: auto-generated/mock notifications removed.
+// Local storage will start empty and the UI should show no notifications until
+// they are created by the backend or via `createNotification`.
 
 export const getNotifications = (userType, userId) => {
   try {
     // Try to get from localStorage first
     const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
     let notifications = storedData ? JSON.parse(storedData) : {};
-    
-    // Initialize user's notifications if they don't exist
+
+    // Return user's notifications array or an empty array (no auto-generated mocks)
     const userKey = `${userType}_${userId}`;
-    if (!notifications[userKey]) {
-      notifications[userKey] = generateMockNotifications(userId, userType);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(notifications));
-    }
-    
-    return notifications[userKey];
+    return notifications[userKey] || [];
   } catch (error) {
     console.error('Error getting notifications from localStorage:', error);
     return [];
@@ -136,8 +81,12 @@ export const createNotification = (userType, userId, notification) => {
       notifications[userKey] = [];
     }
     
+    // Allow an optional clientTempId to help reconcile local and server notifications
+    const clientTempId = notification.clientTempId || null;
+
     const newNotification = {
-      id: Date.now(), // Simple way to generate unique IDs
+      id: Date.now(), // Simple way to generate unique IDs for local-only items
+      clientTempId,
       title: notification.title,
       message: notification.message,
       type: notification.type || 'info',
@@ -152,5 +101,46 @@ export const createNotification = (userType, userId, notification) => {
   } catch (error) {
     console.error('Error creating notification:', error);
     return null;
+  }
+};
+
+/**
+ * Replace a local notification (matched by clientTempId) with the server-created one.
+ * If no matching local notification is found, the server notification is prepended.
+ */
+export const replaceLocalNotification = (clientTempId, userType, userId, serverNotification) => {
+  if (!clientTempId) return false;
+
+  try {
+    const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const notifications = storedData ? JSON.parse(storedData) : {};
+    const userKey = `${userType}_${userId}`;
+    if (!notifications[userKey]) {
+      notifications[userKey] = [];
+    }
+
+    const idx = notifications[userKey].findIndex(n => n.clientTempId === clientTempId);
+    const mapped = {
+      id: serverNotification.id,
+      title: serverNotification.title,
+      message: serverNotification.message,
+      type: (serverNotification.type || 'INFO').toLowerCase(),
+      read: !!serverNotification.read,
+      createdAt: serverNotification.createdAt || new Date().toISOString()
+    };
+
+    if (idx !== -1) {
+      // Replace while preserving ordering
+      notifications[userKey][idx] = mapped;
+    } else {
+      // If not found, add server notification to the front
+      notifications[userKey].unshift(mapped);
+    }
+
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(notifications));
+    return true;
+  } catch (err) {
+    console.error('Error replacing local notification with server notification:', err);
+    return false;
   }
 };
