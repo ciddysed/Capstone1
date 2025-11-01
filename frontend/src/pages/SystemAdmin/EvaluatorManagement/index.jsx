@@ -40,6 +40,7 @@ import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import SystemAdminNavigation from "../../../components/Navigation/SystemAdminNavigation";
 import axios from "axios";
 import { styled } from "@mui/material/styles";
+import toast from "../../../utils/toast";
 
 const EVALUATOR_API_URL = "http://localhost:8080/api/evaluators";
 
@@ -217,11 +218,11 @@ const EvaluatorManagementPage = () => {
           setSelectedEvaluator({...selectedEvaluator, isAdmin});
         }
         
-        alert(`Evaluator ${isAdmin ? 'granted admin privileges' : 'admin privileges revoked'}`);
+        toast.success(`Evaluator ${isAdmin ? 'granted admin privileges' : 'admin privileges revoked'}`);
       }
     } catch (error) {
       console.error("Error updating evaluator admin status:", error);
-      alert(`Failed to update evaluator: ${error.response?.data?.message || error.message}`);
+      toast.error(`Failed to update evaluator: ${error.response?.data?.message || error.message}`);
     } finally {
       setUpdatingEvaluator(false);
     }
@@ -312,7 +313,7 @@ const EvaluatorManagementPage = () => {
                       <TableRow>
                         <StyledTableCell>ID</StyledTableCell>
                         <StyledTableCell>Name</StyledTableCell>
-                        <StyledTableCell>Department</StyledTableCell>
+                        <StyledTableCell>Course</StyledTableCell>
                         <StyledTableCell>Email</StyledTableCell>
                         <StyledTableCell>Role</StyledTableCell>
                         <StyledTableCell align="center">Admin Status</StyledTableCell>

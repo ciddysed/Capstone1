@@ -4,6 +4,7 @@ import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import AppRoutes from "./routes";
 import SystemAdminNavigation from "./components/Navigation/SystemAdminNavigation";
 import CurriculumRouter from "./pages/SystemAdmin/ApplicantDetailsPage/curriculumRouter";
+import ToastProvider from "./components/ToastProvider";
 
 // Optional: Create a custom theme
 const theme = createTheme({
@@ -24,6 +25,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <ToastProvider />
       <Router>
         <Routes>
           <Route

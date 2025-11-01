@@ -37,6 +37,7 @@ import BookIcon from '@mui/icons-material/Book';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import axios from "axios";
+import toast from "../../../utils/toast";
 
 const API_BASE = "http://localhost:8080/api";
 
@@ -156,9 +157,9 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
       axios
         .get(`${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`)
         .then((res) => setRecords(res.data));
-      alert("Curriculum records created successfully.");
+      toast.success("Curriculum records created successfully.");
     } catch (err) {
-      alert("Failed to create curriculum records.");
+      toast.error("Failed to create curriculum records.");
     }
   };
 
@@ -223,14 +224,14 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
         substantiveBasis: "",
       });
       
-      alert("Record updated successfully.");
+      toast.success("Record updated successfully.");
     } catch (err) {
       console.error("Failed to update record:", err);
       const errorMessage = err.response?.data?.message || 
                           err.response?.data || 
                           err.message || 
                           "Unknown error occurred";
-      alert(`Failed to update record: ${errorMessage}`);
+      toast.error(`Failed to update record: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
@@ -263,7 +264,7 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
     } catch (err) {
       console.error("Failed to toggle lock:", err);
       // Only show alert on error
-      alert("Failed to toggle lock status.");
+      toast.error("Failed to toggle lock status.");
     }
   };
 

@@ -292,7 +292,7 @@ export default function CurriculumManagement() {
                   <TableRow>
                     <StyledTableCell>Program Name</StyledTableCell>
                     <StyledTableCell>Year Started</StyledTableCell>
-                    <StyledTableCell>Department</StyledTableCell>
+                    <StyledTableCell>Course</StyledTableCell>
                     <StyledTableCell>Description</StyledTableCell>
                     <StyledTableCell>Status</StyledTableCell>
                     <StyledTableCell align="center">Actions</StyledTableCell>

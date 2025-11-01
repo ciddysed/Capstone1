@@ -30,6 +30,7 @@ import { styled } from "@mui/material/styles";
 import SchoolIcon from '@mui/icons-material/School';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import toast from "../../../utils/toast";
 
 const API_URL = "http://localhost:8080/api/accepted-applicants";
 const EVALUATOR_API = "http://localhost:8080/api/evaluators";
@@ -196,7 +197,7 @@ const Accreditations = ({ onNavigateToGraded }) => {
 
   const handleConfirmAccredit = async () => {
     if (!selectedApplicant || !selectedCurriculumId) {
-      alert("Please select a curriculum before proceeding.");
+      toast.warning("Please select a curriculum before proceeding.");
       return;
     }
 
@@ -214,11 +215,11 @@ const Accreditations = ({ onNavigateToGraded }) => {
         onNavigateToGraded(selectedApplicant.applicant?.applicantId, selectedCurriculumId);
       } else {
         const errorText = await response.text();
-        alert(`Failed to create curriculum record: ${response.status} ${errorText}`);
+        toast.error(`Failed to create curriculum record: ${response.status} ${errorText}`);
       }
     } catch (err) {
       console.error("Error creating curriculum record:", err);
-      alert("Network error while creating curriculum record. Please try again.");
+      toast.error("Network error while creating curriculum record. Please try again.");
     } finally {
       setAccreditLoading(false);
       setConfirmOpen(false);

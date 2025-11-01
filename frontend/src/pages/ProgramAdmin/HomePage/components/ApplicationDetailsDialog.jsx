@@ -43,6 +43,7 @@ import SendIcon from '@mui/icons-material/Send';
 import axios from "axios";
 import { styled } from "@mui/material/styles";
 import DialogContentText from "@mui/material/DialogContentText";
+import toast from "../../../../utils/toast";
 
 const API_URL = "http://localhost:8080/api/program-admins";
 const EVALUATIONS_API_URL = "http://localhost:8080/api/evaluations";
@@ -323,7 +324,7 @@ const ApplicationDetailsDialog = ({
       handleCloseDialog();
     } catch (error) {
       console.error("Error updating application status:", error);
-      alert(`Failed to update application status: ${error.response?.data?.message || error.message}`);
+      toast.error(`Failed to update application status: ${error.response?.data?.message || error.message}`);
     } finally {
       setUpdateLoading(false);
     }
@@ -332,7 +333,7 @@ const ApplicationDetailsDialog = ({
   // Forward application to department - this function references selectedCourse but needs updating
   const forwardApplicationToDepartment = async () => {
     if (!selectedCourse) {
-      alert("Please select a course to forward for evaluation");
+      toast.warning("Please select a course to forward for evaluation");
       return;
     }
 
@@ -373,7 +374,7 @@ const ApplicationDetailsDialog = ({
       console.log("Response received:", response);
       
       if (response.status === 200 || response.status === 201) {
-        alert(`Application successfully forwarded for evaluation`);
+        toast.success(`Application successfully forwarded for evaluation`);
         await onRefreshApplications();
         // Refresh evaluation statuses
         if (coursePreferences.length > 0) {
@@ -418,7 +419,7 @@ const ApplicationDetailsDialog = ({
         errorMessage += ` ${error.message}`;
       }
       
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setForwardingLoading(false);
     }
@@ -427,7 +428,7 @@ const ApplicationDetailsDialog = ({
   // Forward all course preferences to their respective departments
   const forwardAllPreferencesToDepartments = async () => {
     if (!coursePreferences || coursePreferences.length === 0) {
-      alert("No course preferences found to forward");
+      toast.info("No course preferences found to forward");
       return;
     }
 
@@ -451,7 +452,7 @@ const ApplicationDetailsDialog = ({
       });
 
       if (coursesToForward.length === 0) {
-        alert("All course preferences have already been forwarded for evaluation");
+        toast.info("All course preferences have already been forwarded for evaluation");
         return;
       }
 
@@ -476,7 +477,7 @@ const ApplicationDetailsDialog = ({
       
       if (response.status === 200 || response.status === 201) {
         const forwardedCount = coursesToForward.length;
-        alert(`Successfully forwarded ${forwardedCount} course preference${forwardedCount > 1 ? 's' : ''} for evaluation`);
+        toast.success(`Successfully forwarded ${forwardedCount} course preference${forwardedCount > 1 ? 's' : ''} for evaluation`);
         await onRefreshApplications();
         // Refresh evaluation statuses
         await fetchEvaluationStatusesForPreferences(applicantId, coursePreferences);
@@ -517,7 +518,7 @@ const ApplicationDetailsDialog = ({
         errorMessage += ` ${error.message}`;
       }
       
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setForwardingLoading(false);
     }
@@ -546,7 +547,7 @@ const ApplicationDetailsDialog = ({
       
     } catch (error) {
       console.error("Download error:", error);
-      alert(`Failed to download document. Please try again later.`);
+      toast.error(`Failed to download document. Please try again later.`);
     }
   };
 
@@ -653,7 +654,7 @@ const ApplicationDetailsDialog = ({
         pref => preferenceEvaluations[pref.courseId]?.status === "APPROVED"
       );
       if (!approvedPref) {
-        alert("No approved course found.");
+        toast.warning("No approved course found.");
         setAcceptLoading(false);
         return;
       }
@@ -677,14 +678,14 @@ const ApplicationDetailsDialog = ({
       const applicationId = selectedApplication.applicationId || selectedApplication.id;
       await axios.put(`${API_URL}/applications/${applicationId}/update-status?status=APPROVED`);
       
-      alert("Applicant accepted and recorded.");
+      toast.success("Applicant accepted and recorded.");
       setShowAcceptDialog(false);
       setAcceptRemarks("");
       await onRefreshApplications();
       handleCloseDialog();
     } catch (error) {
       console.error("Error accepting applicant:", error);
-      alert("Failed to accept applicant.");
+      toast.error("Failed to accept applicant.");
     } finally {
       setAcceptLoading(false);
     }

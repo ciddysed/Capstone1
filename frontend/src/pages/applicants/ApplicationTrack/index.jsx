@@ -28,6 +28,7 @@ import MinimalLayout from "../../../templates/MinimalLayout";
 import backgroundImage from "../../../assets/login-bg.png";
 import useResponseHandler from "../../../utils/useResponseHandler";
 import logo from "../../../assets/logo.png";
+import toast from "../../../utils/toast";
 
 // Import reusable components and styles from AppCoursePreference
 import {
@@ -79,6 +80,7 @@ const ApplicationTracking = () => {
   const { handleSuccess, handleError, snackbar } = useResponseHandler();
   const navigate = useNavigate();
   const [applicantId, setApplicantId] = useState(null);
+  const [isAccepted, setIsAccepted] = useState(false);
   const [userData, setUserData] = useState({
     name: "",
     email: "",
@@ -299,21 +301,75 @@ const ApplicationTracking = () => {
     setApplicantId(storedApplicantId);
   }, [handleError]); // Added handleError to dependency array
 
+  // Check if applicant is accepted and redirect to accepted dashboard
+  const checkAcceptanceStatus = useCallback(async (applicantId) => {
+    if (isAccepted) return true; // Already accepted, don't check again
+    
+    try {
+      console.log('Checking acceptance status for applicant:', applicantId);
+      const response = await api.get(`/accepted-applicants/applicant/${applicantId}`);
+      console.log('Acceptance check response:', response);
+      
+      if (response.data && response.status === 200) {
+        console.log('Applicant is accepted! Redirecting...');
+        setIsAccepted(true);
+        
+        // Applicant is accepted, show success message and redirect
+        toast.success('Congratulations! Your application has been accepted. Redirecting to enrollment dashboard...', {
+          duration: 4000
+        });
+        
+        // Wait 2 seconds to let user see the message, then redirect
+        setTimeout(() => {
+          console.log('Navigating to /accepted-dashboard');
+          navigate('/accepted-dashboard', { replace: true });
+        }, 2000);
+        
+        return true;
+      }
+      console.log('Applicant not accepted yet');
+      return false;
+    } catch (error) {
+      console.log('Acceptance check error (expected if not accepted):', error.response?.status);
+      // If 404 or error, applicant is not accepted yet
+      return false;
+    }
+  }, [api, navigate, isAccepted]);
+
   // Separate effect for fetching data after applicantId is set
   useEffect(() => {
-    if (applicantId) {
-      fetchApplicantData(applicantId);
-      fetchCourses();
-      fetchCoursePreferences(applicantId);
-      fetchDocuments(applicantId);
+    if (applicantId && !isAccepted) {
+      // First check if applicant is already accepted
+      checkAcceptanceStatus(applicantId).then(accepted => {
+        if (!accepted) {
+          // Only fetch application tracking data if not accepted
+          fetchApplicantData(applicantId);
+          fetchCourses();
+          fetchCoursePreferences(applicantId);
+          fetchDocuments(applicantId);
+        }
+      });
     }
   }, [
     applicantId,
+    isAccepted,
+    checkAcceptanceStatus,
     fetchApplicantData,
     fetchCourses,
     fetchCoursePreferences,
     fetchDocuments,
   ]);
+
+  // Periodic check for acceptance status (every 30 seconds)
+  useEffect(() => {
+    if (!applicantId || isAccepted) return;
+
+    const intervalId = setInterval(() => {
+      checkAcceptanceStatus(applicantId);
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [applicantId, isAccepted, checkAcceptanceStatus]);
 
   const handleFileUpload = async (event) => {
     const fileList = Array.from(event.target.files);

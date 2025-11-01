@@ -1,26 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { 
   Box, Typography, Stack, Paper, Grid, Card, CardContent, 
-  Button, Divider, Chip, CircularProgress, Stepper, 
-  Step, StepLabel, StepContent, Avatar, alpha 
+  Button, Divider, Chip, CircularProgress, Avatar, alpha,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Accordion, AccordionSummary, AccordionDetails, LinearProgress
 } from "@mui/material";
 import { 
   School as SchoolIcon, 
   Assignment as AssignmentIcon,
-  CalendarToday as CalendarIcon,
   Celebration as CelebrationIcon,
   AccountBalance as AccountBalanceIcon,
   EmojiEvents as EmojiEventsIcon,
-  ArrowForward as ArrowForwardIcon 
+  ArrowForward as ArrowForwardIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  HourglassEmpty as PendingIcon,
+  ExpandMore as ExpandMoreIcon,
+  Warning as WarningIcon
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import MainLayout from "../../../templates/MainLayout";
-import EnrollmentTracker from "./EnrollmentTracker";
-import CourseInformation from "./CourseInformation";
 import backgroundImage from "../../../assets/login-bg.png";
 import useResponseHandler from "../../../utils/useResponseHandler";
-import { notifyEnrollmentStep } from "../../../utils/notificationManager";
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -72,7 +74,9 @@ const AcceptedDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [applicantData, setApplicantData] = useState(null);
   const [acceptanceData, setAcceptanceData] = useState(null);
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [subjectRecords, setSubjectRecords] = useState({});
+  const [curriculumSummary, setCurriculumSummary] = useState(null);
+  const [expandedSemester, setExpandedSemester] = useState(false);
 
   useEffect(() => {
     const applicantId = localStorage.getItem("applicantId");
@@ -93,48 +97,36 @@ const AcceptedDashboard = () => {
         
         // Fetch accepted applicant data
         const acceptedResponse = await axios.get(
-          `http://localhost:8080/api/accepted-applicants/by-applicant/${applicantId}`
+          `http://localhost:8080/api/accepted-applicants/applicant/${applicantId}`
         );
         
         if (!acceptedResponse.data) {
           // If not accepted, redirect to regular dashboard
+          handleError("You have not been accepted yet.");
           navigate("/ApplicantHomePage");
           return;
         }
         
-        // Fetch upcoming events (orientation, enrollment deadlines, etc.)
-        const eventsResponse = await axios.get(
-          `http://localhost:8080/api/academic-calendar/upcoming`
-        ).catch(() => ({ data: getMockEvents() })); // Fallback to mock data
+        // Fetch subject records organized by semester
+        const subjectRecordsResponse = await axios.get(
+          `http://localhost:8080/api/applicant-subject-records/applicant/${applicantId}/organized`
+        );
+        
+        // Fetch curriculum summary
+        const summaryResponse = await axios.get(
+          `http://localhost:8080/api/applicant-subject-records/applicant/${applicantId}/summary`
+        );
         
         setApplicantData(applicantResponse.data);
         setAcceptanceData(acceptedResponse.data);
-        setUpcomingEvents(eventsResponse.data);
+        setSubjectRecords(subjectRecordsResponse.data);
+        setCurriculumSummary(summaryResponse.data);
         
-        // Create an enrollment notification when this page is first viewed
-        notifyEnrollmentStep(
-          applicantId, 
-          "Acceptance Confirmed", 
-          `Congratulations! You've been accepted to the ${acceptedResponse.data.course?.courseName || "program"}!`,
-          "success"
-        );
+        handleSuccess("Welcome to your acceptance dashboard!");
         
       } catch (error) {
         console.error("Error fetching accepted dashboard data:", error);
-        
-        // If we have mock data for development, use it
-        if (process.env.NODE_ENV === 'development') {
-          const mockAcceptance = getMockAcceptanceData();
-          setApplicantData({
-            firstName: "John",
-            lastName: "Doe",
-            email: "johndoe@example.com"
-          });
-          setAcceptanceData(mockAcceptance);
-          setUpcomingEvents(getMockEvents());
-        } else {
-          handleError("Error loading your acceptance data. Please try again.");
-        }
+        handleError("Error loading your acceptance data. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -143,51 +135,41 @@ const AcceptedDashboard = () => {
     fetchData();
   }, [navigate, handleError, handleSuccess]);
   
-  const getMockAcceptanceData = () => ({
-    id: 1,
-    acceptedDate: new Date().toISOString(),
-    status: "ACCEPTED",
-    remarks: "Congratulations on your acceptance!",
-    enrollmentStep: "DOCUMENTS_SUBMISSION",
-    course: {
-      courseId: 1,
-      courseName: "Bachelor of Science in Information Technology",
-      courseCode: "BSIT",
-      department: {
-        departmentId: 1,
-        departmentName: "College of Computer Studies"
-      }
-    }
-  });
-  
-  const getMockEvents = () => [
-    {
-      id: 1,
-      title: "Orientation Day",
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-      location: "Main Auditorium",
-      description: "Welcome orientation for new students"
-    },
-    {
-      id: 2,
-      title: "Enrollment Deadline",
-      date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
-      description: "Last day to complete enrollment requirements"
-    },
-    {
-      id: 3,
-      title: "Start of Classes",
-      date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // 21 days from now
-      description: "First day of classes for the new semester"
-    }
-  ];
-  
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'APPROVED':
+        return <CheckCircleIcon sx={{ color: '#4caf50', fontSize: 20 }} />;
+      case 'REJECTED':
+        return <CancelIcon sx={{ color: '#f44336', fontSize: 20 }} />;
+      case 'PENDING':
+      default:
+        return <PendingIcon sx={{ color: '#ff9800', fontSize: 20 }} />;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'APPROVED':
+        return '#4caf50';
+      case 'REJECTED':
+        return '#f44336';
+      case 'PENDING':
+      default:
+        return '#ff9800';
+    }
+  };
+
+  const handleAccordionChange = (panel) => (event, isExpanded) => {
+    setExpandedSemester(isExpanded ? panel : false);
   };
   
   if (loading) {
@@ -241,11 +223,11 @@ const AcceptedDashboard = () => {
               Congratulations, {applicantData?.firstName}!
             </Typography>
             <Typography variant="h6" sx={{ color: maroon.dark, mb: 2 }}>
-              You have been accepted to {acceptanceData?.course?.courseName}
+              You have been accepted to {acceptanceData?.finalCourse?.courseName}
             </Typography>
             <Typography variant="body1" sx={{ color: maroon.dark }}>
-              Your application has been approved on {formatDate(acceptanceData?.acceptedDate)}. 
-              Please complete the enrollment process to secure your slot.
+              Your application has been approved on {formatDate(acceptanceData?.acceptanceDate)}. 
+              Review your curriculum evaluation below.
             </Typography>
           </Grid>
           <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
@@ -271,33 +253,173 @@ const AcceptedDashboard = () => {
       </Paper>
 
       <Grid container spacing={3}>
-        {/* Left column */}
+        {/* Left column - Subject Records */}
         <Grid item xs={12} md={8}>
           <Stack spacing={3}>
-            {/* Enrollment Progress */}
+            {/* Curriculum Progress Summary */}
             <InfoCard 
-              title="Enrollment Progress" 
+              title="Curriculum Progress Summary" 
               icon={<AssignmentIcon />}
               accentColor={maroon.main}
             >
-              <EnrollmentTracker 
-                currentStep={acceptanceData?.enrollmentStep || "DOCUMENTS_SUBMISSION"} 
-                course={acceptanceData?.course}
-              />
+              {curriculumSummary ? (
+                <Grid container spacing={2}>
+                  <Grid item xs={6} md={3}>
+                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#4caf50', 0.1), borderRadius: 2 }}>
+                      <Typography variant="h4" fontWeight={700} color="#4caf50">
+                        {curriculumSummary.approvedCount || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">Approved</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#ff9800', 0.1), borderRadius: 2 }}>
+                      <Typography variant="h4" fontWeight={700} color="#ff9800">
+                        {curriculumSummary.pendingCount || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">Pending</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#f44336', 0.1), borderRadius: 2 }}>
+                      <Typography variant="h4" fontWeight={700} color="#f44336">
+                        {curriculumSummary.rejectedCount || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">Rejected</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha(maroon.main, 0.1), borderRadius: 2 }}>
+                      <Typography variant="h4" fontWeight={700} color={maroon.main}>
+                        {curriculumSummary.totalSubjects || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">Total Subjects</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Box sx={{ mt: 1 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Progress: {curriculumSummary.approvedCount || 0} / {curriculumSummary.totalSubjects || 0}
+                      </Typography>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={curriculumSummary.totalSubjects > 0 
+                          ? (curriculumSummary.approvedCount / curriculumSummary.totalSubjects) * 100 
+                          : 0
+                        }
+                        sx={{
+                          height: 10,
+                          borderRadius: 5,
+                          bgcolor: alpha(maroon.light, 0.2),
+                          '& .MuiLinearProgress-bar': {
+                            bgcolor: '#4caf50',
+                            borderRadius: 5
+                          }
+                        }}
+                      />
+                    </Box>
+                  </Grid>
+                </Grid>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No curriculum data available yet.
+                </Typography>
+              )}
             </InfoCard>
-            
-            {/* Course Information */}
+
+            {/* Subject Records by Semester */}
             <InfoCard 
-              title="Program Information" 
+              title="Subject Records by Semester" 
               icon={<SchoolIcon />}
               accentColor={gold.dark}
             >
-              <CourseInformation course={acceptanceData?.course} />
+              {Object.keys(subjectRecords).length > 0 ? (
+                <Box>
+                  {Object.entries(subjectRecords).map(([semesterLabel, records]) => (
+                    <Accordion 
+                      key={semesterLabel}
+                      expanded={expandedSemester === semesterLabel}
+                      onChange={handleAccordionChange(semesterLabel)}
+                      sx={{ 
+                        mb: 1,
+                        boxShadow: 'none',
+                        '&:before': { display: 'none' },
+                        border: `1px solid ${alpha(maroon.main, 0.2)}`,
+                        borderRadius: '8px !important',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      <AccordionSummary
+                        expandIcon={<ExpandMoreIcon />}
+                        sx={{ bgcolor: alpha(maroon.light, 0.05) }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 2 }}>
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            {semesterLabel}
+                          </Typography>
+                          <Chip 
+                            label={`${records.length} subject${records.length !== 1 ? 's' : ''}`}
+                            size="small"
+                            sx={{ bgcolor: alpha(gold.main, 0.2), color: gold.dark }}
+                          />
+                        </Box>
+                      </AccordionSummary>
+                      <AccordionDetails>
+                        <TableContainer>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell><strong>Subject Code</strong></TableCell>
+                                <TableCell><strong>Description</strong></TableCell>
+                                <TableCell align="center"><strong>Grade</strong></TableCell>
+                                <TableCell align="center"><strong>Status</strong></TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {records.map((record) => (
+                                <TableRow key={record.id} hover>
+                                  <TableCell>{record.subject?.subjectCode || 'N/A'}</TableCell>
+                                  <TableCell>{record.subject?.descriptiveTitle || 'N/A'}</TableCell>
+                                  <TableCell align="center">
+                                    <Chip 
+                                      label={record.grade || 'N/A'}
+                                      size="small"
+                                      variant="outlined"
+                                    />
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                      {getStatusIcon(record.status)}
+                                      <Typography variant="caption" sx={{ color: getStatusColor(record.status), fontWeight: 600 }}>
+                                        {record.status}
+                                      </Typography>
+                                    </Box>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </AccordionDetails>
+                    </Accordion>
+                  ))}
+                </Box>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 3 }}>
+                  <WarningIcon sx={{ fontSize: 48, color: '#ff9800', mb: 1 }} />
+                  <Typography variant="body1" color="text.secondary">
+                    No subject records available yet.
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Your curriculum evaluation is still in progress.
+                  </Typography>
+                </Box>
+              )}
             </InfoCard>
           </Stack>
         </Grid>
         
-        {/* Right column */}
+        {/* Right column - Acceptance Details */}
         <Grid item xs={12} md={4}>
           <Stack spacing={3}>
             {/* Acceptance Details */}
@@ -319,7 +441,19 @@ const AcceptedDashboard = () => {
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">Acceptance Date</Typography>
                   <Typography variant="body1" fontWeight={500}>
-                    {formatDate(acceptanceData?.acceptedDate)}
+                    {formatDate(acceptanceData?.acceptanceDate)}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Program</Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {acceptanceData?.finalCourse?.courseName || 'N/A'}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Course Code</Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {acceptanceData?.finalCourse?.courseCode || 'N/A'}
                   </Typography>
                 </Box>
                 {acceptanceData?.remarks && (
@@ -332,56 +466,68 @@ const AcceptedDashboard = () => {
                 )}
               </Stack>
             </InfoCard>
-            
-            {/* Upcoming Events */}
-            <InfoCard 
-              title="Important Dates" 
-              icon={<CalendarIcon />}
-              accentColor="#0288d1"
-            >
-              <Stack spacing={2}>
-                {upcomingEvents.slice(0, 3).map(event => (
-                  <Box key={event.id} sx={{ 
-                    p: 1.5, 
-                    borderRadius: 1, 
-                    bgcolor: alpha('#e3f2fd', 0.5), 
-                    border: `1px solid ${alpha('#0288d1', 0.2)}`
-                  }}>
-                    <Typography variant="subtitle2" fontWeight={600} color="#0288d1">
-                      {event.title}
-                    </Typography>
-                    <Typography variant="body2" sx={{ mb: 0.5 }}>
-                      {formatDate(event.date)}
-                    </Typography>
-                    {event.location && (
-                      <Typography variant="caption" display="block" color="text.secondary">
-                        Location: {event.location}
-                      </Typography>
-                    )}
-                    {event.description && (
-                      <Typography variant="caption" display="block" color="text.secondary">
-                        {event.description}
-                      </Typography>
-                    )}
-                  </Box>
-                ))}
-                <Button 
-                  variant="outlined" 
-                  size="small" 
-                  sx={{ 
-                    alignSelf: 'center', 
-                    borderColor: '#0288d1', 
-                    color: '#0288d1',
-                    '&:hover': { 
-                      bgcolor: alpha('#0288d1', 0.1),
-                      borderColor: '#0288d1' 
-                    }
-                  }}
-                >
-                  View Academic Calendar
-                </Button>
-              </Stack>
-            </InfoCard>
+
+            {/* Pending Subjects Alert */}
+            {curriculumSummary && curriculumSummary.pendingCount > 0 && (
+              <InfoCard 
+                title="Action Required" 
+                icon={<WarningIcon />}
+                accentColor="#ff9800"
+              >
+                <Box sx={{ 
+                  p: 2, 
+                  borderRadius: 1, 
+                  bgcolor: alpha('#ff9800', 0.1), 
+                  border: `1px solid ${alpha('#ff9800', 0.3)}`
+                }}>
+                  <Typography variant="body2" fontWeight={600} color="#ff9800" gutterBottom>
+                    You have {curriculumSummary.pendingCount} subject{curriculumSummary.pendingCount !== 1 ? 's' : ''} pending evaluation
+                  </Typography>
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    Please wait for the evaluators to review your subject credentials. You will be notified once the evaluation is complete.
+                  </Typography>
+                </Box>
+              </InfoCard>
+            )}
+
+            {/* Rejected Subjects Alert */}
+            {curriculumSummary && curriculumSummary.rejectedCount > 0 && (
+              <InfoCard 
+                title="Attention Needed" 
+                icon={<CancelIcon />}
+                accentColor="#f44336"
+              >
+                <Box sx={{ 
+                  p: 2, 
+                  borderRadius: 1, 
+                  bgcolor: alpha('#f44336', 0.1), 
+                  border: `1px solid ${alpha('#f44336', 0.3)}`
+                }}>
+                  <Typography variant="body2" fontWeight={600} color="#f44336" gutterBottom>
+                    {curriculumSummary.rejectedCount} subject{curriculumSummary.rejectedCount !== 1 ? 's were' : ' was'} not accredited
+                  </Typography>
+                  <Typography variant="caption" display="block" color="text.secondary" gutterBottom>
+                    You may need to take {curriculumSummary.rejectedCount === 1 ? 'this subject' : 'these subjects'} as part of your curriculum. Please contact your program evaluator for more information.
+                  </Typography>
+                  <Button 
+                    variant="outlined" 
+                    size="small"
+                    fullWidth
+                    sx={{ 
+                      mt: 1,
+                      borderColor: '#f44336', 
+                      color: '#f44336',
+                      '&:hover': { 
+                        bgcolor: alpha('#f44336', 0.1),
+                        borderColor: '#f44336' 
+                      }
+                    }}
+                  >
+                    View Rejected Subjects
+                  </Button>
+                </Box>
+              </InfoCard>
+            )}
           </Stack>
         </Grid>
       </Grid>

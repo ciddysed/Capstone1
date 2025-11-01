@@ -38,6 +38,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import axios from "axios";
 import { styled } from "@mui/material/styles";
+import toast from "../../../../utils/toast";
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -203,9 +204,10 @@ const AcceptedStudentsTab = () => {
       setOpenEditDialog(false);
       setEditRemarks("");
       setSelectedStudent(null);
+      toast.success("Remarks updated successfully");
     } catch (error) {
       console.error("Error updating remarks:", error);
-      alert("Failed to update remarks");
+      toast.error("Failed to update remarks");
     }
   };
 

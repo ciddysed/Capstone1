@@ -19,6 +19,7 @@ import {
   Visibility,
   Download
 } from "@mui/icons-material";
+import toast from "../../../utils/toast";
 
 const DocumentHandler = ({
   documents = [],
@@ -66,7 +67,7 @@ const DocumentHandler = ({
       setTimeout(() => document.body.removeChild(link), 100);
     } catch (error) {
       console.error("Download error:", error);
-      alert(`Failed to download ${doc.name}. Please try again later.`);
+      toast.error(`Failed to download ${doc.name}. Please try again later.`);
     }
   }, [apiBaseUrl]);
 
