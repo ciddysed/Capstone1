@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
 import { 
   Box, Typography, Accordion, AccordionSummary, AccordionDetails,
   Chip, Grid, List, ListItem, ListItemIcon, ListItemText,
@@ -35,6 +36,7 @@ const CourseInformation = ({ course }) => {
   const [curriculum, setCurriculum] = useState(null);
   const [expandedAccordion, setExpandedAccordion] = useState('overview');
   
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!course?.courseId) {
       setLoading(false);

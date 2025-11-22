@@ -8,18 +8,6 @@
 let listeners = [];
 let toastId = 0;
 
-const maroonTheme = {
-  main: '#6A0000',
-  light: '#8D323C',
-  dark: '#450000',
-};
-
-const goldTheme = {
-  main: '#FFC72C',
-  light: '#FFF0B9',
-  dark: '#D4A500',
-};
-
 const createToast = (message, severity = 'info', duration = 4000) => {
   const id = ++toastId;
   const toast = {

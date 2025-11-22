@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Box, CircularProgress, Card, Stack, alpha, Grid, Chip, Paper } from "@mui/material";
+import { Typography, Box, CircularProgress, Stack, alpha, Chip, Paper } from "@mui/material";
 import { School } from "@mui/icons-material";
 import PropTypes from "prop-types";
 

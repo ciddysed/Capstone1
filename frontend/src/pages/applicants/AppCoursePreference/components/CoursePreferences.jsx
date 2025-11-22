@@ -1,7 +1,6 @@
 import React from 'react';
-import { Box, Typography, Stack, alpha, Tooltip, Badge } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
-import { maroon, gold, PreferenceBox, CourseButton } from '../styles';
+import { Box, Typography, Stack, alpha, Tooltip } from '@mui/material';
+import { maroon, PreferenceBox, CourseButton } from '../styles';
 
 const CoursePreferences = ({ priorityOrders, coursePreferences, availableCourses, openCourseDialog, getPriorityLabel, checkCourseAlreadySelected }) => {
   return (

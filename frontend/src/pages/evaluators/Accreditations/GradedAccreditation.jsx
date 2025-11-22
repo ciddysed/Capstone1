@@ -12,7 +12,7 @@ import {
   TextField,
   Stack,
   CircularProgress,
-  MenuItem,
+  
   Card,
   CardContent,
   Grow,
@@ -22,14 +22,10 @@ import {
   AccordionDetails,
   IconButton,
   Tooltip,
-  Select,
-  FormControl,
+  
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import EditIcon from '@mui/icons-material/Edit';
-import SaveIcon from '@mui/icons-material/Save';
-import CancelIcon from '@mui/icons-material/Cancel';
 import GradeIcon from '@mui/icons-material/Grade';
 import SchoolIcon from '@mui/icons-material/School';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -125,13 +121,7 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
 const GradedAccreditation = ({ applicantId, curriculumId }) => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingRecordId, setEditingRecordId] = useState(null);
-  const [editFields, setEditFields] = useState({
-    grade: "",
-    processOfAccreditation: "",
-    substantiveBasis: "",
-  });
-  const [saving, setSaving] = useState(false);
+  
 
   useEffect(() => {
     if (applicantId) {
@@ -163,79 +153,6 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
     }
   };
 
-  // Start editing a record
-  const handleEditClick = (record) => {
-    setEditingRecordId(record.id);
-    setEditFields({
-      grade: record.grade || "",
-      processOfAccreditation: record.processOfAccreditation || "",
-      substantiveBasis: record.substantiveBasis || "",
-    });
-  };
-
-  // Cancel editing
-  const handleCancelEdit = () => {
-    setEditingRecordId(null);
-    setEditFields({
-      grade: "",
-      processOfAccreditation: "",
-      substantiveBasis: "",
-    });
-  };
-
-  const handleEditFieldChange = (field, value) => {
-    setEditFields((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveEdit = async (recordId) => {
-    setSaving(true);
-    try {
-      const params = new URLSearchParams();
-      
-      if (editFields.grade !== null && editFields.grade !== undefined && editFields.grade !== "") {
-        params.append('grade', editFields.grade);
-      }
-      if (editFields.processOfAccreditation !== null && editFields.processOfAccreditation !== undefined && editFields.processOfAccreditation !== "") {
-        params.append('processOfAccreditation', editFields.processOfAccreditation);
-      }
-      if (editFields.substantiveBasis !== null && editFields.substantiveBasis !== undefined && editFields.substantiveBasis !== "") {
-        params.append('substantiveBasis', editFields.substantiveBasis);
-      }
-
-      await axios.put(
-        `${API_BASE}/applicant-subject-records/${recordId}?${params.toString()}`,
-        null,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        }
-      );
-      
-      const refreshResponse = await axios.get(
-        `${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`
-      );
-      setRecords(refreshResponse.data);
-      
-      setEditingRecordId(null);
-      setEditFields({
-        grade: "",
-        processOfAccreditation: "",
-        substantiveBasis: "",
-      });
-      
-      toast.success("Record updated successfully.");
-    } catch (err) {
-      console.error("Failed to update record:", err);
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data || 
-                          err.message || 
-                          "Unknown error occurred";
-      toast.error(`Failed to update record: ${errorMessage}`);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   // Toggle lock/unlock status
   const handleToggleLock = async (recordId, currentStatus) => {
@@ -268,18 +185,7 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "APPROVED":
-        return "success";
-      case "REJECTED":
-        return "error";
-      case "PENDING":
-        return "warning";
-      default:
-        return "default";
-    }
-  };
+  
 
   return (
     <Box sx={{ p: 3 }}>
@@ -352,7 +258,6 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
                     </TableHead>
                     <TableBody>
                       {records[semester].map((rec) => {
-                        const isEditing = editingRecordId === rec.id;
                         const isLocked = rec.status === "APPROVED";
                         
                         return (

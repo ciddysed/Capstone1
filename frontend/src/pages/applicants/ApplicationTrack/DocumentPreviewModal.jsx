@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useLocation } from 'react-router-dom';
-import { Box, Typography, Paper, CircularProgress, Button } from '@mui/material';
+import { Box, Typography, Paper, Button } from '@mui/material';
 import { DownloadOutlined, ArrowBack } from '@mui/icons-material';
 
 // Document preview page component

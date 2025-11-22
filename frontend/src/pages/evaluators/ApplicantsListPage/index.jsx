@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
 import {
   Table,
   TableHead,
@@ -25,7 +26,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
 import ListLayoutWithFilters from "../../../templates/ListLayoutWithFilters";
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+ 
 import PendingIcon from '@mui/icons-material/Pending';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -321,49 +322,7 @@ const ApplicantsListPage = () => {
       .slice(0, 2);
   };
 
-  // Improved status chip display with better conditional checks
-  const getStatusChip = (item) => {
-    // Check if this item has an evaluation status and has been explicitly evaluated
-    if (item && item.evaluationStatus && item.evaluationStatus !== "PENDING") {
-      return (
-        <StyledChip
-          icon={item.evaluationStatus === "APPROVED" ? <CheckCircleIcon fontSize="small" /> : null}
-          label={item.evaluationStatus}
-          color={
-            item.evaluationStatus === "APPROVED" ? "success" : 
-            item.evaluationStatus === "REJECTED" ? "error" : 
-            "default"
-          }
-          size="small"
-          variant="outlined"
-        />
-      );
-    } 
-    // For pending evaluations that haven't been started yet
-    else if (item && item.evaluationStatus === "PENDING") {
-      return (
-        <StyledChip
-          icon={<PendingIcon fontSize="small" />}
-          label="In Progress"
-          color="warning"
-          size="small"
-          variant="outlined"
-        />
-      );
-    }
-    // For evaluations not yet started
-    else {
-      return (
-        <StyledChip
-          icon={<HourglassEmptyIcon fontSize="small" />}
-          label="Awaiting Evaluation"
-          color="warning"
-          variant="outlined"
-          size="small"
-        />
-      );
-    }
-  };
+  
   
   // Simplified pagination handlers
   const handleChangePage = (event, newPage) => setPage(newPage);
@@ -373,6 +332,7 @@ const ApplicantsListPage = () => {
     setPage(0);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchEvaluations();
     fetchEvaluatorDepartment();

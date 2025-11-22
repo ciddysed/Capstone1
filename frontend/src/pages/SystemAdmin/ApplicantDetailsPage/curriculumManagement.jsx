@@ -36,7 +36,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import axios from "axios";
 import { styled } from "@mui/material/styles";
-import { useNavigate } from "react-router-dom";
 import CurriculumRouterModal from "./CurriculumRouterModal";
 
 // Custom maroon and gold color palette
@@ -105,7 +104,6 @@ const API_BASE = "http://localhost:8080/api";
 
 export default function CurriculumManagement() {
   const theme = useTheme();
-  const navigate = useNavigate();
   const [curriculums, setCurriculums] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);

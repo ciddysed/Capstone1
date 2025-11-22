@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import {
   Dialog,
   DialogTitle,
@@ -18,11 +19,10 @@ import {
   alpha
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import axios from 'axios';
+ 
 import useResponseHandler from '../../../../utils/useResponseHandler';
 
 // Maroon and Gold theme colors
@@ -49,6 +49,7 @@ const InterviewScheduleModal = ({ open, onClose, onScheduled }) => {
   const [interviewType, setInterviewType] = useState('online');
   
   // Fetch available slots for the selected date
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!open) return;
     

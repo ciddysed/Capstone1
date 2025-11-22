@@ -21,7 +21,6 @@ import {
   Divider,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import HomeIcon from "@mui/icons-material/Home";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import PeopleIcon from "@mui/icons-material/People";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -175,17 +174,7 @@ const EvaluationsPage = () => {
     navigate("/evaluator/applicants");
   };
 
-  const handleNavigateToAccreditations = () => {
-    navigate("/evaluator/accreditations");
-  };
-
-  const handleNavigateToAccreditedApplicants = () => {
-    navigate("/evaluator/accredited-applicants");
-  };
-
-  const handleNavigateToGradedAccreditation = () => {
-    navigate("/evaluator/graded-accreditation");
-  };
+  
 
   const handleNavigateToEvaluations = () => {
     navigate("/evaluator/evaluations");

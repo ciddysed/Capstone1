@@ -23,13 +23,12 @@ import {
   School as GraduationCapIcon,
   CloudUpload as UploadIcon,
   Description as FileTextIcon,
-  Download as DownloadIcon,
   CheckCircle as CheckCircleIcon,
   Schedule as ClockIcon,
   Warning as AlertCircleIcon,
   Add as PlusIcon,
   Close as XIcon,
-  Visibility as EyeIcon,
+  
 } from "@mui/icons-material"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
@@ -126,7 +125,8 @@ export default function ApplicationForm() {
     } finally {
       setLoading(prev => ({ ...prev, profile: false }))
     }
-  }, [handleError])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Fetch courses from backend
   const fetchCoursesFromBackend = useCallback(async () => {
@@ -170,7 +170,8 @@ export default function ApplicationForm() {
     } finally {
       setLoading(prev => ({ ...prev, courses: false }))
     }
-  }, [handleError])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Fetch uploaded documents
   const fetchUploadedDocuments = useCallback(async (applicantId) => {
@@ -192,7 +193,8 @@ export default function ApplicationForm() {
     } finally {
       setLoading(prev => ({ ...prev, documents: false }))
     }
-  }, [handleError])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Fetch course preferences
   const fetchCoursePreferences = useCallback(async (applicantId) => {
@@ -212,7 +214,8 @@ export default function ApplicationForm() {
     } finally {
       setLoading(prev => ({ ...prev, preferences: false }))
     }
-  }, [handleError])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Initialize component
   useEffect(() => {

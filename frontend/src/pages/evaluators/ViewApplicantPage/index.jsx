@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
 import {
   Box,
   Typography,
@@ -22,8 +23,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Card,
-  CardContent,
   alpha,
   createTheme,
   ThemeProvider,
@@ -78,18 +77,7 @@ const customTheme = createTheme({
 });
 
 // Styled components for enhanced UI (matching ProgramAdmin)
-const StyledTableCell = styled(Box)(({ theme }) => ({
-  fontWeight: 500,
-  backgroundColor: maroon.main,
-  color: maroon.contrastText,
-  fontSize: 14,
-  fontWeight: 600,
-  padding: theme.spacing(1.5),
-  borderRadius: theme.spacing(1),
-  display: 'flex',
-  alignItems: 'center',
-  gap: theme.spacing(1)
-}));
+
 
 const AnimatedPaper = styled(Paper)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 1.5,
@@ -108,24 +96,9 @@ const StyledAvatar = styled(Avatar)(({ theme }) => ({
   color: '#FFFFFF',
 }));
 
-const InfoCard = styled(Card)(({ theme }) => ({
-  height: '100%',
-  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
-  borderRadius: theme.shape.borderRadius * 1.5,
-  transition: 'box-shadow 0.3s ease',
-  '&:hover': {
-    boxShadow: '0 4px 20px rgba(106, 0, 0, 0.15)',
-  },
-  borderTop: `3px solid ${maroon.main}`,
-}));
 
-const DetailHeader = styled(Box)(({ theme }) => ({
-  backgroundColor: alpha(gold.light, 0.3),
-  padding: theme.spacing(2),
-  borderRadius: theme.shape.borderRadius,
-  marginBottom: theme.spacing(2),
-  borderLeft: `4px solid ${gold.main}`,
-}));
+
+
 
 const ActionButton = styled(Button)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 1.5,
@@ -374,6 +347,7 @@ const ViewApplicantPage = () => {
   }, [applicantId, evaluationId, specificCourseId, evaluatorId]);
 
   // Second effect that runs when selectedCourse changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!applicantId || !selectedCourse || !evaluatorId) return;
 

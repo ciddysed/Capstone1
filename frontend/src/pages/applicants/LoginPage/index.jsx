@@ -1,5 +1,6 @@
 import { Stack } from "@mui/material";
 import { useState, useEffect } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useNavigate } from "react-router-dom";
 import backgroundImage from "../../../assets/login-bg.png";
 import logo from "../../../assets/logo.png";
@@ -54,6 +55,7 @@ const LoginPage = () => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const userType = localStorage.getItem("userType");
     const applicantId = localStorage.getItem("applicantId");

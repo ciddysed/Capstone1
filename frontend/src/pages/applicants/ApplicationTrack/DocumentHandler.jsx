@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React from "react";
 import PropTypes from "prop-types";
 import {
   Typography,
@@ -9,19 +9,14 @@ import {
   CircularProgress,
   Divider,
   alpha,
-  Grid,
-  Card,
   Button,
   List,
   ListItem,
   ListItemText,
-  Paper
+  
 } from "@mui/material";
 import {
-  UploadFile,
-  Description,
-  Visibility,
-  Download
+  UploadFile
 } from "@mui/icons-material";
 
 // Import styles from AppCoursePreference for consistency

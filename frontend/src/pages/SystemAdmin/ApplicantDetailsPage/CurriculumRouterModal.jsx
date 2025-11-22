@@ -4,9 +4,7 @@ import {
   DialogTitle,
   DialogContent,
   IconButton,
-  Box,
   Typography,
-  useTheme,
   alpha,
   Stack,
   DialogActions,
@@ -37,7 +35,6 @@ const gold = {
 };
 
 export default function CurriculumRouterModal({ open, onClose, curriculumId }) {
-  const theme = useTheme();
   const [curriculum, setCurriculum] = useState(null);
   const [loading, setLoading] = useState(true);
 

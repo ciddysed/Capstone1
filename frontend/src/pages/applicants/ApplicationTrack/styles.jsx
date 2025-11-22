@@ -109,17 +109,15 @@ export const UploadButton = styled(Button)(({ theme }) => ({
   fontWeight: 500,
   "&:hover": {
     backgroundColor: "#000000",
-    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
   },
   width: "100%",
   justifyContent: "flex-start",
   padding: "8px 16px",
   marginBottom: "8px",
   transition: 'transform 0.2s, box-shadow 0.2s',
-  "&:hover": {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
-  }
+  
 }));
 
 export const TrackButton = styled(Button)(({ theme }) => ({

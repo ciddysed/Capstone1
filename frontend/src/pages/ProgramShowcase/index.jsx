@@ -1,11 +1,10 @@
-import { useState } from "react"
+
 import { useNavigate } from "react-router-dom"
 import {
   Button,
   Card,
   CardContent,
   CardHeader,
-  TextField,
   Chip,
   Divider,
   Box,
@@ -13,12 +12,10 @@ import {
   Container,
   Grid,
   Paper,
-  alpha,
+  
 } from "@mui/material"
 import {
-  Search,
   Notifications as Bell,
-  School as GraduationCap,
   People as Users,
   MenuBook as BookOpen,
   EmojiEvents as Award,
@@ -36,7 +33,7 @@ import eteeapLogo from "../../assets/eteeaplogo-removebg-preview.png"
 
 const ProgramShowcase = () => {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState("")
+  
 
   const programs = [
     {

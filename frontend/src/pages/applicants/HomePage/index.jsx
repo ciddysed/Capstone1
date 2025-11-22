@@ -102,8 +102,6 @@ const Homepage = () => {
   const [userFullName, setUserFullName] = useState("User");
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const { handleSuccess, handleError, snackbar } = useResponseHandler();
-  const [userData, setUserData] = useState();
-  const [isAccepted, setIsAccepted] = useState(false);
 
   useEffect(() => {
     const applicantId = localStorage.getItem("applicantId");
@@ -137,7 +135,6 @@ const Homepage = () => {
         }
 
         setUserFullName(`${data.firstName} ${data.lastName}`);
-        setUserData(data);
         
         // Check if applicant is accepted
         try {
@@ -146,7 +143,6 @@ const Homepage = () => {
           );
           
           if (acceptedResponse.data && acceptedResponse.data.status === "ACCEPTED") {
-            setIsAccepted(true);
             // Redirect to the accepted dashboard
             navigate("/accepted-dashboard");
           }

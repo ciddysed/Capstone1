@@ -1,21 +1,17 @@
 import React, { useState } from "react";
 import {
-  AppBar,
-  Toolbar,
   Stack,
   Container,
   IconButton,
   Popover,
   MenuItem,
-  Avatar,
   Typography,
   Divider,
   Box,
   Paper,
 } from "@mui/material";
-import logo from "../../assets/logo.png";
 import { useNavigate } from "react-router-dom";
-import { AccountCircle, Logout, Person as UserIcon, School as GraduationCapIcon } from "@mui/icons-material"; // Import logout icon
+import { Logout, Person as UserIcon, School as GraduationCapIcon } from "@mui/icons-material"; // Import logout icon
 import backgroundImage from "../../assets/login-bg.png";
 import NotificationCenter from "../../components/Notifications/NotificationCenter";
 import { handleLogout } from "../../utils/logoutUtils";
@@ -51,7 +47,6 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
   };
 
   const open = Boolean(anchorEl);
-  const userInitial = data?.charAt(0)?.toUpperCase() || "A";
 
   // Get user ID based on userType
   const getUserId = () => {
