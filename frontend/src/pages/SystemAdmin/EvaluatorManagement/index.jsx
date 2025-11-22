@@ -42,7 +42,7 @@ import axios from "axios";
 import { styled } from "@mui/material/styles";
 import toast from "../../../utils/toast";
 
-const EVALUATOR_API_URL = "http://localhost:8080/api/evaluators";
+const EVALUATOR_API_URL = `${process.env.REACT_APP_BACKEND_URL}/api/evaluators`;
 
 // Custom maroon and gold color palette
 const maroon = {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as localNotificationService from './localNotificationService';
 
-const API_URL = 'http://localhost:8080/api/notifications';
+const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api/notifications`;
 
 const notificationService = {
   // Get all notifications for a user

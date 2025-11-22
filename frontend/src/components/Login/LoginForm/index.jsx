@@ -85,7 +85,7 @@ const LoginForm = ({
 
         // Complete signup with all profile data
         const response = await axios.post(
-          "http://localhost:8080/api/applicants/register-complete",
+          `${process.env.REACT_APP_BACKEND_URL}/api/applicants/register-complete`,
           {
             email: data.email,
             password: data.password,
@@ -112,7 +112,7 @@ const LoginForm = ({
     } else {
       try {
         const response = await axios.post(
-          "http://localhost:8080/api/applicants/login",
+          `${process.env.REACT_APP_BACKEND_URL}/api/applicants/login`,
           {
             email: data.email,
             password: data.password,
@@ -135,7 +135,7 @@ const LoginForm = ({
           // Check if profile is complete by fetching user data
           try {
             const userResponse = await axios.get(
-              `http://localhost:8080/api/applicants/${applicantId}`
+              `${process.env.REACT_APP_BACKEND_URL}/api/applicants/${applicantId}`
             );
             const userData = userResponse.data;
 
@@ -185,21 +185,21 @@ const LoginForm = ({
     try {
       // Check for course preferences
       const preferencesResponse = await axios.get(
-        `http://localhost:8080/api/preferences/applicant/${applicantId}`
+        `${process.env.REACT_APP_BACKEND_URL}/api/preferences/applicant/${applicantId}`
       );
       const hasPreferences =
         preferencesResponse.data && preferencesResponse.data.length > 0;
 
       // Check for uploaded documents
       const documentsResponse = await axios.get(
-        `http://localhost:8080/api/documents/applicant/${applicantId}`
+        `${process.env.REACT_APP_BACKEND_URL}/api/documents/applicant/${applicantId}`
       );
       const hasDocuments =
         documentsResponse.data && documentsResponse.data.length > 0;
 
       // Check if they have submitted an application
       const applicationResponse = await axios.get(
-        `http://localhost:8080/api/applications/applicant/${applicantId}`
+        `${process.env.REACT_APP_BACKEND_URL}/api/applications/applicant/${applicantId}`
       );
       const hasSubmittedApplication =
         applicationResponse.data && applicationResponse.data.length > 0;

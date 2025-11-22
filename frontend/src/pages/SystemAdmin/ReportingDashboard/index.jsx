@@ -46,9 +46,9 @@ const ReportingDashboard = () => {
       setLoading(true);
       try {
         const [applicationsData, statusData, coursesData] = await Promise.all([
-          axios.get('http://localhost:8080/api/reports/applications-over-time'),
-          axios.get('http://localhost:8080/api/reports/applications-by-status'),
-          axios.get('http://localhost:8080/api/reports/course-preferences')
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/reports/applications-over-time`),
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/reports/applications-by-status`),
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/reports/course-preferences`)
         ]);
         
         setMetrics({

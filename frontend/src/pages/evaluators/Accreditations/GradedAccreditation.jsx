@@ -35,7 +35,7 @@ import LockOpenIcon from '@mui/icons-material/LockOpen';
 import axios from "axios";
 import toast from "../../../utils/toast";
 
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 // Custom maroon and gold color palette
 const maroon = {

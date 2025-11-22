@@ -100,7 +100,7 @@ const ActionButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function CurriculumManagement() {
   const theme = useTheme();
