@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import PropTypes from 'prop-types';
 import {
   Typography,
   Box,
@@ -153,7 +154,7 @@ const StyledChip = styled(Chip)(({ theme }) => ({
 // Helper functions
 const getOrdinalSuffix = (num) => {
   const number = Number(num);
-  if (isNaN(number)) return '';
+  if (Number.isNaN(number)) return '';
   
   if (number % 100 >= 11 && number % 100 <= 13) {
     return 'th';
@@ -205,13 +206,48 @@ const ApplicationDetailsDialog = ({
   const [newStatus, setNewStatus] = useState("");
   const [updateLoading, setUpdateLoading] = useState(false);
   const [forwardingLoading, setForwardingLoading] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState("");
+  
   const [showAcceptDialog, setShowAcceptDialog] = useState(false);
   const [acceptRemarks, setAcceptRemarks] = useState("");
   const [acceptLoading, setAcceptLoading] = useState(false);
 
+  // Fetch evaluation statuses for course preferences
+  const fetchEvaluationStatusesForPreferences = useCallback(async (applicantId, preferences) => {
+    setLoadingEvaluations(true);
+    try {
+      const response = await axios.get(`${EVALUATIONS_API_URL}/applicant/${applicantId}`);
+      const evaluations = response.data;
+      
+      const evaluationMap = {};
+      
+      if (Array.isArray(evaluations) && evaluations.length > 0) {
+        for (const evaluation of evaluations) {
+          const courseId = evaluation?.course?.courseId;
+          if (courseId) {
+            evaluationMap[courseId] = {
+              status: evaluation?.evaluationStatus || 'PENDING',
+              evaluatorName: evaluation?.evaluator ? 
+                `${evaluation.evaluator.firstName || ''} ${evaluation.evaluator.lastName || ''}`.trim() : 
+                'Unknown Evaluator',
+              dateEvaluated: evaluation?.dateEvaluated || null,
+              comments: evaluation?.comments || '',
+              evaluationId: evaluation?.evaluationId
+            };
+          }
+        }
+      }
+      
+      setPreferenceEvaluations(evaluationMap);
+    } catch (error) {
+      console.error("Error fetching evaluation statuses:", error);
+      setPreferenceEvaluations({});
+    } finally {
+      setLoadingEvaluations(false);
+    }
+  }, []);
+
   // Fetch application details including preferences and documents
-  const fetchApplicationDetails = async (applicationId) => {
+  const fetchApplicationDetails = useCallback(async (applicationId) => {
     setLoadingPreferences(true);
     try {
       const response = await axios.get(`${API_URL}/applications/${applicationId}`);
@@ -233,7 +269,7 @@ const ApplicationDetailsDialog = ({
       let prefsToUse = [];
       if (applicationData.coursePreferences) {
         prefsToUse = applicationData.coursePreferences.map(pref => ({
-          id: pref.preferenceId || pref.id || Math.random().toString(36).substr(2, 9),
+            id: pref.preferenceId || pref.id || Math.random().toString(36).slice(2, 11),
           preferenceId: pref.preferenceId || pref.id,
           preferenceOrder: pref.priorityOrder || pref.preferenceOrder,
           courseId: pref.course?.courseId || pref.courseId,
@@ -245,7 +281,7 @@ const ApplicationDetailsDialog = ({
         try {
           const preferencesResponse = await axios.get(`${API_URL}/applications/${applicationId}/preferences`);
           prefsToUse = preferencesResponse.data.map(pref => ({
-            id: pref.preferenceId || pref.id || Math.random().toString(36).substr(2, 9),
+              id: pref.preferenceId || pref.id || Math.random().toString(36).slice(2, 11),
             preferenceId: pref.preferenceId || pref.id,
             preferenceOrder: pref.priorityOrder || pref.preferenceOrder,
             courseId: pref.course?.courseId || pref.courseId,
@@ -275,41 +311,7 @@ const ApplicationDetailsDialog = ({
     } finally {
       setLoadingPreferences(false);
     }
-  };
-
-  // Fetch evaluation statuses for course preferences
-  const fetchEvaluationStatusesForPreferences = async (applicantId, preferences) => {
-    setLoadingEvaluations(true);
-    try {
-      const response = await axios.get(`${EVALUATIONS_API_URL}/applicant/${applicantId}`);
-      const evaluations = response.data;
-      
-      const evaluationMap = {};
-      
-      if (Array.isArray(evaluations) && evaluations.length > 0) {
-        evaluations.forEach(evaluation => {
-          if (evaluation.course && evaluation.course.courseId) {
-            evaluationMap[evaluation.course.courseId] = {
-              status: evaluation.evaluationStatus || 'PENDING',
-              evaluatorName: evaluation.evaluator ? 
-                `${evaluation.evaluator.firstName || ''} ${evaluation.evaluator.lastName || ''}`.trim() : 
-                'Unknown Evaluator',
-              dateEvaluated: evaluation.dateEvaluated || null,
-              comments: evaluation.comments || '',
-              evaluationId: evaluation.evaluationId
-            };
-          }
-        });
-      }
-      
-      setPreferenceEvaluations(evaluationMap);
-    } catch (error) {
-      console.error("Error fetching evaluation statuses:", error);
-      setPreferenceEvaluations({});
-    } finally {
-      setLoadingEvaluations(false);
-    }
-  };
+  }, [fetchEvaluationStatusesForPreferences]);
 
   // Update application status
   const updateApplicationStatus = async () => {
@@ -330,100 +332,8 @@ const ApplicationDetailsDialog = ({
     }
   };
 
-  // Forward application to department - this function references selectedCourse but needs updating
-  const forwardApplicationToDepartment = async () => {
-    if (!selectedCourse) {
-      toast.warning("Please select a course to forward for evaluation");
-      return;
-    }
-
-    setForwardingLoading(true);
-    try {
-      const applicantId = selectedApplication.applicant?.applicantId;
-      if (!applicantId) {
-        throw new Error("Applicant ID not found");
-      }
-
-      if (!selectedApplication.applicationId && !selectedApplication.id) {
-        throw new Error("Application ID not found");
-      }
-
-      console.log("Forwarding application with data:", {
-        applicantId,
-        courseId: selectedCourse,
-        applicationId: selectedApplication.applicationId || selectedApplication.id
-      });
-      
-      const url = `${EVALUATIONS_API_URL}/forward-application/${applicantId}`;
-      const requestData = { 
-        courseId: parseInt(selectedCourse, 10),
-        applicationId: selectedApplication.applicationId || selectedApplication.id
-      };
-
-      console.log("Making POST request to:", url);
-      console.log("Request payload:", requestData);
-      
-      const response = await axios.post(url, requestData, {
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        timeout: 30000,
-      });
-      
-      console.log("Response received:", response);
-      
-      if (response.status === 200 || response.status === 201) {
-        toast.success(`Application successfully forwarded for evaluation`);
-        await onRefreshApplications();
-        // Refresh evaluation statuses
-        if (coursePreferences.length > 0) {
-          await fetchEvaluationStatusesForPreferences(applicantId, coursePreferences);
-        }
-        handleCloseDialog();
-      } else {
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
-    } catch (error) {
-      console.error("Error forwarding application:", error);
-      
-      let errorMessage = "Failed to forward application for evaluation.";
-      
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-        console.error("Error response headers:", error.response.headers);
-        
-        if (error.response.status === 500) {
-          errorMessage += " Internal server error occurred. Please check server logs for details.";
-        } else if (error.response.status === 400) {
-          errorMessage += " Invalid request data. Please check the selected course.";
-        } else if (error.response.data) {
-          if (typeof error.response.data === 'string') {
-            errorMessage += ` ${error.response.data}`;
-          } else if (error.response.data.message) {
-            errorMessage += ` ${error.response.data.message}`;
-          } else if (error.response.data.error) {
-            errorMessage += ` ${error.response.data.error}`;
-          } else {
-            errorMessage += ` Server error (${error.response.status})`;
-          }
-        } else {
-          errorMessage += ` Server error (${error.response.status})`;
-        }
-      } else if (error.request) {
-        console.error("No response received:", error.request);
-        errorMessage += " No response from server. Please check your connection and ensure the server is running.";
-      } else {
-        console.error("Request setup error:", error.message);
-        errorMessage += ` ${error.message}`;
-      }
-      
-      toast.error(errorMessage);
-    } finally {
-      setForwardingLoading(false);
-    }
-  };
+  // Note: forwarding a single application to a department is handled
+  // via the `forwardAllPreferencesToDepartments` function below.
 
   // Forward all course preferences to their respective departments
   const forwardAllPreferencesToDepartments = async () => {
@@ -459,7 +369,7 @@ const ApplicationDetailsDialog = ({
       const url = `${EVALUATIONS_API_URL}/forward-all-preferences/${applicantId}`;
       const requestData = { 
         applicationId: selectedApplication.applicationId || selectedApplication.id,
-        courseIds: coursesToForward.map(pref => parseInt(pref.courseId, 10))
+        courseIds: coursesToForward.map(pref => Number.parseInt(pref.courseId, 10))
       };
 
       console.log("Making POST request to:", url);
@@ -542,7 +452,11 @@ const ApplicationDetailsDialog = ({
       link.click();
       
       setTimeout(() => {
-        document.body.removeChild(link);
+        try {
+          link.remove();
+        } catch (e) {
+          // ignore removal errors
+        }
       }, 100);
       
     } catch (error) {
@@ -586,12 +500,13 @@ const ApplicationDetailsDialog = ({
     if (!evaluation) {
       return "No evaluation data available";
     }
-    
-    const dateText = evaluation.dateEvaluated ? 
-      `Evaluated on ${new Date(evaluation.dateEvaluated).toLocaleDateString()}` : 
+    const dateText = evaluation.dateEvaluated ?
+      `Evaluated on ${new Date(evaluation.dateEvaluated).toLocaleDateString()}` :
       "Date not available";
-    
-    return `${evaluation.status} by ${evaluation.evaluatorName}\n${dateText}${evaluation.comments ? `\nComments: ${evaluation.comments}` : ''}`;
+
+    const parts = [`${evaluation.status} by ${evaluation.evaluatorName}`, dateText];
+    if (evaluation.comments) parts.push(`Comments: ${evaluation.comments}`);
+    return parts.join('\n');
   };
 
   // Get count of courses that can be forwarded
@@ -615,7 +530,6 @@ const ApplicationDetailsDialog = ({
     setSelectedApplication(null);
     setCoursePreferences([]);
     setNewStatus("");
-    setSelectedCourse(""); // Reset selected course
     onClose();
   };
 
@@ -630,7 +544,7 @@ const ApplicationDetailsDialog = ({
       setNewStatus(application.status);
       fetchApplicationDetails(application.applicationId || application.id);
     }
-  }, [application, open]);
+  }, [application, open, fetchApplicationDetails]);
 
   // Check if any course preference is approved
   useEffect(() => {
@@ -690,6 +604,15 @@ const ApplicationDetailsDialog = ({
       setAcceptLoading(false);
     }
   };
+
+  // Precompute labels and counts used by the Course Forwarding UI
+  const forwardableCount = getForwardableCoursesCount();
+  const forwardedCount = getForwardedCoursesCount();
+  let forwardButtonLabel;
+  if (forwardingLoading) forwardButtonLabel = "Forwarding...";
+  else if (loadingPreferences || loadingEvaluations) forwardButtonLabel = "Loading...";
+  else if (forwardableCount === 0) forwardButtonLabel = "All Forwarded";
+  else forwardButtonLabel = `Forward ${forwardableCount} Course${forwardableCount > 1 ? 's' : ''}`;
 
   return (
     <>
@@ -835,44 +758,41 @@ const ApplicationDetailsDialog = ({
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {coursePreferences
-                                .sort((a, b) => {
-                                  const priorityMap = { "FIRST": 1, "SECOND": 2, "THIRD": 3 };
-                                  const orderA = typeof a.preferenceOrder === 'string' && isNaN(a.preferenceOrder) 
-                                    ? priorityMap[a.preferenceOrder] || 999 
+                              {(() => {
+                                // Create a sorted copy to avoid mutating original
+                                const priorityMap = { "FIRST": 1, "SECOND": 2, "THIRD": 3 };
+                                const sortedPreferences = [...coursePreferences].sort((a, b) => {
+                                  const orderA = typeof a.preferenceOrder === 'string' && Number.isNaN(Number(a.preferenceOrder))
+                                    ? priorityMap[a.preferenceOrder] || 999
                                     : a.preferenceOrder;
-                                  const orderB = typeof b.preferenceOrder === 'string' && isNaN(b.preferenceOrder) 
-                                    ? priorityMap[b.preferenceOrder] || 999 
+                                  const orderB = typeof b.preferenceOrder === 'string' && Number.isNaN(Number(b.preferenceOrder))
+                                    ? priorityMap[b.preferenceOrder] || 999
                                     : b.preferenceOrder;
                                   return orderA - orderB;
-                                })
-                                .map((preference) => (
-                                  <StyledTableRow key={preference.id || preference.preferenceId || `pref-${Math.random()}`}>
-                                    <StyledTableCell sx={{ width: '20%' }}>
-                                      <Chip
-                                        label={
-                                          preference.preferenceOrder === "FIRST" ? "1st Choice" :
-                                          preference.preferenceOrder === "SECOND" ? "2nd Choice" :
-                                          preference.preferenceOrder === "THIRD" ? "3rd Choice" :
-                                          `${preference.preferenceOrder}${getOrdinalSuffix(preference.preferenceOrder)} Choice`
-                                        }
-                                        size="small"
-                                        color={
-                                          preference.preferenceOrder === "FIRST" || preference.preferenceOrder === 1 ? "primary" :
-                                          preference.preferenceOrder === "SECOND" || preference.preferenceOrder === 2 ? "secondary" : 
-                                          "default"
-                                        }
-                                        variant="outlined"
-                                      />
-                                    </StyledTableCell>
-                                    <StyledTableCell sx={{ fontWeight: 'medium' }}>{preference.courseName}</StyledTableCell>
-                                    <StyledTableCell>{preference.department}</StyledTableCell>
-                                    <StyledTableCell>
-                                      <Tooltip 
-                                        title={getEvaluationTooltipText(preference.courseId)}
-                                        arrow
-                                        placement="top"
-                                      >
+                                });
+
+                                return sortedPreferences.map((preference) => {
+                                  const order = preference.preferenceOrder;
+                                  let label;
+                                  if (order === "FIRST") label = "1st Choice";
+                                  else if (order === "SECOND") label = "2nd Choice";
+                                  else if (order === "THIRD") label = "3rd Choice";
+                                  else label = `${order}${getOrdinalSuffix(order)} Choice`;
+
+                                    let color;
+                                    if (order === "FIRST" || order === 1) color = "primary";
+                                    else if (order === "SECOND" || order === 2) color = "secondary";
+                                    else color = "default";
+
+                                  return (
+                                    <StyledTableRow key={preference.id || preference.preferenceId || `pref-${Math.random()}`}>
+                                      <StyledTableCell sx={{ width: '20%' }}>
+                                        <Chip label={label} size="small" color={color} variant="outlined" />
+                                      </StyledTableCell>
+                                      <StyledTableCell sx={{ fontWeight: 'medium' }}>{preference.courseName}</StyledTableCell>
+                                      <StyledTableCell>{preference.department}</StyledTableCell>
+                                      <StyledTableCell>
+                                        <Tooltip title={getEvaluationTooltipText(preference.courseId)} arrow placement="top">
                                         <Box sx={{ display: 'inline-block' }}>
                                           {loadingEvaluations ? (
                                             <CircularProgress size={20} thickness={5} />
@@ -884,7 +804,9 @@ const ApplicationDetailsDialog = ({
                                       </Tooltip>
                                     </StyledTableCell>
                                   </StyledTableRow>
-                                ))}
+                                  );
+                                });
+                              })()}
                             </TableBody>
                           </Table>
                         </TableContainer>
@@ -1037,11 +959,11 @@ const ApplicationDetailsDialog = ({
                                       Forward All Course Preferences for Evaluation
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
-                                      {getForwardableCoursesCount() > 0 ? (
+                                      {forwardableCount > 0 ? (
                                         <>
-                                          {getForwardableCoursesCount()} course{getForwardableCoursesCount() > 1 ? 's' : ''} ready to forward
-                                          {getForwardedCoursesCount() > 0 && (
-                                            <>, {getForwardedCoursesCount()} already forwarded</>
+                                          {forwardableCount} course{forwardableCount > 1 ? 's' : ''} ready to forward
+                                          {forwardedCount > 0 && (
+                                            <>, {forwardedCount} already forwarded</>
                                           )}
                                         </>
                                       ) : (
@@ -1077,7 +999,7 @@ const ApplicationDetailsDialog = ({
                                   </Stack>
                                 </Grid>
                                 <Grid item xs={12} sm={4}>
-                                  <ActionButton 
+                                    <ActionButton 
                                     variant="contained"
                                     fullWidth
                                     onClick={forwardAllPreferencesToDepartments}
@@ -1096,10 +1018,7 @@ const ApplicationDetailsDialog = ({
                                       }
                                     }}
                                   >
-                                    {forwardingLoading ? "Forwarding..." : 
-                                     loadingPreferences || loadingEvaluations ? "Loading..." : 
-                                     getForwardableCoursesCount() === 0 ? "All Forwarded" : 
-                                     `Forward ${getForwardableCoursesCount()} Course${getForwardableCoursesCount() > 1 ? 's' : ''}`}
+                                    {forwardButtonLabel}
                                   </ActionButton>
                                 </Grid>
                               </Grid>
@@ -1194,6 +1113,29 @@ const ApplicationDetailsDialog = ({
       </Dialog>
     </>
   );
+};
+
+ApplicationDetailsDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  application: PropTypes.shape({
+    applicationDate: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
+    uploadDate: PropTypes.string,
+    dateSubmitted: PropTypes.string,
+    applicantName: PropTypes.string,
+    status: PropTypes.string,
+    applicationId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    applicant: PropTypes.shape({
+      applicantId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      firstName: PropTypes.string,
+      lastName: PropTypes.string,
+      email: PropTypes.string,
+    }),
+    documents: PropTypes.arrayOf(PropTypes.object),
+    coursePreferences: PropTypes.arrayOf(PropTypes.object),
+  }),
+  onRefreshApplications: PropTypes.func.isRequired,
 };
 
 export default ApplicationDetailsDialog;

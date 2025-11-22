@@ -23,17 +23,19 @@ import toast from '../utils/toast';
  * @returns {Object} Notification state and controls
  */
 const useSubjectNotifications = (
-  applicantId, 
-  subjects = [], 
+  applicantId,
+  subjects,
   fetchSubjects,
   options = {}
 ) => {
   const {
     enablePolling = true,
-    pollingInterval = 30000, // 30 seconds
     showToast = true,
     autoInitialize = true
   } = options;
+
+  // Ensure subjects is an array even if caller omitted it
+  subjects = subjects || [];
 
   const [isTracking, setIsTracking] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
@@ -62,7 +64,7 @@ const useSubjectNotifications = (
     setNotificationCount(prev => prev + notifications.length);
     
     if (showToast) {
-      notifications.forEach(notification => {
+      for (const notification of notifications) {
         // Show toast based on notification type
         switch (notification.type) {
           case 'success':
@@ -77,7 +79,7 @@ const useSubjectNotifications = (
           default:
             toast.info(notification.message, { duration: 5000 });
         }
-      });
+      }
     }
     
     // Update summary

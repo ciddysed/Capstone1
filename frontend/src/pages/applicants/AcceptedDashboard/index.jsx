@@ -21,6 +21,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import PropTypes from 'prop-types';
 import MainLayout from "../../../templates/MainLayout";
 import backgroundImage from "../../../assets/login-bg.png";
 import useResponseHandler from "../../../utils/useResponseHandler";
@@ -71,6 +72,13 @@ const InfoCard = ({ title, icon, children, accentColor = maroon.main }) => (
   </Card>
 );
 
+InfoCard.propTypes = {
+  title: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
+  icon: PropTypes.node,
+  children: PropTypes.node,
+  accentColor: PropTypes.string,
+};
+
 const AcceptedDashboard = () => {
   const navigate = useNavigate();
   const { handleSuccess, handleError, snackbar } = useResponseHandler();
@@ -87,19 +95,21 @@ const AcceptedDashboard = () => {
   const fetchAllSubjects = useCallback(async () => {
     const applicantId = localStorage.getItem("applicantId");
     if (!applicantId) return [];
-    
+
     try {
       // Using the actual working API endpoint
       const response = await axios.get(
         `http://localhost:8080/api/applicant-subject-records/applicant/${applicantId}/organized-clean`
       );
-      
+
       // Flatten the organized data into a single array
       const allSubjects = [];
-      Object.values(response.data).forEach(semesterSubjects => {
-        allSubjects.push(...semesterSubjects);
-      });
-      
+      for (const semesterSubjects of Object.values(response.data || {})) {
+        if (Array.isArray(semesterSubjects) && semesterSubjects.length > 0) {
+          allSubjects.push(...semesterSubjects);
+        }
+      }
+
       return allSubjects;
     } catch (error) {
       console.error("Error fetching subjects:", error);

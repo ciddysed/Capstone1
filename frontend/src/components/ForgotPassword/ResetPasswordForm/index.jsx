@@ -24,7 +24,6 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm();
 

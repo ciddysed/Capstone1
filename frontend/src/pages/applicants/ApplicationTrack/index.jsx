@@ -3,20 +3,15 @@ import {
   Typography,
   Box,
   Grid,
-  Stack,
   CircularProgress,
-  Tooltip,
   ThemeProvider,
   alpha,
   Card,
   CardContent,
   CardHeader,
-  createTheme,
   Divider,
-  Grow,
   MenuItem,
   Popover,
-  Button,
   Paper,
   LinearProgress,
   Chip
@@ -24,25 +19,17 @@ import {
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import MinimalLayout from "../../../templates/MinimalLayout";
-import backgroundImage from "../../../assets/login-bg.png";
+// Reuse color palette and theme from AppCoursePreference styles
+import { maroon, gold, customTheme } from '../AppCoursePreference/styles';
 import useResponseHandler from "../../../utils/useResponseHandler";
-import logo from "../../../assets/logo.png";
+// logo removed (unused)
 import toast from "../../../utils/toast";
 
 // Import reusable components and styles from AppCoursePreference
-import {
-  AnimatedPaper,
-  InfoBox,
-  SectionTitle,
-  maroon,
-  gold,
-  customTheme
-} from '../AppCoursePreference/styles';
+// Reuse styles via individual components where needed; removed unused imports from AppCoursePreference styles
 
 // Import shared component
 import DocumentHandler from "./DocumentHandler";
-import ApplicantInfo from "./ApplicantInfo";
 import CoursePreferences from "./CoursePreferences";
 
 // Notifications
@@ -50,18 +37,14 @@ import NotificationCenter from '../../../components/Notifications/NotificationCe
 import useSubjectNotifications from '../../../hooks/useSubjectNotifications';
 
 import {
-  TrackingPaper,
   StatusChip,
-  UserAvatar
 } from "./styled";
 
 import {
   APPLICATION_STATUS,
   DOCUMENT_TYPES,
   getStatusIcon,
-  PRIORITY_ORDER,
-  getDocumentType,
-  getDocumentTypeLabel
+  PRIORITY_ORDER
 } from "./utils";
 
 // API base URL - move to environment config in production
@@ -168,9 +151,9 @@ const ApplicationTracking = () => {
 
   // Check for missing required documents
   const checkMissingDocuments = useCallback((documents) => {
-    const uploadedTypes = documents.map(doc => doc.type);
+    const uploadedTypes = new Set(documents.map(doc => doc.type));
     const missing = REQUIRED_DOCUMENTS.filter(
-      reqDoc => !uploadedTypes.includes(reqDoc.value)
+      reqDoc => !uploadedTypes.has(reqDoc.value)
     );
     setMissingDocuments(missing);
   }, []);
@@ -399,6 +382,7 @@ const ApplicationTracking = () => {
     fetchCourses,
     fetchCoursePreferences,
     fetchDocuments,
+    fetchAllSubjects,
   ]);
 
   // Periodic check for acceptance status (every 30 seconds)
@@ -586,26 +570,7 @@ const ApplicationTracking = () => {
     )
   }), [documents]);
 
-  // Document tab state
-  const [documentTab, setDocumentTab] = useState(0);
-  
-  // Handle changing tabs
-  const handleDocumentTabChange = (event, newValue) => {
-    setDocumentTab(newValue);
-  };
-  
-  // Document preview/download handlers
-  const handlePreviewDocument = (doc) => {
-    // Create a URL from the base URL and the document's path
-    const previewUrl = `${API_BASE_URL}${doc.previewUrl}`;
-    window.open(previewUrl, '_blank');
-  };
-  
-  const handleDownloadDocument = (doc) => {
-    // Create a URL from the base URL and the document's path
-    const downloadUrl = `${API_BASE_URL}${doc.downloadUrl}`;
-    window.open(downloadUrl, '_blank');
-  };
+  // Document preview/download are handled in DocumentHandler/DocumentList components
 
   // Display loading states
   const isLoading = loading.profile || loading.courses || loading.preferences || loading.documents;

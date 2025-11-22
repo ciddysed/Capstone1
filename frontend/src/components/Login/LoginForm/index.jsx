@@ -124,7 +124,7 @@ const LoginForm = ({
           }
         );
 
-        const { applicantId, message } = response.data;
+        const { applicantId } = response.data;
         console.log("GIKAN LOGIN", response.data);
 
         if (applicantId) {

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
-  IconButton,
-  TextField,
+  InputBase,
   AppBar,
   Toolbar,
   Divider,
@@ -11,40 +10,18 @@ import {
   ListItem,
   Button,
   Stack,
-  FormControl,
-  MenuItem,
-  Select,
-  InputLabel,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
-  Tooltip,
-  Avatar,
-  alpha,
-  TablePagination,
-  useTheme,
-  Paper,
-  Grow,
+  
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
-import NotificationsIcon from "@mui/icons-material/Notifications";
 import SearchIcon from "@mui/icons-material/Search";
 import logo from "../../../assets/logo.png";
 import backgroundImage from "../../../assets/login-bg.png";
+import PropTypes from 'prop-types';
 
 // Import the content components
 import EvaluatorManagementContent from "../../../pages/SystemAdmin/EvaluatorManagement/EvaluatorManagementContent";
 import CurriculumManagement from "../../../pages/SystemAdmin/ApplicantDetailsPage/curriculumManagement";
 import NotificationCenter from "../../Notifications/NotificationCenter";
-
-const API_URL = "http://localhost:8080/api/program-admins";
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -61,81 +38,11 @@ const gold = {
   contrastText: '#000000',
 };
 
-// Styled components for enhanced UI
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  fontWeight: 500,
-  '&.MuiTableCell-head': {
-    backgroundColor: maroon.main,
-    color: maroon.contrastText,
-    fontSize: 14,
-    fontWeight: 600,
-  },
-}));
+// Reduced imports and removed unused styled table/chip components.
 
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: alpha(gold.light, 0.15),
-  },
-  '&:hover': {
-    backgroundColor: alpha(gold.light, 0.3),
-    transition: 'background-color 0.2s ease',
-  },
-  '&:last-child td, &:last-child th': {
-    border: 0,
-  },
-}));
-
-const ActionButton = styled(Button)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius * 1.5,
-  textTransform: 'none',
-  fontWeight: 600,
-  boxShadow: 'none',
-  backgroundColor: maroon.main,
-  '&:hover': {
-    backgroundColor: maroon.dark,
-    boxShadow: '0 4px 12px rgba(106, 0, 0, 0.25)',
-  },
-}));
-
-const StyledChip = styled(Chip)(({ theme }) => ({
-  fontWeight: 600,
-  borderWidth: 2,
-  '&.MuiChip-outlinedPrimary': {
-    borderColor: maroon.main,
-    color: maroon.main,
-  },
-  '&.MuiChip-outlinedSecondary': {
-    borderColor: gold.main,
-    color: gold.dark,
-  },
-  '&.MuiChip-outlinedSuccess': {
-    color: '#2e7d32',
-  },
-  '&.MuiChip-outlinedError': {
-    color: '#d32f2f',
-  },
-  '&.MuiChip-outlinedInfo': {
-    color: '#0288d1',
-  },
-  '&.MuiChip-outlinedWarning': {
-    color: '#ed6c02',
-  },
-}));
-
-// Status color mapping
-const getStatusChipColor = (status) => {
-  const statusMap = {
-    PENDING: "warning",
-    APPROVED: "success",
-    REJECTED: "error",
-    WAITLISTED: "info",
-    UNDER_REVIEW: "secondary",
-  };
-  return statusMap[status] || "default";
-};
+// Status color mapping (kept inline where needed)
 
 const SystemAdminNavigation = ({ children, activeTab = "Evaluator Management" }) => {
-  const theme = useTheme();
   const location = useLocation(); // Add this
   const [activeButton, setActiveButton] = useState(
     location.state?.defaultTab || activeTab
@@ -250,14 +157,10 @@ const SystemAdminNavigation = ({ children, activeTab = "Evaluator Management" })
               </Typography>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <TextField
-                  size="small"
-                  placeholder="Search..."
-                  InputProps={{
-                    startAdornment: <SearchIcon sx={{ mr: 1 }} />,
-                    sx: { borderRadius: 5, bgcolor: "#fff" },
-                  }}
-                />
+                <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: '#fff', px: 1, py: 0.25, borderRadius: 2 }}>
+                  <SearchIcon sx={{ mr: 1, color: 'rgba(0,0,0,0.6)' }} />
+                  <InputBase placeholder="Search..." sx={{ ml: 0, flex: 1 }} />
+                </Box>
                 
                 {/* Replace the notification icon with the NotificationCenter component */}
                 <NotificationCenter userType="system-admin" userId={systemAdminId} />
@@ -281,6 +184,11 @@ const SystemAdminNavigation = ({ children, activeTab = "Evaluator Management" })
       </Box>
     </Box>
   );
+};
+
+SystemAdminNavigation.propTypes = {
+  children: PropTypes.node,
+  activeTab: PropTypes.string,
 };
 
 export default SystemAdminNavigation;

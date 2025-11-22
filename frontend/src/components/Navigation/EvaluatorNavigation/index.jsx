@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   Box,
   Typography,
-  IconButton,
   TextField,
   AppBar,
   Toolbar,
@@ -16,7 +15,6 @@ import {
   Select,
   InputLabel,
 } from "@mui/material";
-import NotificationsIcon from "@mui/icons-material/Notifications";
 import SearchIcon from "@mui/icons-material/Search";
 import logo from "../../../assets/logo.png";
 import backgroundImage from "../../../assets/login-bg.png";

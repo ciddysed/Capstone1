@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { 
-  Box, Typography, Badge, Menu, MenuItem, IconButton, 
+  Box, Typography, Badge, Menu, IconButton, 
   List, ListItem, ListItemText, Divider, CircularProgress, 
   Avatar, alpha, Tooltip
 } from '@mui/material';
@@ -17,12 +18,7 @@ const maroon = {
   contrastText: '#FFFFFF',
 };
 
-const gold = {
-  light: '#FFF0B9',
-  main: '#FFC72C',
-  dark: '#D4A500',
-  contrastText: '#000000',
-};
+// gold color removed (unused)
 
 // Styled components
 const NotificationItem = styled(ListItem)(({ theme, read }) => ({
@@ -51,24 +47,18 @@ const NotificationCenter = ({ userType, userId }) => {
     setLoading(true);
     setError(null);
 
-    try {
-      // Try backend first, fallback to localStorage on error
-      notificationService.getNotifications(userType, userId)
-        .then(data => {
-          setNotifications(data || []);
-          setLoading(false);
-        })
-        .catch(err => {
-          console.warn('Notification API unavailable, falling back to localStorage', err);
-          const userNotifications = localNotificationService.getNotifications(userType, userId);
-          setNotifications(userNotifications || []);
-          setLoading(false);
-        });
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
-      setError('Failed to load notifications');
-      setLoading(false);
-    }
+    // Try backend first, fallback to localStorage on error
+    notificationService.getNotifications(userType, userId)
+      .then(data => {
+        setNotifications(data || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.warn('Notification API unavailable, falling back to localStorage', err);
+        const userNotifications = localNotificationService.getNotifications(userType, userId);
+        setNotifications(userNotifications || []);
+        setLoading(false);
+      });
   }, [userId, userType]);
   
   useEffect(() => {
@@ -79,27 +69,38 @@ const NotificationCenter = ({ userType, userId }) => {
 
     // Listen for notification updates dispatched elsewhere (optimistic create reconciliation)
     const handler = (e) => {
-      try {
-        const detail = e?.detail || {};
-        // If detail contains userType/userId, only refresh for that user
-        if (detail.userType && detail.userId) {
-          if (String(detail.userType) !== String(userType) || String(detail.userId) !== String(userId)) {
-            return;
-          }
+      const detail = e?.detail || {};
+      // If detail contains userType/userId, only refresh for that user
+      if (detail.userType && detail.userId) {
+        if (String(detail.userType) !== String(userType) || String(detail.userId) !== String(userId)) {
+          return;
         }
-        fetchNotifications();
-      } catch (err) {
-        console.warn('notifications:updated handler error', err);
       }
+      fetchNotifications();
     };
 
-    window.addEventListener('notifications:updated', handler);
+    const getGlobal = () => {
+      // Use the most common host globals in environments where globalThis may not be recognized by the linter.
+      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') return window;
+      // Note: intentionally skipping direct `self` usage to avoid restricted global lint rules.
+      if (typeof global !== 'undefined' && typeof global.addEventListener === 'function') return global;
+      return null;
+    };
+
+    const eventTarget = getGlobal();
+
+    if (eventTarget && typeof eventTarget.addEventListener === 'function') {
+      eventTarget.addEventListener('notifications:updated', handler);
+    }
 
     return () => {
       clearInterval(intervalId);
-      window.removeEventListener('notifications:updated', handler);
+      if (eventTarget && typeof eventTarget.removeEventListener === 'function') {
+        eventTarget.removeEventListener('notifications:updated', handler);
+      }
     };
   }, [fetchNotifications, userType, userId]);
+
 
   // Menu handlers
   const handleOpenMenu = (event) => {
@@ -206,14 +207,16 @@ const NotificationCenter = ({ userType, userId }) => {
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleCloseMenu}
-        PaperProps={{
-          sx: { 
-            width: 360, 
-            maxHeight: 400, 
-            overflow: 'auto',
-            mt: 1.5,
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
-            borderRadius: 2,
+        slotProps={{
+          paper: {
+            sx: {
+              width: 360,
+              maxHeight: 400,
+              overflow: 'auto',
+              mt: 1.5,
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
+              borderRadius: 2,
+            }
           }
         }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
@@ -236,81 +239,100 @@ const NotificationCenter = ({ userType, userId }) => {
         </Box>
         <Divider />
         
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress size={30} sx={{ color: maroon.main }} />
-          </Box>
-        ) : error ? (
-          <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body2" color="error">
-              {error}
-            </Typography>
-          </Box>
-        ) : notifications.length > 0 ? (
-          <List disablePadding>
-            {notifications.map(notification => (
-              <NotificationItem 
-                key={notification.id} 
-                onClick={() => handleMarkAsRead(notification.id)}
-                read={notification.read}
-              >
-                <Box sx={{ pr: 2, display: 'flex', alignItems: 'center' }}>
-                  {notification.read ? (
-                    <Avatar sx={{ 
-                      width: 10, 
-                      height: 10, 
-                      bgcolor: 'transparent',
-                      border: `1px solid ${alpha(getIconColor(notification.type), 0.5)}`
-                    }} />
-                  ) : (
-                    <Circle sx={{ 
-                      width: 10, 
-                      height: 10, 
-                      color: getIconColor(notification.type)
-                    }} />
-                  )}
-                </Box>
-                <ListItemText 
-                  primary={
-                    <Typography variant="subtitle2" sx={{ fontWeight: notification.read ? 400 : 600 }}>
-                      {notification.title}
-                    </Typography>
-                  }
-                  secondary={
-                    <React.Fragment>
-                      <Typography 
-                        variant="body2" 
-                        component="p"
-                        sx={{ 
-                          color: notification.read ? 'text.secondary' : 'text.primary',
-                          mb: 0.5 
-                        }}
-                      >
-                        {notification.message}
-                      </Typography>
-                      <Typography 
-                        variant="caption" 
-                        component="p" 
-                        sx={{ color: 'text.disabled' }}
-                      >
-                        {formatRelativeTime(notification.createdAt)}
-                      </Typography>
-                    </React.Fragment>
-                  }
-                />
-              </NotificationItem>
-            ))}
-          </List>
-        ) : (
-          <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              No notifications
-            </Typography>
-          </Box>
-        )}
+        {(() => {
+          // Extracted menu body for clarity instead of nested ternary
+          if (loading) {
+            return (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <CircularProgress size={30} sx={{ color: maroon.main }} />
+              </Box>
+            );
+          }
+
+          if (error) {
+            return (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="body2" color="error">
+                  {error}
+                </Typography>
+              </Box>
+            );
+          }
+
+          if (notifications.length > 0) {
+            return (
+              <List disablePadding>
+                {notifications.map(notification => (
+                  <NotificationItem 
+                    key={notification.id} 
+                    onClick={() => handleMarkAsRead(notification.id)}
+                    read={notification.read}
+                  >
+                    <Box sx={{ pr: 2, display: 'flex', alignItems: 'center' }}>
+                      {notification.read ? (
+                        <Avatar sx={{ 
+                          width: 10, 
+                          height: 10, 
+                          bgcolor: 'transparent',
+                          border: `1px solid ${alpha(getIconColor(notification.type), 0.5)}`
+                        }} />
+                      ) : (
+                        <Circle sx={{ 
+                          width: 10, 
+                          height: 10, 
+                          color: getIconColor(notification.type)
+                        }} />
+                      )}
+                    </Box>
+                    <ListItemText 
+                      primary={
+                        <Typography variant="subtitle2" sx={{ fontWeight: notification.read ? 400 : 600 }}>
+                          {notification.title}
+                        </Typography>
+                      }
+                      secondary={
+                        <>
+                          <Typography 
+                            variant="body2" 
+                            component="p"
+                            sx={{ 
+                              color: notification.read ? 'text.secondary' : 'text.primary',
+                              mb: 0.5 
+                            }}
+                          >
+                            {notification.message}
+                          </Typography>
+                          <Typography 
+                            variant="caption" 
+                            component="p" 
+                            sx={{ color: 'text.disabled' }}
+                          >
+                            {formatRelativeTime(notification.createdAt)}
+                          </Typography>
+                        </>
+                      }
+                    />
+                  </NotificationItem>
+                ))}
+              </List>
+            );
+          }
+
+          return (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                No notifications
+              </Typography>
+            </Box>
+          );
+        })()}
       </Menu>
     </Box>
   );
+};
+NotificationCenter.propTypes = {
+  userType: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  userId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 export default NotificationCenter;
