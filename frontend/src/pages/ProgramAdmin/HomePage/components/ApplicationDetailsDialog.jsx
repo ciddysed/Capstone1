@@ -46,8 +46,8 @@ import { styled } from "@mui/material/styles";
 import DialogContentText from "@mui/material/DialogContentText";
 import toast from "../../../../utils/toast";
 
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api/program-admins`;
-const EVALUATIONS_API_URL = `${process.env.REACT_APP_BACKEND_URL}/api/evaluations`;
+const API_URL = 'https://eteeap-foth.onrender.com/api/program-admins';
+const EVALUATIONS_API_URL = 'https://eteeap-foth.onrender.com/api/evaluations';
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -436,14 +436,14 @@ const ApplicationDetailsDialog = ({
 
   // Handle previewing document
   const handlePreviewDocument = (documentId) => {
-    const previewUrl = `${process.env.REACT_APP_BACKEND_URL}/api/documents/preview/${documentId}`;
+    const previewUrl = `https://eteeap-foth.onrender.com/api/documents/preview/${documentId}`;
     window.open(previewUrl, '_blank', 'noopener,noreferrer');
   };
 
   // Handle downloading document
   const handleDownloadDocument = (documentId, fileName) => {
     try {
-      const downloadUrl = `${process.env.REACT_APP_BACKEND_URL}/api/documents/download/${documentId}`;
+      const downloadUrl = `https://eteeap-foth.onrender.com/api/documents/download/${documentId}`;
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.setAttribute('download', fileName);
@@ -577,7 +577,7 @@ const ApplicationDetailsDialog = ({
       const remarks = acceptRemarks;
 
       await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/api/accepted-applicants/accept`,
+        `https://eteeap-foth.onrender.com/api/accepted-applicants/accept`,
         null,
         {
           params: {

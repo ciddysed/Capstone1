@@ -31,8 +31,8 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import toast from "../../../utils/toast";
 
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api/accepted-applicants`;
-const EVALUATOR_API = `${process.env.REACT_APP_BACKEND_URL}/api/evaluators`;
+const API_URL = 'https://eteeap-foth.onrender.com/api/accepted-applicants';
+const EVALUATOR_API = 'https://eteeap-foth.onrender.com/api/evaluators';
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -142,7 +142,7 @@ const Accreditations = ({ onNavigateToGraded }) => {
         if (applicantIds.length > 0) {
           // Fetch all subject records for these applicants
           const promises = applicantIds.map(id =>
-            fetch(`${process.env.REACT_APP_BACKEND_URL}/api/applicant-subject-records/applicant/${id}`)
+            fetch(`https://eteeap-foth.onrender.com/api/applicant-subject-records/applicant/${id}`)
               .then(res => res.ok ? res.json() : [])
               .catch(() => [])
           );
@@ -178,7 +178,7 @@ const Accreditations = ({ onNavigateToGraded }) => {
   // Fetch curriculums for evaluator's department
   useEffect(() => {
     if (departmentId) {
-      fetch(`${process.env.REACT_APP_BACKEND_URL}/api/curriculums?departmentId=${departmentId}`)
+      fetch(`https://eteeap-foth.onrender.com/api/curriculums?departmentId=${departmentId}`)
         .then(res => res.json())
         .then(data => setCurriculums(data))
         .catch(() => setCurriculums([]));
@@ -205,7 +205,7 @@ const Accreditations = ({ onNavigateToGraded }) => {
     try {
       const applicantId = selectedApplicant.applicant?.applicantId;
       const params = new URLSearchParams({ curriculumId: selectedCurriculumId });
-      const url = `${process.env.REACT_APP_BACKEND_URL}/api/applicants/${applicantId}/create-curriculum-record?${params.toString()}`;
+      const url = `https://eteeap-foth.onrender.com/api/applicants/${applicantId}/create-curriculum-record?${params.toString()}`;
       
       const response = await fetch(url, { method: "POST" });
       

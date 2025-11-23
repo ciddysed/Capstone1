@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { API_BASE } from '../../../config';
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -85,7 +86,7 @@ const LoginForm = ({
 
         // Complete signup with all profile data
         const response = await axios.post(
-          `${process.env.REACT_APP_BACKEND_URL}/api/applicants/register-complete`,
+          `${API_BASE}/applicants/register-complete`,
           {
             email: data.email,
             password: data.password,
@@ -107,12 +108,24 @@ const LoginForm = ({
         setCurrentFormType("login");
       } catch (error) {
         console.error("Signup error:", error);
-        handleError("Signup failed. Please try again.");
+        if (error.response) {
+          console.error("Signup response status:", error.response.status);
+          console.error("Signup response data:", error.response.data);
+          console.error("Signup response headers:", error.response.headers);
+          console.error("Signup request config:", error.config);
+          handleError(error.response.data?.message || `Signup failed (${error.response.status})`);
+        } else if (error.request) {
+          console.error("No response received for signup:", error.request);
+          handleError("No response from server. Please check your connection.");
+        } else {
+          console.error("Signup setup error:", error.message);
+          handleError("Signup failed. Please try again.");
+        }
       }
     } else {
       try {
         const response = await axios.post(
-          `${process.env.REACT_APP_BACKEND_URL}/api/applicants/login`,
+          `${API_BASE}/applicants/login`,
           {
             email: data.email,
             password: data.password,
@@ -135,7 +148,7 @@ const LoginForm = ({
           // Check if profile is complete by fetching user data
           try {
             const userResponse = await axios.get(
-              `${process.env.REACT_APP_BACKEND_URL}/api/applicants/${applicantId}`
+              `${API_BASE}/applicants/${applicantId}`
             );
             const userData = userResponse.data;
 
@@ -164,10 +177,20 @@ const LoginForm = ({
           throw new Error("Applicant ID missing in response");
         }
       } catch (error) {
-        console.error("Login error:", error.response?.data || error.message);
-        handleError(
-          error.response?.data?.message || "Login failed. Please try again."
-        );
+        console.error("Login error:", error);
+        if (error.response) {
+          console.error("Login response status:", error.response.status);
+          console.error("Login response data:", error.response.data);
+          console.error("Login response headers:", error.response.headers);
+          console.error("Login request config:", error.config);
+          handleError(error.response.data?.message || `Login failed (${error.response.status})`);
+        } else if (error.request) {
+          console.error("No response received for login:", error.request);
+          handleError("No response from server. Please check your connection.");
+        } else {
+          console.error("Login setup error:", error.message);
+          handleError("Login failed. Please try again.");
+        }
       }
     }
   };
@@ -185,21 +208,21 @@ const LoginForm = ({
     try {
       // Check for course preferences
       const preferencesResponse = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/api/preferences/applicant/${applicantId}`
+        `${API_BASE}/preferences/applicant/${applicantId}`
       );
       const hasPreferences =
         preferencesResponse.data && preferencesResponse.data.length > 0;
 
       // Check for uploaded documents
       const documentsResponse = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/api/documents/applicant/${applicantId}`
+        `${API_BASE}/documents/applicant/${applicantId}`
       );
       const hasDocuments =
         documentsResponse.data && documentsResponse.data.length > 0;
 
       // Check if they have submitted an application
       const applicationResponse = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/api/applications/applicant/${applicantId}`
+        `${API_BASE}/applications/applicant/${applicantId}`
       );
       const hasSubmittedApplication =
         applicationResponse.data && applicationResponse.data.length > 0;

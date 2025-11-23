@@ -46,9 +46,9 @@ const ReportingDashboard = () => {
       setLoading(true);
       try {
         const [applicationsData, statusData, coursesData] = await Promise.all([
-          axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/reports/applications-over-time`),
-          axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/reports/applications-by-status`),
-          axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/reports/course-preferences`)
+          axios.get('https://eteeap-foth.onrender.com/api/reports/applications-over-time'),
+          axios.get('https://eteeap-foth.onrender.com/api/reports/applications-by-status'),
+          axios.get('https://eteeap-foth.onrender.com/api/reports/course-preferences')
         ]);
         
         setMetrics({
