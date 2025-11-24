@@ -17,6 +17,7 @@ import {
   Chip
 } from "@mui/material";
 import axios from "axios";
+import { API_BASE } from '../../../config';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 // Reuse color palette and theme from AppCoursePreference styles
@@ -47,8 +48,8 @@ import {
   PRIORITY_ORDER
 } from "./utils";
 
-// API base URL - move to environment config in production
-const API_BASE_URL = "http://localhost:8080/api";
+// API base URL (centralized)
+const API_BASE_URL = API_BASE;
 
 // Required document types
 const REQUIRED_DOCUMENTS = [

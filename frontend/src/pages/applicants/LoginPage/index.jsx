@@ -9,6 +9,7 @@ import SetUpProfile from "../../../components/Login/SetUpProfile";
 import MinimalLayout from "../../../templates/MinimalLayout";
 import useResponseHandler from "../../../utils/useResponseHandler";
 import axios from "axios";
+import { API_BASE } from '../../../config';
 
 const LoginPage = () => {
   const [view, setView] = useState("login"); // login | signup | setupProfile
@@ -20,14 +21,14 @@ const LoginPage = () => {
     try {
       // Check for course preferences
       const preferencesResponse = await axios.get(
-        `http://localhost:8080/api/preferences/applicant/${applicantId}`
+        `${API_BASE}/preferences/applicant/${applicantId}`
       );
       const hasPreferences =
         preferencesResponse.data && preferencesResponse.data.length > 0;
 
       // Check for uploaded documents
       const documentsResponse = await axios.get(
-        `http://localhost:8080/api/documents/applicant/${applicantId}`
+        `${API_BASE}/documents/applicant/${applicantId}`
       );
       const hasDocuments =
         documentsResponse.data && documentsResponse.data.length > 0;
@@ -40,7 +41,7 @@ const LoginPage = () => {
 
       // Check if they have submitted an application
       const applicationResponse = await axios.get(
-        `http://localhost:8080/api/applications/applicant/${applicantId}`
+        `${API_BASE}/applications/applicant/${applicantId}`
       );
       if (applicationResponse.data && applicationResponse.data.length > 0) {
         navigate("/ApplicationTrack");

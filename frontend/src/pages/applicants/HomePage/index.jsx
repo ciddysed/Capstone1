@@ -5,6 +5,7 @@ import backgroundImage from "../../../assets/login-bg.png";
 import logo from "../../../assets/logo.png";
 
 import axios from "axios";
+import { API_BASE } from '../../../config';
 import useResponseHandler from "../../../utils/useResponseHandler";
 import MainLayout from "../../../templates/MainLayout";
 
@@ -115,7 +116,7 @@ const Homepage = () => {
       try {
         // Fetch applicant data
         const response = await axios.get(
-          `http://localhost:8080/api/applicants/${applicantId}`
+          `${API_BASE}/applicants/${applicantId}`
         );
         const data = response.data;
 
@@ -139,7 +140,7 @@ const Homepage = () => {
         // Check if applicant is accepted
         try {
           const acceptedResponse = await axios.get(
-            `http://localhost:8080/api/accepted-applicants/by-applicant/${applicantId}`
+            `${API_BASE}/accepted-applicants/by-applicant/${applicantId}`
           );
           
           if (acceptedResponse.data && acceptedResponse.data.status === "ACCEPTED") {
@@ -164,7 +165,7 @@ const Homepage = () => {
     const applicantId = localStorage.getItem("applicantId");
     try {
       const response = await axios.get(
-        `http://localhost:8080/api/applications/applicant/${applicantId}`
+        `${API_BASE}/applications/applicant/${applicantId}`
       );
       if (response.data && response.data.length > 0) {
         // Trigger SuccessModal if an application already exists

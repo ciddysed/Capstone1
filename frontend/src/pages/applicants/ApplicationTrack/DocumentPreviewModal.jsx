@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { DownloadOutlined, ArrowBack } from '@mui/icons-material';
+import { API_BASE } from '../../../config';
 
 // Document preview page component
 const DocumentPreviewPage = () => {
@@ -11,8 +12,8 @@ const DocumentPreviewPage = () => {
   // Extract document information from state if available
   const docInfo = location.state?.docInfo || { name: 'Document' };
   
-  // API base URL should match your main app
-  const API_BASE_URL = "http://localhost:8080/api";
+  // Centralized API base URL
+  const API_BASE_URL = API_BASE;
   
   // Handle download
   const handleDownload = () => {
