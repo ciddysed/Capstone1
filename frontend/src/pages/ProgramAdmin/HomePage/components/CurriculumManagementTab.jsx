@@ -109,7 +109,7 @@ const ActionButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = "https://eteeap-foth.onrender.com/api";
 
 const CurriculumManagementTab = () => {
   const theme = useTheme();

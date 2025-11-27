@@ -45,7 +45,7 @@ const CourseInformation = ({ course }) => {
     
     const fetchCurriculum = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/api/curriculums/course/${course.courseId}`);
+        const response = await axios.get(`https://eteeap-foth.onrender.com/api/curriculums/course/${course.courseId}`);
         setCurriculum(response.data);
       } catch (error) {
         console.error("Error fetching curriculum:", error);

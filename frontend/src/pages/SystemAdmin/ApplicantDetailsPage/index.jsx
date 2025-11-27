@@ -81,7 +81,7 @@ const ApplicantDetailsPage = () => {
     if (!applicantId) return;
     
     // Fetch applicant profile
-    fetch(`http://localhost:8080/api/applicants/${applicantId}`)
+    fetch(`https://eteeap-foth.onrender.com/api/applicants/${applicantId}`)
       .then((res) => res.json())
       .then((data) => {
         setApplicant(data);
@@ -91,13 +91,13 @@ const ApplicantDetailsPage = () => {
       .catch(() => setApplicant(null));
 
     // Fetch course preferences
-    fetch(`http://localhost:8080/api/preferences/applicant/${applicantId}`)
+    fetch(`https://eteeap-foth.onrender.com/api/preferences/applicant/${applicantId}`)
       .then((res) => res.json())
       .then(setCoursePreferences)
       .catch(() => setCoursePreferences([]));
 
     // Fetch documents
-    fetch(`http://localhost:8080/api/documents/applicant/${applicantId}`)
+    fetch(`https://eteeap-foth.onrender.com/api/documents/applicant/${applicantId}`)
       .then(async (res) => {
         if (!res.ok) return [];
         try {
@@ -110,7 +110,7 @@ const ApplicantDetailsPage = () => {
       .catch(() => setDocuments([]));
       
     // Fetch evaluators
-    fetch(`http://localhost:8080/api/evaluators/active`)
+    fetch(`https://eteeap-foth.onrender.com/api/evaluators/active`)
       .then((res) => res.json())
       .then(setEvaluators)
       .catch(() => setEvaluators([]));
@@ -136,7 +136,7 @@ const ApplicantDetailsPage = () => {
         statusUpdatedAt: new Date().toISOString()
       };
 
-      const response = await fetch(`http://localhost:8080/api/applicants/${applicantId}/status`, {
+      const response = await fetch(`https://eteeap-foth.onrender.com/api/applicants/${applicantId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -210,7 +210,7 @@ const ApplicantDetailsPage = () => {
         forwardedForEvaluation: true
       };
 
-      const response = await fetch(`http://localhost:8080/api/applicants/${applicantId}/forward`, {
+      const response = await fetch(`https://eteeap-foth.onrender.com/api/applicants/${applicantId}/forward`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -253,7 +253,7 @@ const ApplicantDetailsPage = () => {
 
   // Helper to preview document in modal
   const handlePreview = (doc) => {
-    const url = `http://localhost:8080/api/documents/preview/${doc.documentId}`;
+    const url = `https://eteeap-foth.onrender.com/api/documents/preview/${doc.documentId}`;
     setPreviewUrl(url);
     const fileName = doc.fileName || doc.name || "";
     setPreviewType(typeof fileName === "string" ? fileName.toLowerCase() : "");
@@ -264,7 +264,7 @@ const ApplicantDetailsPage = () => {
 
   // Helper to download document
   const handleDownload = (docId) => {
-    window.open(`http://localhost:8080/api/documents/download/${docId}`, "_blank");
+    window.open(`https://eteeap-foth.onrender.com/api/documents/download/${docId}`, "_blank");
   };
 
   return (

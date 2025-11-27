@@ -47,7 +47,7 @@ import AcceptedStudentsTab from "../../../pages/ProgramAdmin/HomePage/components
 import ApplicationDetailsDialog from "../../../pages/ProgramAdmin/HomePage/components/ApplicationDetailsDialog";
 import NotificationCenter from "../../Notifications/NotificationCenter";
 
-const API_URL = "http://localhost:8080/api/program-admins";
+const API_URL = "https://eteeap-foth.onrender.com/api/program-admins";
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -172,7 +172,7 @@ const ProgramAdminNavigation = ({ children }) => {
       // Fetch accepted applicants to filter them out
       let acceptedApplicantIds = [];
       try {
-        const acceptedResponse = await axios.get("http://localhost:8080/api/accepted-applicants");
+        const acceptedResponse = await axios.get("https://eteeap-foth.onrender.com/api/accepted-applicants");
         acceptedApplicantIds = acceptedResponse.data.map(accepted => accepted.applicant?.applicantId).filter(Boolean);
       } catch (error) {
         console.error("Error fetching accepted applicants:", error);

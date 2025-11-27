@@ -67,7 +67,7 @@ const SetUpProfile = ({ handleSuccess }) => {
       console.log("payload", payload);
 
       await axios.patch(
-        `http://localhost:8080/api/applicants/${applicantId}/complete-profile`,
+        `https://eteeap-foth.onrender.com/api/applicants/${applicantId}/complete-profile`,
         payload
       );
 

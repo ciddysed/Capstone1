@@ -23,8 +23,8 @@ import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 
-const API_ACCEPTED = "http://localhost:8080/api/accepted-applicants";
-const API_SUBJECT_RECORDS = "http://localhost:8080/api/applicant-subject-records";
+const API_ACCEPTED = "https://eteeap-foth.onrender.com/api/accepted-applicants";
+const API_SUBJECT_RECORDS = "https://eteeap-foth.onrender.com/api/applicant-subject-records";
 
 // Custom maroon and gold color palette
 const maroon = {

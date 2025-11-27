@@ -132,7 +132,7 @@ const fetchApplicant = async (applicantId) => {
   if (!applicantId) return null;
   try {
     // Use the correct endpoint for fetching applicant by ID
-    const res = await fetch(`http://localhost:8080/api/applicants/${applicantId}`);
+    const res = await fetch(`https://eteeap-foth.onrender.com/api/applicants/${applicantId}`);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -144,7 +144,7 @@ const fetchCourse = async (courseId) => {
   if (!courseId) return null;
   try {
     // Use the correct endpoint for fetching course by ID
-    const res = await fetch(`http://localhost:8080/api/courses/${courseId}`);
+    const res = await fetch(`https://eteeap-foth.onrender.com/api/courses/${courseId}`);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -175,7 +175,7 @@ const ApplicantsListPage = () => {
     }
 
     // Fetch evaluations specific to this evaluator
-    fetch(`http://localhost:8080/api/evaluations/evaluator/${evaluatorId}`)
+    fetch(`https://eteeap-foth.onrender.com/api/evaluations/evaluator/${evaluatorId}`)
       .then((res) => {
         if (!res.ok) {
           console.error(`Error fetching evaluations: HTTP ${res.status}`);
@@ -204,7 +204,7 @@ const ApplicantsListPage = () => {
           let excludedIds = [];
           if (applicantIds.length > 0) {
             const acceptedApplicantPromises = applicantIds.map(id =>
-              fetch(`http://localhost:8080/api/accepted-applicants/applicant/${id}`)
+              fetch(`https://eteeap-foth.onrender.com/api/accepted-applicants/applicant/${id}`)
                 .then(res => res.ok ? res.json() : null)
                 .catch(() => null)
             );
@@ -275,7 +275,7 @@ const ApplicantsListPage = () => {
     if (!evaluatorId) return;
     
     try {
-      const response = await fetch(`http://localhost:8080/api/evaluators/${evaluatorId}`);
+      const response = await fetch(`https://eteeap-foth.onrender.com/api/evaluators/${evaluatorId}`);
       if (response.ok) {
         const evaluatorData = await response.json();
         // Extract department name from the department object

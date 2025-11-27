@@ -134,7 +134,7 @@ const AcceptedStudentsTab = () => {
   const fetchAcceptedStudents = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8080/api/accepted-applicants");
+      const response = await axios.get("https://eteeap-foth.onrender.com/api/accepted-applicants");
       setAcceptedStudents(response.data);
     } catch (error) {
       console.error("Error fetching accepted students:", error);
@@ -191,7 +191,7 @@ const AcceptedStudentsTab = () => {
   const handleUpdateRemarks = async () => {
     try {
       await axios.put(
-        `http://localhost:8080/api/accepted-applicants/${selectedStudent.acceptedApplicantId}/status`,
+        `https://eteeap-foth.onrender.com/api/accepted-applicants/${selectedStudent.acceptedApplicantId}/status`,
         null,
         {
           params: {

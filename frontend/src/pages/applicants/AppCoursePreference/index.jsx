@@ -114,7 +114,7 @@ export default function ApplicationForm() {
   const fetchApplicantData = useCallback(async (id) => {
     try {
       setLoading(prev => ({ ...prev, profile: true }))
-      const response = await axios.get(`http://localhost:8080/api/applicants/${id}`)
+      const response = await axios.get(`https://eteeap-foth.onrender.com/api/applicants/${id}`)
       setUserData({
         name: `${response.data.firstName} ${response.data.lastName}`,
         email: response.data.email,
@@ -132,7 +132,7 @@ export default function ApplicationForm() {
   const fetchCoursesFromBackend = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, courses: true }))
-      const response = await axios.get("http://localhost:8080/api/courses")
+      const response = await axios.get("https://eteeap-foth.onrender.com/api/courses")
       const processedCourses = response.data.map((course) => {
         let department = ""
         const deptId = course.department?.departmentId
@@ -177,7 +177,7 @@ export default function ApplicationForm() {
   const fetchUploadedDocuments = useCallback(async (applicantId) => {
     try {
       setLoading(prev => ({ ...prev, documents: true }))
-      const response = await axios.get(`http://localhost:8080/api/documents/applicant/${applicantId}`)
+      const response = await axios.get(`https://eteeap-foth.onrender.com/api/documents/applicant/${applicantId}`)
       const documents = response.data.map((doc) => ({
         name: doc.fileName,
         id: doc.documentId,
@@ -200,7 +200,7 @@ export default function ApplicationForm() {
   const fetchCoursePreferences = useCallback(async (applicantId) => {
     try {
       setLoading(prev => ({ ...prev, preferences: true }))
-      const response = await axios.get(`http://localhost:8080/api/preferences/applicant/${applicantId}`)
+      const response = await axios.get(`https://eteeap-foth.onrender.com/api/preferences/applicant/${applicantId}`)
       
       const priorityOrder = { "FIRST": 1, "SECOND": 2, "THIRD": 3 }
       const sortedPrefs = [...response.data].sort((a, b) => 
@@ -298,7 +298,7 @@ export default function ApplicationForm() {
         }
 
         const response = await axios.put(
-          `http://localhost:8080/api/preferences/${existingPreference.preferenceId}`,
+          `https://eteeap-foth.onrender.com/api/preferences/${existingPreference.preferenceId}`,
           updatedPreference
         )
 
@@ -315,7 +315,7 @@ export default function ApplicationForm() {
         }
 
         const response = await axios.post(
-          `http://localhost:8080/api/preferences/applicant/${applicantId}`,
+          `https://eteeap-foth.onrender.com/api/preferences/applicant/${applicantId}`,
           newPreference
         )
 
@@ -364,7 +364,7 @@ export default function ApplicationForm() {
     try {
       if (isReplacement && documentId) {
         // For replacement, use PUT request to update existing document
-        const response = await axios.put(`http://localhost:8080/api/documents/${documentId}`, formData, {
+        const response = await axios.put(`https://eteeap-foth.onrender.com/api/documents/${documentId}`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
@@ -389,7 +389,7 @@ export default function ApplicationForm() {
         )
       } else {
         // For new upload, use POST request
-        const response = await axios.post("http://localhost:8080/api/documents/upload", formData, {
+        const response = await axios.post("https://eteeap-foth.onrender.com/api/documents/upload", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
@@ -443,7 +443,7 @@ export default function ApplicationForm() {
       
       // Check if application already exists
       try {
-        const response = await axios.get(`http://localhost:8080/api/applications/applicant/${applicantId}`)
+        const response = await axios.get(`https://eteeap-foth.onrender.com/api/applications/applicant/${applicantId}`)
         if (response.data && response.data.length > 0) {
           setSuccessModalOpen(true)
           setSubmitting(false)
@@ -465,7 +465,7 @@ export default function ApplicationForm() {
         status: "PENDING",
       }
 
-      await axios.post(`http://localhost:8080/api/applications/applicant/${applicantId}`, newApplication, {
+      await axios.post(`https://eteeap-foth.onrender.com/api/applications/applicant/${applicantId}`, newApplication, {
         headers: {
           "Content-Type": "application/json",
         },

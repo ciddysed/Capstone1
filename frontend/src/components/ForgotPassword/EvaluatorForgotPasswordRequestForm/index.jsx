@@ -55,7 +55,7 @@ const EvaluatorForgotPasswordRequestForm = ({ onSuccess }) => {
     try {
       console.log("=== FRONTEND: Evaluator Direct Password Reset START ===");
       const response = await axios.post(
-        "http://localhost:8080/api/evaluators/reset-password",
+        "https://eteeap-foth.onrender.com/api/evaluators/reset-password",
         {
           email: data.email,
           newPassword: data.newPassword,

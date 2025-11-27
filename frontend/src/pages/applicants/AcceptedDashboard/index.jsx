@@ -99,7 +99,7 @@ const AcceptedDashboard = () => {
     try {
       // Using the actual working API endpoint
       const response = await axios.get(
-        `http://localhost:8080/api/applicant-subject-records/applicant/${applicantId}/organized-clean`
+        `https://eteeap-foth.onrender.com/api/applicant-subject-records/applicant/${applicantId}/organized-clean`
       );
 
       // Flatten the organized data into a single array
@@ -152,12 +152,12 @@ const AcceptedDashboard = () => {
         
         // Fetch applicant profile
         const applicantResponse = await axios.get(
-          `http://localhost:8080/api/applicants/${applicantId}`
+          `https://eteeap-foth.onrender.com/api/applicants/${applicantId}`
         );
         
         // Fetch accepted applicant data
         const acceptedResponse = await axios.get(
-          `http://localhost:8080/api/accepted-applicants/applicant/${applicantId}`
+          `https://eteeap-foth.onrender.com/api/accepted-applicants/applicant/${applicantId}`
         );
         
         if (!acceptedResponse.data) {
@@ -169,7 +169,7 @@ const AcceptedDashboard = () => {
         
         // Fetch subject records organized by semester (using working API)
         const subjectRecordsResponse = await axios.get(
-          `http://localhost:8080/api/applicant-subject-records/applicant/${applicantId}/organized-clean`
+          `https://eteeap-foth.onrender.com/api/applicant-subject-records/applicant/${applicantId}/organized-clean`
         );
         
         // Calculate curriculum summary from the fetched data

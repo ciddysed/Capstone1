@@ -17,7 +17,7 @@ import axios from "axios";
 // Import the core curriculum management functionality
 import CurriculumRouterContent from "./CurriculumRouterContent";
 
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = "https://eteeap-foth.onrender.com/api";
 
 // Custom maroon and gold color palette
 const maroon = {

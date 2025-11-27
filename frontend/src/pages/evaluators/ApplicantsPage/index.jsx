@@ -79,7 +79,7 @@ const EvaluatorLoginForm = ({
   const fetchDepartments = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/evaluators/departments"
+        "https://eteeap-foth.onrender.com/api/evaluators/departments"
       );
       if (response.ok) {
         const departmentData = await response.json();
@@ -97,7 +97,7 @@ const EvaluatorLoginForm = ({
   const fetchCurrentEvaluatorDepartment = async (evaluatorId) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/evaluators/${evaluatorId}`
+        `https://eteeap-foth.onrender.com/api/evaluators/${evaluatorId}`
       );
       if (response.ok) {
         const evaluatorData = await response.json();
@@ -119,7 +119,7 @@ const EvaluatorLoginForm = ({
         console.log("Registration data being sent:", data); // Debug log
 
         const response = await fetch(
-          "http://localhost:8080/api/evaluators/register",
+          "https://eteeap-foth.onrender.com/api/evaluators/register",
           {
             method: "POST",
             headers: {
@@ -162,7 +162,7 @@ const EvaluatorLoginForm = ({
         setCurrentFormType("login");
       } else {
         const response = await fetch(
-          "http://localhost:8080/api/evaluators/login",
+          "https://eteeap-foth.onrender.com/api/evaluators/login",
           {
             method: "POST",
             headers: {

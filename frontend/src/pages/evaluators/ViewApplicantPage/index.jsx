@@ -198,7 +198,7 @@ const ViewApplicantPage = () => {
     });
     
     // Fetch applicant profile
-    fetch(`http://localhost:8080/api/applicants/${applicantId}`)
+    fetch(`https://eteeap-foth.onrender.com/api/applicants/${applicantId}`)
       .then((res) => {
         if (!res.ok) {
           console.error(`Error fetching applicant: HTTP ${res.status}`);
@@ -218,7 +218,7 @@ const ViewApplicantPage = () => {
     // If we have an evaluationId, fetch that specific evaluation
     if (evaluationId) {
       console.log(`Fetching specific evaluation: ${evaluationId}`);
-      fetch(`http://localhost:8080/api/evaluations/${evaluationId}`)
+      fetch(`https://eteeap-foth.onrender.com/api/evaluations/${evaluationId}`)
         .then((res) => {
           if (!res.ok) {
             console.error(`Error fetching evaluation: HTTP ${res.status}`);
@@ -250,7 +250,7 @@ const ViewApplicantPage = () => {
 
     // Get all evaluations for this applicant
     console.log(`Fetching all evaluations for applicant: ${applicantId}`);
-    fetch(`http://localhost:8080/api/evaluations/applicant/${applicantId}`)
+    fetch(`https://eteeap-foth.onrender.com/api/evaluations/applicant/${applicantId}`)
       .then((res) => {
         if (!res.ok) {
           console.error(`Error fetching applicant evaluations: HTTP ${res.status}`);
@@ -308,7 +308,7 @@ const ViewApplicantPage = () => {
       });
 
     // Fetch documents with error handling
-    fetch(`http://localhost:8080/api/documents/applicant/${applicantId}`)
+    fetch(`https://eteeap-foth.onrender.com/api/documents/applicant/${applicantId}`)
       .then(async (res) => {
         if (!res.ok) {
           return [];
@@ -323,13 +323,13 @@ const ViewApplicantPage = () => {
       .catch(() => setDocuments([]));
 
     // Fetch all courses for mapping courseId to courseName
-    fetch("http://localhost:8080/api/courses")
+    fetch("https://eteeap-foth.onrender.com/api/courses")
       .then((res) => res.json())
       .then(setCourses)
       .catch(() => setCourses([]));
 
     // Fetch forwarding information to display which admin forwarded this application
-    fetch(`http://localhost:8080/api/applicants/${applicantId}/forward-info`)
+    fetch(`https://eteeap-foth.onrender.com/api/applicants/${applicantId}/forward-info`)
       .then(async (res) => {
         if (!res.ok) return null;
         return await res.json();
@@ -358,7 +358,7 @@ const ViewApplicantPage = () => {
     });
 
     // Check if there's an existing evaluation
-    fetch(`http://localhost:8080/api/evaluations/check?applicantId=${applicantId}&courseId=${selectedCourse.courseId}&evaluatorId=${evaluatorId}`)
+    fetch(`https://eteeap-foth.onrender.com/api/evaluations/check?applicantId=${applicantId}&courseId=${selectedCourse.courseId}&evaluatorId=${evaluatorId}`)
       .then(async (res) => {
         if (!res.ok) return null;
         return await res.json();
@@ -429,10 +429,10 @@ const ViewApplicantPage = () => {
 
       // Determine correct URL based on whether updating or creating
       const url = existingEvaluation 
-        ? `http://localhost:8080/api/evaluations/${existingEvaluation.evaluationId}`
+        ? `https://eteeap-foth.onrender.com/api/evaluations/${existingEvaluation.evaluationId}`
         : currentEvaluation
-          ? `http://localhost:8080/api/evaluations/${currentEvaluation.evaluationId}`
-          : "http://localhost:8080/api/evaluations";
+          ? `https://eteeap-foth.onrender.com/api/evaluations/${currentEvaluation.evaluationId}`
+          : "https://eteeap-foth.onrender.com/api/evaluations";
 
       const method = (existingEvaluation || currentEvaluation) ? "PUT" : "POST";
       console.log(`Making ${method} request to: ${url}`);
@@ -492,7 +492,7 @@ const ViewApplicantPage = () => {
 
   // Helper to preview document in modal
   const handlePreview = (doc) => {
-    const url = `http://localhost:8080/api/documents/preview/${doc.documentId}`;
+    const url = `https://eteeap-foth.onrender.com/api/documents/preview/${doc.documentId}`;
     setPreviewUrl(url);
     const fileName = doc.fileName || doc.name || "";
     setPreviewType(typeof fileName === "string" ? fileName.toLowerCase() : "");
@@ -503,7 +503,7 @@ const ViewApplicantPage = () => {
 
   // Helper to download document
   const handleDownload = (docId) => {
-    window.open(`http://localhost:8080/api/documents/download/${docId}`, "_blank");
+    window.open(`https://eteeap-foth.onrender.com/api/documents/download/${docId}`, "_blank");
   };
 
   // Helper to get available courses for the applicant - improved

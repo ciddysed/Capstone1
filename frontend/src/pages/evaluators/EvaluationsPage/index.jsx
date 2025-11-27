@@ -150,7 +150,7 @@ const EvaluationsPage = () => {
   const fetchEvaluatorInfo = async (evaluatorId) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/evaluators/${evaluatorId}`
+        `https://eteeap-foth.onrender.com/api/evaluators/${evaluatorId}`
       );
       if (response.ok) {
         const data = await response.json();

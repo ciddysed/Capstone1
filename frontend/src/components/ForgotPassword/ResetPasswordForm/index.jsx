@@ -60,7 +60,7 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
 
       try {
         console.log("ResetPasswordForm: Sending token validation request");
-        const baseUrl = "http://localhost:8080/api/applicants";
+        const baseUrl = "https://eteeap-foth.onrender.com/api/applicants";
         
         const response = await axios.get(`${baseUrl}/validate-reset-token/${token}`);
         
@@ -101,7 +101,7 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
     setLoading(true);
     try {
       console.log("ResetPasswordForm: Sending password reset request", { token });
-      const baseUrl = "http://localhost:8080/api/applicants";
+      const baseUrl = "https://eteeap-foth.onrender.com/api/applicants";
       
       const response = await axios.post(`${baseUrl}/reset-password`, {
         token: token,

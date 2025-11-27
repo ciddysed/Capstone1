@@ -57,7 +57,7 @@ const ProgramAdminLoginPage = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8080/api/program-admins/login', {
+      const response = await fetch('https://eteeap-foth.onrender.com/api/program-admins/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

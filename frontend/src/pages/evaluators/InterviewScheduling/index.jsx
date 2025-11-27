@@ -42,8 +42,8 @@ const InterviewScheduling = () => {
       setLoading(true);
       try {
         const [applicantsRes, schedulesRes] = await Promise.all([
-          axios.get('http://localhost:8080/api/applicants/approved'),
-          axios.get('http://localhost:8080/api/interviews')
+          axios.get('https://eteeap-foth.onrender.com/api/applicants/approved'),
+          axios.get('https://eteeap-foth.onrender.com/api/interviews')
         ]);
         
         setApplicants(applicantsRes.data);
@@ -124,7 +124,7 @@ const InterviewScheduling = () => {
       let response;
       if (existingInterview) {
         response = await axios.put(
-          `http://localhost:8080/api/interviews/${existingInterview.id}`,
+          `https://eteeap-foth.onrender.com/api/interviews/${existingInterview.id}`,
           payload
         );
         
@@ -138,7 +138,7 @@ const InterviewScheduling = () => {
           message: 'Interview schedule updated successfully.'
         });
       } else {
-        response = await axios.post('http://localhost:8080/api/interviews', payload);
+        response = await axios.post('https://eteeap-foth.onrender.com/api/interviews', payload);
         setSchedules([...schedules, response.data]);
         
         setAlertMessage({
@@ -159,7 +159,7 @@ const InterviewScheduling = () => {
 
   const handleDeleteSchedule = async (scheduleId) => {
     try {
-      await axios.delete(`http://localhost:8080/api/interviews/${scheduleId}`);
+      await axios.delete(`https://eteeap-foth.onrender.com/api/interviews/${scheduleId}`);
       setSchedules(schedules.filter(schedule => schedule.id !== scheduleId));
       
       setAlertMessage({

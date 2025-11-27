@@ -60,7 +60,7 @@ const EvaluatorResetPasswordForm = ({ onSuccessCallback }) => {
 
       try {
         console.log("EvaluatorResetPasswordForm: Sending token validation request");
-        const baseUrl = "http://localhost:8080/api/evaluators";
+        const baseUrl = "https://eteeap-foth.onrender.com/api/evaluators";
         
         const response = await axios.get(`${baseUrl}/validate-reset-token/${token}`);
         
@@ -101,7 +101,7 @@ const EvaluatorResetPasswordForm = ({ onSuccessCallback }) => {
     setLoading(true);
     try {
       console.log("EvaluatorResetPasswordForm: Sending password reset request", { token });
-      const baseUrl = "http://localhost:8080/api/evaluators";
+      const baseUrl = "https://eteeap-foth.onrender.com/api/evaluators";
       
       const response = await axios.post(`${baseUrl}/reset-password`, {
         token: token,

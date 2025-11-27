@@ -25,7 +25,7 @@ const EvaluatorHomePage = () => {
     setLoading(true);
 
     // Check evaluator status
-    fetch(`http://localhost:8080/api/evaluators/${evaluatorId}/status`)
+    fetch(`https://eteeap-foth.onrender.com/api/evaluators/${evaluatorId}/status`)
       .then((res) => res.json())
       .then((data) => {
         setEvaluatorStatus(data.status || "PENDING");
