@@ -196,21 +196,91 @@ export default function ApplicationForm() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // --- NEW helpers: normalize preference + localStorage cache keys ---
+  const prefCacheKey = (id) => `coursePreferences_applicant_${id}`
+
+  const priorityStringMap = {
+    1: "FIRST",
+    2: "SECOND",
+    3: "THIRD",
+    "1": "FIRST",
+    "2": "SECOND",
+    "3": "THIRD",
+    FIRST: "FIRST",
+    SECOND: "SECOND",
+    THIRD: "THIRD",
+    first: "FIRST",
+    second: "SECOND",
+    third: "THIRD",
+  }
+
+  const normalizePreference = (pref = {}) => {
+    const rawPriority = pref.priorityOrder ?? pref.preferenceOrder
+    const normalizedPriority = priorityStringMap[rawPriority] || String(rawPriority ?? "").toUpperCase()
+    const courseObj = pref.course || {}
+    const courseId = Number(courseObj.courseId ?? pref.courseId ?? courseObj.id)
+    return {
+      ...pref,
+      // keep backend ids if present
+      preferenceId: pref.preferenceId ?? pref.id ?? pref.preferenceId,
+      priorityOrder: normalizedPriority,
+      course: {
+        ...courseObj,
+        courseId: Number.isNaN(courseId) ? courseObj.courseId : courseId
+      }
+    }
+  }
+
+  const sortPreferences = (prefs) => {
+    const order = { FIRST: 1, SECOND: 2, THIRD: 3 }
+    return [...prefs].sort((a, b) => (order[a.priorityOrder] || 99) - (order[b.priorityOrder] || 99))
+  }
+
+  const cachePreferences = (appId, prefs) => {
+    try {
+      localStorage.setItem(prefCacheKey(appId), JSON.stringify(prefs))
+    } catch (e) {
+      console.warn("Failed to cache preferences", e)
+    }
+  }
+
+  const loadCachedPreferences = (appId) => {
+    try {
+      const raw = localStorage.getItem(prefCacheKey(appId))
+      if (!raw) return null
+      const parsed = JSON.parse(raw)
+      // ensure normalization
+      return (parsed || []).map(normalizePreference)
+    } catch (e) {
+      return null
+    }
+  }
+  // --- end new helpers ---
+
   // Fetch course preferences
   const fetchCoursePreferences = useCallback(async (applicantId) => {
     try {
       setLoading(prev => ({ ...prev, preferences: true }))
+
+      // Try to show cached preferences immediately (so progress reflects selection on reload)
+      const cached = loadCachedPreferences(applicantId)
+      if (cached && cached.length > 0) {
+        setCoursePreferences(sortPreferences(cached))
+      }
+
       const response = await axios.get(`https://eteeap-foth.onrender.com/api/preferences/applicant/${applicantId}`)
       
-      const priorityOrder = { "FIRST": 1, "SECOND": 2, "THIRD": 3 }
-      const sortedPrefs = [...response.data].sort((a, b) => 
-        priorityOrder[a.priorityOrder] - priorityOrder[b.priorityOrder]
-      )
-      
+      // normalize and sort
+      const normalized = (response.data || []).map(normalizePreference)
+      const sortedPrefs = sortPreferences(normalized)
+
       setCoursePreferences(sortedPrefs)
+      cachePreferences(applicantId, sortedPrefs)
     } catch (error) {
       console.error("Error fetching course preferences:", error)
-      setCoursePreferences([])
+      // keep whatever cached prefs we might have shown; if none, clear state
+      const cached = loadCachedPreferences(applicantId)
+      if (!cached) setCoursePreferences([])
     } finally {
       setLoading(prev => ({ ...prev, preferences: false }))
     }
@@ -240,9 +310,10 @@ export default function ApplicationForm() {
     }
   }, [applicantId, fetchApplicantData, fetchCoursesFromBackend, fetchUploadedDocuments, fetchCoursePreferences])
 
-  // Check if course is already selected
+  // Check if course is already selected (use numeric compare)
   const checkCourseAlreadySelected = (courseId) => {
-    return coursePreferences.some(pref => pref.course.courseId === courseId)
+    const idNum = Number(courseId)
+    return coursePreferences.some(pref => Number(pref.course?.courseId) === idNum)
   }
 
   // Calculate completion progress
@@ -264,15 +335,21 @@ export default function ApplicationForm() {
     setCourseDialogOpen(true)
   }
 
+  // Get course preference by priority order
+  const getCoursePreferenceByPriority = (priorityIndex) => {
+    const target = priorityOrders[priorityIndex]
+    return coursePreferences.find(pref => pref.priorityOrder === target)
+  }
+
   // Handle course selection
   const handleCourseSelection = async () => {
     if (!selectedCourse || currentPriorityIndex === null) {
       return
     }
 
-    // Check if this course is already selected in another priority level
+    // Check if this course is already selected in another priority level (use numeric compare)
     const isDuplicate = coursePreferences.some(
-      pref => pref.course.courseId === selectedCourse.courseId && 
+      pref => Number(pref.course?.courseId) === Number(selectedCourse.courseId) &&
              pref.priorityOrder !== priorityOrders[currentPriorityIndex]
     )
 
@@ -289,28 +366,32 @@ export default function ApplicationForm() {
     try {
       if (existingPreference) {
         // Update existing preference
-        const updatedPreference = {
-          preferenceId: existingPreference.preferenceId,
-          applicant: { applicantId: applicantId },
-          course: { courseId: selectedCourse.courseId },
+        const preferenceId = existingPreference.preferenceId ?? existingPreference.id
+        const updatedPreferencePayload = {
+          preferenceId: preferenceId,
+          applicant: { applicantId: Number(applicantId) },
+          course: { courseId: Number(selectedCourse.courseId) },
           priorityOrder: priorityOrders[currentPriorityIndex],
           status: existingPreference.status || "PENDING"
         }
 
         const response = await axios.put(
-          `https://eteeap-foth.onrender.com/api/preferences/${existingPreference.preferenceId}`,
-          updatedPreference
+          `https://eteeap-foth.onrender.com/api/preferences/${preferenceId}`,
+          updatedPreferencePayload
         )
 
+        const normalizedResponse = normalizePreference(response.data)
         const updatedPreferences = coursePreferences.map((pref) =>
-          pref.preferenceId === existingPreference.preferenceId ? response.data : pref
+          (pref.preferenceId ?? pref.id) === (normalizedResponse.preferenceId ?? normalizedResponse.id) ? normalizedResponse : pref
         )
-        setCoursePreferences(updatedPreferences)
+        const sorted = sortPreferences(updatedPreferences)
+        setCoursePreferences(sorted)
+        cachePreferences(applicantId, sorted)
         handleSuccess("Course preference updated!")
       } else {
         // Create new preference
         const newPreference = {
-          course: { courseId: selectedCourse.courseId },
+          course: { courseId: Number(selectedCourse.courseId) },
           priorityOrder: priorityOrders[currentPriorityIndex],
         }
 
@@ -319,13 +400,16 @@ export default function ApplicationForm() {
           newPreference
         )
 
-        const updatedPreferences = [...coursePreferences]
-        const filteredPreferences = updatedPreferences.filter(
-          (pref) => pref.priorityOrder !== priorityOrders[currentPriorityIndex]
-        )
-        filteredPreferences.push(response.data)
+        const normalizedResponse = normalizePreference(response.data)
 
-        setCoursePreferences(filteredPreferences)
+        // Replace any preference that has the same priority (avoid duplicates) and keep others
+        const updatedPreferences = [
+          ...coursePreferences.filter(pref => pref.priorityOrder !== normalizedResponse.priorityOrder),
+          normalizedResponse
+        ]
+        const sorted = sortPreferences(updatedPreferences)
+        setCoursePreferences(sorted)
+        cachePreferences(applicantId, sorted)
         handleSuccess("Course preference added!")
       }
     } catch (error) {
@@ -497,11 +581,6 @@ export default function ApplicationForm() {
 
   // Check if all data has finished loading
   const isLoading = loading.profile || loading.courses || loading.documents || loading.preferences
-
-  // Get course preference by priority order
-  const getCoursePreferenceByPriority = (priorityIndex) => {
-    return coursePreferences.find(pref => pref.priorityOrder === priorityOrders[priorityIndex])
-  }
 
   return (
     <Box sx={{ 
