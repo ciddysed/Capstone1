@@ -110,11 +110,31 @@ export default function ApplicationForm() {
     }
   }
 
+  // --- NEW: auth helper to attach Authorization header if token exists ---
+  const getAuthToken = () => {
+    // check common localStorage keys used for tokens
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("jwt") ||
+      null
+    )
+  }
+
+  const getAuthConfig = (extra = {}) => {
+    const token = getAuthToken()
+    const headers = { ...(extra.headers || {}) }
+    if (token) headers.Authorization = `Bearer ${token}`
+    return { headers, ...extra }
+  }
+  // --- end auth helper ---
+
   // Fetch applicant data
   const fetchApplicantData = useCallback(async (id) => {
     try {
       setLoading(prev => ({ ...prev, profile: true }))
-      const response = await axios.get(`https://eteeap-foth.onrender.com/api/applicants/${id}`)
+      const response = await axios.get(`https://eteeap-foth.onrender.com/api/applicants/${id}`, getAuthConfig())
       setUserData({
         name: `${response.data.firstName} ${response.data.lastName}`,
         email: response.data.email,
@@ -132,7 +152,7 @@ export default function ApplicationForm() {
   const fetchCoursesFromBackend = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, courses: true }))
-      const response = await axios.get("https://eteeap-foth.onrender.com/api/courses")
+      const response = await axios.get("https://eteeap-foth.onrender.com/api/courses", getAuthConfig())
       const processedCourses = response.data.map((course) => {
         let department = ""
         const deptId = course.department?.departmentId
@@ -150,7 +170,7 @@ export default function ApplicationForm() {
 
         // Log if description is present
         if (course.description) {
-          console.log(`Course "${course.courseName}" has description: "${course.description}"`)
+          console.log(`Course "${course.courseName}"`)
         } else {
           console.log(`Course "${course.courseName}" has NO description.`)
         }
@@ -177,7 +197,7 @@ export default function ApplicationForm() {
   const fetchUploadedDocuments = useCallback(async (applicantId) => {
     try {
       setLoading(prev => ({ ...prev, documents: true }))
-      const response = await axios.get(`https://eteeap-foth.onrender.com/api/documents/applicant/${applicantId}`)
+      const response = await axios.get(`https://eteeap-foth.onrender.com/api/documents/applicant/${applicantId}`, getAuthConfig())
       const documents = response.data.map((doc) => ({
         name: doc.fileName,
         id: doc.documentId,
@@ -268,7 +288,7 @@ export default function ApplicationForm() {
         setCoursePreferences(sortPreferences(cached))
       }
 
-      const response = await axios.get(`https://eteeap-foth.onrender.com/api/preferences/applicant/${applicantId}`)
+      const response = await axios.get(`https://eteeap-foth.onrender.com/api/preferences/applicant/${applicantId}`, getAuthConfig())
       
       // normalize and sort
       const normalized = (response.data || []).map(normalizePreference)
@@ -377,7 +397,8 @@ export default function ApplicationForm() {
 
         const response = await axios.put(
           `https://eteeap-foth.onrender.com/api/preferences/${preferenceId}`,
-          updatedPreferencePayload
+          updatedPreferencePayload,
+          getAuthConfig({ headers: { "Content-Type": "application/json" } })
         )
 
         const normalizedResponse = normalizePreference(response.data)
@@ -397,7 +418,8 @@ export default function ApplicationForm() {
 
         const response = await axios.post(
           `https://eteeap-foth.onrender.com/api/preferences/applicant/${applicantId}`,
-          newPreference
+          newPreference,
+          getAuthConfig({ headers: { "Content-Type": "application/json" } })
         )
 
         const normalizedResponse = normalizePreference(response.data)
@@ -448,11 +470,9 @@ export default function ApplicationForm() {
     try {
       if (isReplacement && documentId) {
         // For replacement, use PUT request to update existing document
-        const response = await axios.put(`https://eteeap-foth.onrender.com/api/documents/${documentId}`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
+        const response = await axios.put(`https://eteeap-foth.onrender.com/api/documents/${documentId}`, formData, getAuthConfig({
+          headers: { "Content-Type": "multipart/form-data" }
+        }))
 
         handleSuccess(`${getDocumentTypeLabel(actualDocumentType)} replaced successfully!`)
         
@@ -473,11 +493,9 @@ export default function ApplicationForm() {
         )
       } else {
         // For new upload, use POST request
-        const response = await axios.post("https://eteeap-foth.onrender.com/api/documents/upload", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
+        const response = await axios.post("https://eteeap-foth.onrender.com/api/documents/upload", formData, getAuthConfig({
+          headers: { "Content-Type": "multipart/form-data" }
+        }))
 
         handleSuccess(`${getDocumentTypeLabel(actualDocumentType)} uploaded successfully!`)
         
@@ -527,7 +545,7 @@ export default function ApplicationForm() {
       
       // Check if application already exists
       try {
-        const response = await axios.get(`https://eteeap-foth.onrender.com/api/applications/applicant/${applicantId}`)
+        const response = await axios.get(`https://eteeap-foth.onrender.com/api/applications/applicant/${applicantId}`, getAuthConfig())
         if (response.data && response.data.length > 0) {
           setSuccessModalOpen(true)
           setSubmitting(false)
@@ -549,11 +567,9 @@ export default function ApplicationForm() {
         status: "PENDING",
       }
 
-      await axios.post(`https://eteeap-foth.onrender.com/api/applications/applicant/${applicantId}`, newApplication, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
+      await axios.post(`https://eteeap-foth.onrender.com/api/applications/applicant/${applicantId}`, newApplication, getAuthConfig({
+        headers: { "Content-Type": "application/json" }
+      }))
 
       handleSuccess("Application submitted successfully!")
       setSubmitting(false)
