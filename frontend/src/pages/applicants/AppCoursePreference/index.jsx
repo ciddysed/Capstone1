@@ -770,10 +770,10 @@ export default function ApplicationForm() {
                       title={
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                           <GraduationCapIcon sx={{ color: maroonTheme.primary.main, fontSize: 20 }} />
-                          <Typography variant="h6" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Course Preferences</Typography>
+                          <Typography variant="h6" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Your Course Preferences</Typography>
                         </Box>
                       }
-                      subheader="Select up to 3 courses in order of preference"
+                      subheader="Select up to 3 courses in order of preferences"
                       sx={{ 
                         pb: 2,
                         background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
