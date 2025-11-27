@@ -137,9 +137,9 @@ export default function ApplicationForm() {
         let department = ""
         const deptId = course.department?.departmentId
         if (deptId === 1) {
-          department = "College of Computer Studies"
+          department = "College of Arts, Sciences, and Education "
         } else if (deptId === 2) {
-          department = "College of Arts, Sciences, and Education"
+          department = "College of Computer Studies"
         } else if (deptId === 3) {
           department = "College of Management, Business and Accountancy"
         } else if (deptId === 4) {
