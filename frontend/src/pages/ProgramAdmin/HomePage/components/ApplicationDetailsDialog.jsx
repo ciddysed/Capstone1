@@ -931,8 +931,6 @@ const ApplicationDetailsDialog = ({
                             <MenuItem value="PENDING">PENDING</MenuItem>
                             <MenuItem value="APPROVED">APPROVED</MenuItem>
                             <MenuItem value="REJECTED">REJECTED</MenuItem>
-                            <MenuItem value="WAITLISTED">WAITLISTED</MenuItem>
-                            <MenuItem value="UNDER_REVIEW">UNDER_REVIEW</MenuItem>
                           </Select>
                         </FormControl>
 
