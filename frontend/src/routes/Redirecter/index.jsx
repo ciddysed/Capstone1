@@ -5,11 +5,13 @@ const Redirecter = () => {
   const userType = localStorage.getItem("userType");
   const applicantId = localStorage.getItem("applicantId");
   const evaluatorId = localStorage.getItem("evaluatorId");
+  const adviserId = localStorage.getItem("adviserId");
   const programAdminId = localStorage.getItem("programAdminId");
   const systemAdminId = localStorage.getItem("systemAdminId");
 
   // Detect role from URL
   const isEvaluator = location.pathname.includes("/evaluator");
+  const isAdviser = location.pathname.includes("/adviser");
   const isProgramAdmin = location.pathname.includes("/program-admin");
   const isSystemAdmin = location.pathname.includes("/system-admin");
   const isApplicant = location.pathname.includes("/applicant");
@@ -17,6 +19,7 @@ const Redirecter = () => {
   // Set role only if it's not already set
   if (!userType) {
     if (isEvaluator) localStorage.setItem("userType", "evaluator");
+    else if (isAdviser) localStorage.setItem("userType", "adviser");
     else if (isProgramAdmin) localStorage.setItem("userType", "program-admin");
     else if (isSystemAdmin) localStorage.setItem("userType", "system-admin");
     else if (isApplicant) localStorage.setItem("userType", "applicant");
@@ -28,6 +31,7 @@ const Redirecter = () => {
   const isAuthenticated = 
     (role === "applicant" && applicantId) || 
     (role === "evaluator" && evaluatorId) || 
+    (role === "adviser" && adviserId) || 
     (role === "program-admin" && programAdminId) ||
     (role === "system-admin" && systemAdminId);
 
@@ -36,6 +40,8 @@ const Redirecter = () => {
     switch (role) {
       case "evaluator":
         return <Navigate to="/evaluator/login" replace />;
+      case "adviser":
+        return <Navigate to="/adviser/login" replace />;
       case "program-admin":
         return <Navigate to="/program-admin/login" replace />;
       case "system-admin":
@@ -50,6 +56,8 @@ const Redirecter = () => {
   switch (role) {
     case "evaluator":
       return <Navigate to="/evaluator/applicants" replace />;
+    case "adviser":
+      return <Navigate to="/adviser/homepage" replace />;
     case "program-admin":
       return <Navigate to="/program-admin/program-management" replace />;
     case "system-admin":

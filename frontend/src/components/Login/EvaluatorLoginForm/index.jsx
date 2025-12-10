@@ -35,7 +35,6 @@ const getValidationSchema = (formType) =>
         .string()
         .matches(/^[0-9+\-\s()]+$/, "Invalid contact number")
         .required("Contact number is required"),
-      role: yup.string().required("Role is required"),
       department: yup.string().required("Department is required"),
     }),
   });
@@ -102,7 +101,6 @@ const EvaluatorLoginForm = ({
               password: data.password,
               name: data.name,
               contactNumber: data.contactNumber,
-              role: data.role,
               department: data.department,
             }),
           }
@@ -267,18 +265,6 @@ const EvaluatorLoginForm = ({
                 error={!!errors.contactNumber}
                 helperText={errors.contactNumber?.message}
               />
-
-              <StyledTextField
-                type="text"
-                fullWidth
-                placeholder="Enter your role"
-                variant="outlined"
-                size="small"
-                {...register("role")}
-                error={!!errors.role}
-                helperText={errors.role?.message}
-              />
-
               <StyledTextField
                 select
                 fullWidth

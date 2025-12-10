@@ -54,6 +54,8 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
       return localStorage.getItem('applicantId');
     } else if (userType === 'evaluator') {
       return localStorage.getItem('evaluatorId');
+    } else if (userType === 'adviser') {
+      return localStorage.getItem('adviserId');
     } else if (userType === 'system-admin') {
       return localStorage.getItem('systemAdminId');
     } else if (userType === 'program-admin') {
@@ -112,9 +114,15 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
                   ETEEAP PORTAL
                 </Typography>
                 <Typography variant="body2" color="rgba(255,255,255,0.8)">
-                  {userType === "applicant" ? "Applicant Dashboard" : 
-                   userType === "evaluator" ? "Evaluator Dashboard" : 
-                   userType === "admin" ? "Admin Dashboard" : "User Portal"}
+                  {userType === "applicant"
+                    ? "Applicant Dashboard"
+                    : userType === "evaluator"
+                    ? "Evaluator Dashboard"
+                    : userType === "adviser"
+                    ? "Adviser Dashboard"
+                    : userType === "admin"
+                    ? "Admin Dashboard"
+                    : "User Portal"}
                 </Typography>
               </Box>
             </Box>

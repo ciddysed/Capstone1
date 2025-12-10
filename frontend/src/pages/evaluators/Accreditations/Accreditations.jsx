@@ -20,7 +20,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  
+  FormControl,
+  InputLabel,
   Card,
   CardContent,
   Grow,
@@ -29,6 +30,7 @@ import { styled } from "@mui/material/styles";
 import SchoolIcon from '@mui/icons-material/School';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import PersonIcon from '@mui/icons-material/Person';
 import toast from "../../../utils/toast";
 
 const API_URL = 'https://eteeap-foth.onrender.com/api/accepted-applicants';
@@ -109,6 +111,8 @@ const Accreditations = ({ onNavigateToGraded }) => {
   const [curriculums, setCurriculums] = useState([]);
   const [selectedCurriculumId, setSelectedCurriculumId] = useState("");
   const [accreditLoading, setAccreditLoading] = useState(false);
+  const [advisers, setAdvisers] = useState([]);
+  const [selectedAdviser, setSelectedAdviser] = useState("");
 
   useEffect(() => {
     // Fetch evaluator department
@@ -185,9 +189,30 @@ const Accreditations = ({ onNavigateToGraded }) => {
     }
   }, [departmentId]);
 
-  const displayedApplicants = selectedCourse
-    ? acceptedApplicants.filter(a => a.finalCourse.courseId === selectedCourse)
-    : acceptedApplicants;
+  // Fetch advisers (evaluators with role 'adviser')
+  useEffect(() => {
+    const fetchAdvisers = async () => {
+      try {
+        const res = await fetch(`${EVALUATOR_API}`);
+        const data = await res.json();
+        // Filter to only get advisers (those with role === 'adviser' or similar)
+        const adviserList = data.filter(evaluator => 
+          evaluator.role === 'adviser' || evaluator.role === 'Adviser'
+        );
+        setAdvisers(adviserList);
+      } catch (error) {
+        console.error("Error fetching advisers:", error);
+        setAdvisers([]);
+      }
+    };
+    fetchAdvisers();
+  }, []);
+
+  const displayedApplicants = acceptedApplicants.filter(a => {
+    const matchesCourse = !selectedCourse || a.finalCourse.courseId === selectedCourse;
+    const matchesAdviser = !selectedAdviser || a.adviser?.evaluatorId === selectedAdviser;
+    return matchesCourse && matchesAdviser;
+  });
 
   const handleAccreditClick = applicant => {
     setSelectedApplicant(applicant);
@@ -252,30 +277,65 @@ const Accreditations = ({ onNavigateToGraded }) => {
         </CardContent>
       </InfoCard>
 
-      {/* Course Filter */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-          Filter by Course:
-        </Typography>
-        <Select
-          value={selectedCourse}
-          onChange={e => setSelectedCourse(e.target.value)}
-          displayEmpty
-          sx={{ 
-            minWidth: 220,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 2,
-            }
-          }}
-        >
-          <MenuItem value="">All Courses</MenuItem>
-          {courses.map(course => (
-            <MenuItem key={course.courseId} value={course.courseId}>
-              {course.courseName}
+      {/* Course and Adviser Filters */}
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
+        {/* Course Filter */}
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+            Filter by Course:
+          </Typography>
+          <Select
+            value={selectedCourse}
+            onChange={e => setSelectedCourse(e.target.value)}
+            displayEmpty
+            sx={{ 
+              width: "100%",
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
+          >
+            <MenuItem value="">All Courses</MenuItem>
+            {courses.map(course => (
+              <MenuItem key={course.courseId} value={course.courseId}>
+                {course.courseName}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
+
+        {/* Adviser Selection */}
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+            Select Adviser:
+          </Typography>
+          <Select
+            value={selectedAdviser}
+            onChange={e => setSelectedAdviser(e.target.value)}
+            displayEmpty
+            sx={{ 
+              width: "100%",
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
+          >
+            <MenuItem value="">
+              <em>All Advisers</em>
             </MenuItem>
-          ))}
-        </Select>
-      </Box>
+            {advisers.map(adviser => (
+              <MenuItem key={adviser.evaluatorId} value={adviser.evaluatorId}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <PersonIcon sx={{ fontSize: 18 }} />
+                  <Typography variant="body2">
+                    {adviser.name || `${adviser.firstName || ""} ${adviser.lastName || ""}`}
+                  </Typography>
+                </Stack>
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
+      </Stack>
 
       {/* Main Content */}
       <Grow in={true} timeout={500}>

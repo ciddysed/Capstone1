@@ -8,6 +8,8 @@ export const handleLogout = (navigate) => {
   // Redirect to appropriate login page based on user type
   if (userType === "evaluator") {
     navigate("/evaluator/login");
+  } else if (userType === "adviser") {
+    navigate("/adviser/login");
   } else if (userType === "program-admin") {
     navigate("/program-admin/login");
   } else {

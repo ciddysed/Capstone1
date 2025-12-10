@@ -18,6 +18,8 @@ import EvaluatorForgotPasswordPage from "../pages/evaluators/ForgotPasswordPage"
 import EvaluatorHomePage from "../pages/evaluators/HomePage";
 import EvaluatorsLoginPage from "../pages/evaluators/LoginPage";
 import ViewApplicantPage from "../pages/evaluators/ViewApplicantPage";
+import AdviserLoginPage from "../pages/advisers/LoginPage";
+import AdviserHomePage from "../pages/advisers/HomePage";
 import ProtectedRoute from "./ProtectedRoutes";
 import ProgramAdminProtectedRoute from "./ProgramAdminProtectedRoutes";
 import SystemAdminProtectedRoute from "./SystemAdminProtectedRoutes";
@@ -106,7 +108,15 @@ const AppRoutes = () => {
       element: <EvaluatorsLoginPage />,
     },
     {
+      path: "/adviser/login",
+      element: <AdviserLoginPage />,
+    },
+    {
       path: "/evaluator/forget-password",
+      element: <EvaluatorForgotPasswordPage />,
+    },
+    {
+      path: "/adviser/forget-password",
       element: <EvaluatorForgotPasswordPage />,
     },
     {
@@ -140,6 +150,14 @@ const AppRoutes = () => {
       element: (
         <ProtectedRoute>
           <EvaluatorHomePage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/adviser/homepage",
+      element: (
+        <ProtectedRoute>
+          <AdviserHomePage />
         </ProtectedRoute>
       ),
     },
@@ -234,6 +252,10 @@ const AppRoutes = () => {
 
     {
       path: "/evaluator/reset-password",
+      element: <EvaluatorResetPasswordPage />,
+    },
+    {
+      path: "/adviser/reset-password",
       element: <EvaluatorResetPasswordPage />,
     },
     
