@@ -12,7 +12,6 @@ import {
   TextField,
   Stack,
   CircularProgress,
-  
   Card,
   CardContent,
   Grow,
@@ -23,6 +22,8 @@ import {
   IconButton,
   Tooltip,
   Autocomplete,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -34,6 +35,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import axios from "axios";
 import toast from "../../../utils/toast";
 
@@ -121,17 +123,16 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
   },
 }));
 
-const GradedAccreditation = ({ applicantId, curriculumId }) => {
+const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [advisers, setAdvisers] = useState([]);
   const [selectedAdviser, setSelectedAdviser] = useState(null);
   const [existingAssignment, setExistingAssignment] = useState(null);
   const [savingAdviser, setSavingAdviser] = useState(false);
-  
 
   useEffect(() => {
-    if (applicantId) {
+    if (applicantId && isOpen) {
       setLoading(true);
       axios
         .get(`${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`)
@@ -141,11 +142,11 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
         .catch(() => setRecords([]))
         .finally(() => setLoading(false));
     }
-  }, [applicantId]);
+  }, [applicantId, isOpen]);
 
   // Fetch existing assignment for this applicant (only on mount or applicantId change)
   useEffect(() => {
-    if (applicantId && advisers.length > 0) {
+    if (applicantId && advisers.length > 0 && isOpen) {
       axios
         .get(`${API_BASE}/assignments/applicant/${applicantId}`)
         .then((res) => {
@@ -171,7 +172,7 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
           setSelectedAdviser(null);
         });
     }
-  }, [applicantId, advisers]);
+  }, [applicantId, advisers, isOpen]);
 
   // Fetch all evaluators for adviser selection
   useEffect(() => {
@@ -310,12 +311,21 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
     }
   };
 
-  
-
-  return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
+  const modalContent = (
+    <Box sx={{ p: 3, height: '100%', overflow: 'auto' }}>
+      {/* Header with Back Button */}
+      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+        <IconButton
+          onClick={onClose}
+          sx={{
+            color: maroon.main,
+            '&:hover': {
+              backgroundColor: alpha(maroon.main, 0.1),
+            },
+          }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
         <GradeIcon sx={{ color: maroon.main, fontSize: 32 }} />
         <Typography variant="h5" fontWeight="bold" color={maroon.dark}>
           Graded Accreditation Record
@@ -323,105 +333,81 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
       </Stack>
 
       {/* Info Card */}
-      <InfoCard sx={{ mb: 3 }}>
-        <CardContent>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between">
-            <Box>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <SchoolIcon sx={{ color: gold.main, fontSize: 24 }} />
-                <Box>
-                  <Typography variant="h6" fontWeight="bold" color={maroon.main}>
-                    Subject Evaluation & Grading
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Review and grade individual subjects for accreditation completion
-                  </Typography>
-                </Box>
-              </Stack>
-            </Box>
-            
-            {/* Adviser Selection - Autocomplete */}
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 280 }}>
-              <PersonIcon sx={{ color: maroon.main, fontSize: 20 }} />
-              <Autocomplete
-                options={advisers}
-                getOptionLabel={(option) => {
-                  if (!option) return '';
-                  const name = option.firstName ? `${option.firstName} ${option.lastName || ''}`.trim() : 
-                               option.name ? option.name :
-                               option.email ? option.email.split('@')[0] :
-                               'Unknown';
-                  return name;
-                }}
-                isOptionEqualToValue={(option, value) => option?.evaluatorId === value?.evaluatorId}
-                value={selectedAdviser}
-                onChange={handleAdviserChange}
-                disabled={savingAdviser}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Assign Adviser"
-                    placeholder="Type name..."
-                    size="small"
-                    sx={{
-                      flex: 1,
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#fff',
-                      },
-                    }}
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {savingAdviser ? <CircularProgress size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                  />
-                )}
-                sx={{
-                  flex: 1,
-                  '& .MuiAutocomplete-paper': {
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                  },
-                  '& .MuiAutocomplete-listbox': {
-                    '& .MuiAutocomplete-option': {
-                      padding: '8px 16px !important',
-                      '&[aria-selected="true"]': {
-                        backgroundColor: alpha(maroon.main, 0.1),
-                      },
-                      '&:hover': {
-                        backgroundColor: alpha(gold.main, 0.2),
-                      },
-                    },
-                  },
-                }}
-                noOptionsText="No evaluators found"
-              />
-              
-              {/* Delete/Clear Assignment Button */}
-              {selectedAdviser && existingAssignment && (
-                <Tooltip title="Delete adviser assignment">
-                  <IconButton
-                    size="small"
-                    onClick={handleDeleteAssignment}
-                    disabled={savingAdviser}
-                    sx={{
-                      color: '#d32f2f',
-                      '&:hover': {
-                        backgroundColor: alpha('#d32f2f', 0.1),
-                      },
-                    }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Stack>
-          </Stack>
-        </CardContent>
-      </InfoCard>
+    {/* Proper Header Section */}
+<Box
+  sx={{
+    width: '100%',
+    bgcolor: '#fff',
+    borderRadius: 2,
+    p: 2.5,
+    mb: 3,
+    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+  }}
+>
+  <Stack
+    direction={{ xs: 'column', md: 'row' }}
+    justifyContent="space-between"
+    alignItems={{ xs: 'flex-start', md: 'center' }}
+    spacing={2}
+  >
+    {/* Left Side: Title + Description */}
+    <Stack direction="row" spacing={2} alignItems="center">
+      <SchoolIcon sx={{ color: gold.main, fontSize: 28 }} />
+
+      <Box>
+        <Typography variant="h6" fontWeight="bold" color={maroon.main}>
+          Subject Evaluation & Grading
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Review and grade individual subjects for accreditation completion
+        </Typography>
+      </Box>
+    </Stack>
+
+    {/* Right Side: Adviser Selection */}
+    <Stack direction="row" spacing={1.2} alignItems="center">
+      <PersonIcon sx={{ color: maroon.main }} />
+
+      <Autocomplete
+        options={advisers}
+        value={selectedAdviser}
+        onChange={handleAdviserChange}
+        getOptionLabel={(option) =>
+          option?.firstName
+            ? `${option.firstName} ${option.lastName}`
+            : option?.name || option?.email?.split("@")[0] || ""
+        }
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Assign Adviser"
+            size="small"
+            sx={{ width: 220 }}
+          />
+        )}
+        disabled={savingAdviser}
+        noOptionsText="No evaluators found"
+      />
+
+      {/* Delete Button */}
+      {selectedAdviser && existingAssignment && (
+        <Tooltip title="Delete adviser assignment">
+          <IconButton
+            size="small"
+            onClick={handleDeleteAssignment}
+            sx={{
+              color: '#d32f2f',
+              '&:hover': { bgcolor: 'rgba(211,47,47,0.1)' },
+            }}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </Tooltip>
+      )}
+    </Stack>
+  </Stack>
+</Box>
+
       
       {loading ? (
         <Box sx={{ textAlign: "center", py: 6 }}>
@@ -681,19 +667,29 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               No subject records have been created for this applicant yet.
             </Typography>
-            {applicantId && curriculumId && (
-              <ActionButton
-                variant="contained"
-                onClick={handleCreateCurriculumRecord}
-                startIcon={<SchoolIcon />}
-              >
-                Create Curriculum Records
-              </ActionButton>
-            )}
           </CardContent>
         </InfoCard>
       )}
     </Box>
+  );
+
+  return (
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      maxWidth="xl"
+      fullWidth
+      fullScreen
+      PaperProps={{
+        sx: {
+          borderRadius: 0,
+        },
+      }}
+    >
+      <DialogContent sx={{ p: 0, bgcolor: '#f5f5f5', height: '100vh' }}>
+        {modalContent}
+      </DialogContent>
+    </Dialog>
   );
 };
 

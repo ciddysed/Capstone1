@@ -22,69 +22,59 @@ import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import Accreditations from "../../../pages/evaluators/Accreditations/Accreditations";
 import AccreditedAccounts from "../../../pages/evaluators/Accreditations/AccreditedAccounts";
-import GradedAccreditation from "../../../pages/evaluators/Accreditations/GradedAccreditation";
 import NotificationCenter from "../../Notifications/NotificationCenter";
 import { handleLogout } from "../../../utils/logoutUtils";
 
-const EvaluatorNavigation = ({ children, initialGradedState = null }) => {
-  const [activeButton, setActiveButton] = useState("Applicants");
-  const [gradedAccreditationState, setGradedAccreditationState] = useState(initialGradedState);
-  const navItems = ["Applicants", "Accreditations", "Accredited Applicants", "Graded", "Logout"];
+const EvaluatorNavigation = ({ children }) => {
+  const sections = [
+    {
+      title: "Evaluation",
+      items: [{ key: "ApplicantsEval", label: "Applicants for Evaluation" }],
+    },
+    {
+      title: "Accreditation",
+      items: [
+        { key: "ApplicantsAccred", label: "Applicants for Accreditations" },
+        { key: "Accredited", label: "Accredited Applicants" },
+      ],
+    },
+    { title: "", items: [{ key: "Logout", label: "Logout" }] },
+  ];
+  const [activeButton, setActiveButton] = useState("ApplicantsEval");
   const navigate = useNavigate();
 
-  const handleNavItemClick = (item) => {
-    setActiveButton(item);
-
-    if (item === "Logout") {
-      handleLogout(navigate);
-    }
+  const handleNavItemClick = (itemKey) => {
+    setActiveButton(itemKey);
+    if (itemKey === "Logout") handleLogout(navigate);
   };
 
-  // Function to handle graded accreditation navigation
-  const handleGradedAccreditationNavigation = (applicantId, curriculumId) => {
-    setGradedAccreditationState({ applicantId, curriculumId });
-    setActiveButton("Graded");
-  };
-
-  // Function to render the appropriate content based on active button
   const renderContent = () => {
     switch (activeButton) {
-      case "Applicants":
+      case "ApplicantsEval":
         return children;
-      case "Accreditations":
-        return <Accreditations onNavigateToGraded={handleGradedAccreditationNavigation} />;
-      case "Accredited Applicants":
-        return <AccreditedAccounts onNavigateToGraded={handleGradedAccreditationNavigation} />;
-      case "Graded":
-        return <GradedAccreditation 
-          applicantId={gradedAccreditationState?.applicantId} 
-          curriculumId={gradedAccreditationState?.curriculumId} 
-        />;
+      case "ApplicantsAccred":
+        return <Accreditations />;
+      case "Accredited":
+        return <AccreditedAccounts />;
       default:
         return children;
     }
   };
 
-  // Function to get the appropriate title for the top bar
   const getPageTitle = () => {
     switch (activeButton) {
-      case "Applicants":
-        return "Applicants";
-      case "Accreditations":
-        return "Accreditations";
-      case "Accredited Applicants":
+      case "ApplicantsEval":
+        return "Applicants for Evaluation";
+      case "ApplicantsAccred":
+        return "Applicants for Accreditations";
+      case "Accredited":
         return "Accredited Applicants";
-      case "Graded":
-        return "Graded Accreditation";
       default:
-        return "Applicants";
+        return "Applicants for Evaluation";
     }
   };
 
-  // Function to determine if filters should be shown
-  const shouldShowFilters = () => {
-    return activeButton === "Applicants";
-  };
+  const shouldShowFilters = () => activeButton === "ApplicantsEval";
 
   // Get evaluator ID from localStorage
   const evaluatorId = localStorage.getItem("evaluatorId");
@@ -116,33 +106,52 @@ const EvaluatorNavigation = ({ children, initialGradedState = null }) => {
         </Stack>
 
         <Divider sx={{ borderColor: "rgba(255,255,255,0.3)" }} />
-        <Stack>
-          <List>
-            {navItems.map((item) => (
-              <ListItem key={item} disablePadding sx={{ my: 1 }}>
-                <Button
-                  fullWidth
-                  onClick={() => handleNavItemClick(item)}
+        <Stack spacing={1.5} sx={{ mt: 2 }}>
+          {sections.map((section) => (
+            <Box key={section.title || "misc"}>
+              {section.title && (
+                <Typography
+                  variant="caption"
                   sx={{
-                    justifyContent: "flex-start",
-                    color: activeButton === item ? "#000" : "#fff",
-                    bgcolor: activeButton === item ? "#FFD700" : "transparent",
-                    "&:hover": {
-                      bgcolor:
-                        activeButton === item
-                          ? "#FFD700"
-                          : "rgba(255,255,255,0.1)",
-                    },
-                    textTransform: "none",
-                    borderRadius: 2,
-                    px: 2,
+                    color: "rgba(255,255,255,0.7)",
+                    pl: 1,
+                    pb: 0.5,
+                    display: "block",
                   }}
                 >
-                  {item}
-                </Button>
-              </ListItem>
-            ))}
-          </List>
+                  {section.title}
+                </Typography>
+              )}
+              <List sx={{ py: 0 }}>
+                {section.items.map((item) => (
+                  <ListItem key={item.key} disablePadding sx={{ my: 0.5 }}>
+                    <Button
+                      fullWidth
+                      onClick={() => handleNavItemClick(item.key)}
+                      sx={{
+                        justifyContent: "flex-start",
+                        color: activeButton === item.key ? "#000" : "#fff",
+                        bgcolor:
+                          activeButton === item.key ? "#FFD700" : "transparent",
+                        "&:hover": {
+                          bgcolor:
+                            activeButton === item.key
+                              ? "#FFD700"
+                              : "rgba(255,255,255,0.1)",
+                        },
+                        textTransform: "none",
+                        borderRadius: 2,
+                        px: 2,
+                        py: 1,
+                      }}
+                    >
+                      {item.label}
+                    </Button>
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          ))}
         </Stack>
       </Box>
 
@@ -163,20 +172,7 @@ const EvaluatorNavigation = ({ children, initialGradedState = null }) => {
                 {getPageTitle()}
               </Typography>
 
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <TextField
-                  size="small"
-                  placeholder="Search..."
-                  InputProps={{
-                    startAdornment: <SearchIcon sx={{ mr: 1 }} />,
-                    sx: { borderRadius: 5, bgcolor: "#fff" },
-                  }}
-                />
-                
-                {/* Replace the notification icon with the NotificationCenter component */}
-                <NotificationCenter userType="evaluator" userId={evaluatorId} />
-                
-              </Box>
+              
             </Toolbar>
           </AppBar>
 

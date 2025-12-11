@@ -264,7 +264,7 @@ const Accreditations = ({ onNavigateToGraded }) => {
             onChange={e => setSelectedCourse(e.target.value)}
             displayEmpty
             sx={{ 
-              width: "100%",
+              width: "30%",
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
               }
