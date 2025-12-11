@@ -22,7 +22,7 @@ import {
   AccordionDetails,
   IconButton,
   Tooltip,
-  
+  Autocomplete,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -32,10 +32,13 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import BookIcon from '@mui/icons-material/Book';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
+import PersonIcon from '@mui/icons-material/Person';
+import DeleteIcon from '@mui/icons-material/Delete';
 import axios from "axios";
 import toast from "../../../utils/toast";
 
 const API_BASE = 'https://eteeap-foth.onrender.com/api';
+const EVALUATOR_API = 'https://eteeap-foth.onrender.com/api/evaluators';
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -121,6 +124,10 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
 const GradedAccreditation = ({ applicantId, curriculumId }) => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [advisers, setAdvisers] = useState([]);
+  const [selectedAdviser, setSelectedAdviser] = useState(null);
+  const [existingAssignment, setExistingAssignment] = useState(null);
+  const [savingAdviser, setSavingAdviser] = useState(false);
   
 
   useEffect(() => {
@@ -135,6 +142,124 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
         .finally(() => setLoading(false));
     }
   }, [applicantId]);
+
+  // Fetch existing assignment for this applicant (only on mount or applicantId change)
+  useEffect(() => {
+    if (applicantId && advisers.length > 0) {
+      axios
+        .get(`${API_BASE}/assignments/applicant/${applicantId}`)
+        .then((res) => {
+          if (res.data && res.data.length > 0) {
+            const assignment = res.data[0]; // Get the first/latest assignment
+            setExistingAssignment(assignment);
+            // Find and set the assigned adviser only on initial load
+            const assignedAdviser = advisers.find(
+              (adv) => adv.evaluatorId === assignment.evaluator?.evaluatorId
+            );
+            if (assignedAdviser) {
+              setSelectedAdviser(assignedAdviser);
+            }
+          } else {
+            // No existing assignment
+            setExistingAssignment(null);
+            setSelectedAdviser(null);
+          }
+        })
+        .catch((err) => {
+          console.log("No existing assignment found or error:", err);
+          setExistingAssignment(null);
+          setSelectedAdviser(null);
+        });
+    }
+  }, [applicantId, advisers]);
+
+  // Fetch all evaluators for adviser selection
+  useEffect(() => {
+    const fetchAdvisers = async () => {
+      try {
+        const res = await fetch(`${EVALUATOR_API}`);
+        const data = await res.json();
+        console.log("Fetched advisers:", data);
+        setAdvisers(data);
+      } catch (error) {
+        console.error("Error fetching evaluators:", error);
+        setAdvisers([]);
+      }
+    };
+    fetchAdvisers();
+  }, []);
+
+  // Handle adviser selection and save to backend
+  const handleAdviserChange = async (event, newValue) => {
+    setSelectedAdviser(newValue);
+    
+    if (!newValue || !applicantId) return;
+
+    setSavingAdviser(true);
+    try {
+      if (existingAssignment) {
+        // Update existing assignment - backend only accepts notes in PUT
+        const updateRes = await axios.put(`${API_BASE}/assignments/${existingAssignment.assignmentId}`, {
+          notes: existingAssignment.notes || ""
+        });
+        console.log("Assignment updated successfully:", updateRes.data);
+        toast.success("Adviser assignment updated successfully.");
+        // Update the existing assignment state without re-selecting
+        setExistingAssignment(updateRes.data);
+      } else {
+        // Create new assignment
+        const createRes = await axios.post(`${API_BASE}/assignments`, {
+          applicantId: applicantId,
+          evaluatorId: newValue.evaluatorId,
+          notes: ""
+        });
+        console.log("Assignment created successfully:", createRes.data);
+        toast.success("Adviser assigned successfully.");
+        // Set the newly created assignment
+        if (createRes.data && createRes.data.assignmentId) {
+          setExistingAssignment(createRes.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error saving adviser assignment:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      toast.error("Failed to save adviser assignment. Please try again.");
+      // Reset selected adviser on error
+      setSelectedAdviser(null);
+    } finally {
+      setSavingAdviser(false);
+    }
+  };
+
+  // Handle delete/clear adviser assignment
+  const handleDeleteAssignment = async () => {
+    if (!existingAssignment) {
+      toast.info("No assignment to delete");
+      return;
+    }
+
+    // Confirm deletion
+    if (!window.confirm("Are you sure you want to delete this adviser assignment?")) {
+      return;
+    }
+
+    setSavingAdviser(true);
+    try {
+      await axios.delete(`${API_BASE}/assignments/${existingAssignment.assignmentId}`);
+      console.log("Assignment deleted successfully");
+      toast.success("Adviser assignment deleted successfully.");
+      
+      // Clear the selection
+      setSelectedAdviser(null);
+      setExistingAssignment(null);
+    } catch (error) {
+      console.error("Error deleting adviser assignment:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      toast.error("Failed to delete adviser assignment. Please try again.");
+    } finally {
+      setSavingAdviser(false);
+    }
+  };
 
   // Accreditation function (bulk create records from curriculum)
   const handleCreateCurriculumRecord = async () => {
@@ -200,16 +325,100 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
       {/* Info Card */}
       <InfoCard sx={{ mb: 3 }}>
         <CardContent>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <SchoolIcon sx={{ color: gold.main, fontSize: 24 }} />
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between">
             <Box>
-              <Typography variant="h6" fontWeight="bold" color={maroon.main}>
-                Subject Evaluation & Grading
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Review and grade individual subjects for accreditation completion
-              </Typography>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <SchoolIcon sx={{ color: gold.main, fontSize: 24 }} />
+                <Box>
+                  <Typography variant="h6" fontWeight="bold" color={maroon.main}>
+                    Subject Evaluation & Grading
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Review and grade individual subjects for accreditation completion
+                  </Typography>
+                </Box>
+              </Stack>
             </Box>
+            
+            {/* Adviser Selection - Autocomplete */}
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 280 }}>
+              <PersonIcon sx={{ color: maroon.main, fontSize: 20 }} />
+              <Autocomplete
+                options={advisers}
+                getOptionLabel={(option) => {
+                  if (!option) return '';
+                  const name = option.firstName ? `${option.firstName} ${option.lastName || ''}`.trim() : 
+                               option.name ? option.name :
+                               option.email ? option.email.split('@')[0] :
+                               'Unknown';
+                  return name;
+                }}
+                isOptionEqualToValue={(option, value) => option?.evaluatorId === value?.evaluatorId}
+                value={selectedAdviser}
+                onChange={handleAdviserChange}
+                disabled={savingAdviser}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Assign Adviser"
+                    placeholder="Type name..."
+                    size="small"
+                    sx={{
+                      flex: 1,
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: '#fff',
+                      },
+                    }}
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {savingAdviser ? <CircularProgress size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                sx={{
+                  flex: 1,
+                  '& .MuiAutocomplete-paper': {
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  },
+                  '& .MuiAutocomplete-listbox': {
+                    '& .MuiAutocomplete-option': {
+                      padding: '8px 16px !important',
+                      '&[aria-selected="true"]': {
+                        backgroundColor: alpha(maroon.main, 0.1),
+                      },
+                      '&:hover': {
+                        backgroundColor: alpha(gold.main, 0.2),
+                      },
+                    },
+                  },
+                }}
+                noOptionsText="No evaluators found"
+              />
+              
+              {/* Delete/Clear Assignment Button */}
+              {selectedAdviser && existingAssignment && (
+                <Tooltip title="Delete adviser assignment">
+                  <IconButton
+                    size="small"
+                    onClick={handleDeleteAssignment}
+                    disabled={savingAdviser}
+                    sx={{
+                      color: '#d32f2f',
+                      '&:hover': {
+                        backgroundColor: alpha('#d32f2f', 0.1),
+                      },
+                    }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Stack>
           </Stack>
         </CardContent>
       </InfoCard>

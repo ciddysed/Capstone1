@@ -20,7 +20,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  
   Card,
   CardContent,
   Grow,
@@ -185,9 +184,10 @@ const Accreditations = ({ onNavigateToGraded }) => {
     }
   }, [departmentId]);
 
-  const displayedApplicants = selectedCourse
-    ? acceptedApplicants.filter(a => a.finalCourse.courseId === selectedCourse)
-    : acceptedApplicants;
+  const displayedApplicants = acceptedApplicants.filter(a => {
+    const matchesCourse = !selectedCourse || a.finalCourse.courseId === selectedCourse;
+    return matchesCourse;
+  });
 
   const handleAccreditClick = applicant => {
     setSelectedApplicant(applicant);
@@ -252,30 +252,33 @@ const Accreditations = ({ onNavigateToGraded }) => {
         </CardContent>
       </InfoCard>
 
-      {/* Course Filter */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-          Filter by Course:
-        </Typography>
-        <Select
-          value={selectedCourse}
-          onChange={e => setSelectedCourse(e.target.value)}
-          displayEmpty
-          sx={{ 
-            minWidth: 220,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 2,
-            }
-          }}
-        >
-          <MenuItem value="">All Courses</MenuItem>
-          {courses.map(course => (
-            <MenuItem key={course.courseId} value={course.courseId}>
-              {course.courseName}
-            </MenuItem>
-          ))}
-        </Select>
-      </Box>
+      {/* Course and Adviser Filters */}
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
+        {/* Course Filter */}
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+            Filter by Course:
+          </Typography>
+          <Select
+            value={selectedCourse}
+            onChange={e => setSelectedCourse(e.target.value)}
+            displayEmpty
+            sx={{ 
+              width: "100%",
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
+          >
+            <MenuItem value="">All Courses</MenuItem>
+            {courses.map(course => (
+              <MenuItem key={course.courseId} value={course.courseId}>
+                {course.courseName}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
+      </Stack>
 
       {/* Main Content */}
       <Grow in={true} timeout={500}>
@@ -463,4 +466,3 @@ const Accreditations = ({ onNavigateToGraded }) => {
 };
 
 export default Accreditations;
-

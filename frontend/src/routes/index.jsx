@@ -18,6 +18,8 @@ import EvaluatorForgotPasswordPage from "../pages/evaluators/ForgotPasswordPage"
 import EvaluatorHomePage from "../pages/evaluators/HomePage";
 import EvaluatorsLoginPage from "../pages/evaluators/LoginPage";
 import ViewApplicantPage from "../pages/evaluators/ViewApplicantPage";
+import AdviserLoginPage from "../pages/advisers/LoginPage";
+import AdviserHomePage from "../pages/advisers/HomePage";
 import ProtectedRoute from "./ProtectedRoutes";
 import ProgramAdminProtectedRoute from "./ProgramAdminProtectedRoutes";
 import SystemAdminProtectedRoute from "./SystemAdminProtectedRoutes";
@@ -31,6 +33,9 @@ import Accreditations from "../pages/evaluators/Accreditations/Accreditations";
 import GradedAccreditation from "../pages/evaluators/Accreditations/GradedAccreditation";
 import AccreditedAccounts from "../pages/evaluators/Accreditations/AccreditedAccounts";
 import AcceptedDashboard from "../pages/applicants/AcceptedDashboard";
+import AdviserApplicantsListPage from "../pages/advisers/ApplicantsListPage";
+import AdviserViewApplicantPage from "../pages/advisers/ViewApplicantPage";
+import AdviserGradedAccreditationsPage from "../pages/advisers/GradedAccreditationsPage";
 
 const AppRoutes = () => {
   return useRoutes([
@@ -106,7 +111,15 @@ const AppRoutes = () => {
       element: <EvaluatorsLoginPage />,
     },
     {
+      path: "/adviser/login",
+      element: <AdviserLoginPage />,
+    },
+    {
       path: "/evaluator/forget-password",
+      element: <EvaluatorForgotPasswordPage />,
+    },
+    {
+      path: "/adviser/forget-password",
       element: <EvaluatorForgotPasswordPage />,
     },
     {
@@ -144,6 +157,14 @@ const AppRoutes = () => {
       ),
     },
     {
+      path: "/adviser/homepage",
+      element: (
+        <ProtectedRoute>
+          <AdviserHomePage />
+        </ProtectedRoute>
+      ),
+    },
+    {
       path: "/evaluator/accreditations",
       element: (
         <ProtectedRoute>
@@ -164,6 +185,32 @@ const AppRoutes = () => {
       element: (
         <ProtectedRoute>
           <AccreditedAccounts />
+        </ProtectedRoute>
+      ),
+    },
+
+    // Adviser routes
+    {
+      path: "/adviser/applicants",
+      element: (
+        <ProtectedRoute>
+          <AdviserApplicantsListPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/adviser/applicants/view-applicant",
+      element: (
+        <ProtectedRoute>
+          <AdviserViewApplicantPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/adviser/graded-accreditations",
+      element: (
+        <ProtectedRoute>
+          <AdviserGradedAccreditationsPage />
         </ProtectedRoute>
       ),
     },
@@ -234,6 +281,10 @@ const AppRoutes = () => {
 
     {
       path: "/evaluator/reset-password",
+      element: <EvaluatorResetPasswordPage />,
+    },
+    {
+      path: "/adviser/reset-password",
       element: <EvaluatorResetPasswordPage />,
     },
     

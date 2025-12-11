@@ -215,7 +215,7 @@ const ApplicationDetailsDialog = ({
   const fetchEvaluationStatusesForPreferences = useCallback(async (applicantId, preferences) => {
     setLoadingEvaluations(true);
     try {
-      const response = await axios.get(`http://localhost:8080/api/preferences/applicant/${applicantId}/with-evaluation`);
+      const response = await axios.get(`https://eteeap-foth.onrender.com/api/preferences/applicant/${applicantId}/with-evaluation`);
       const preferencesWithEval = response.data;
       
       const evaluationMap = {};
