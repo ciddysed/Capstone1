@@ -535,24 +535,7 @@ const ApplicantsListPage = () => {
               </Box>
             )}
 
-            {/* Pagination Controls */}
-            <TablePagination
-              component="div"
-              count={evaluations.length}
-              page={page}
-              onPageChange={handleChangePage}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              rowsPerPageOptions={[10, 20, 50]}
-              sx={{
-                '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                  fontWeight: 500,
-                },
-                '.MuiTablePagination-select': {
-                  fontWeight: 600,
-                }
-              }}
-            />
+            
           </AnimatedPaper>
         </Grow>
       </ListLayoutWithFilters>

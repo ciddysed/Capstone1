@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
   Typography,
@@ -130,18 +130,59 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
   const [selectedAdviser, setSelectedAdviser] = useState(null);
   const [existingAssignment, setExistingAssignment] = useState(null);
   const [savingAdviser, setSavingAdviser] = useState(false);
+  const saveTimers = useRef({});
+
+  const flushTimers = () => {
+    Object.values(saveTimers.current).forEach(clearTimeout);
+    saveTimers.current = {};
+  };
+
+  // debounce save helper (also saves empty strings to allow clearing)
+  const queueSave = (recId, semester, field, value) => {
+    const key = `${recId}-${field}`;
+    if (saveTimers.current[key]) clearTimeout(saveTimers.current[key]);
+
+    setRecords(prev => ({
+      ...prev,
+      [semester]: prev[semester].map(r =>
+        r.id === recId ? { ...r, [field]: value } : r
+      )
+    }));
+
+    saveTimers.current[key] = setTimeout(async () => {
+      const params = new URLSearchParams();
+      params.append(field, value ?? "");
+      try {
+        await axios.put(
+          `${API_BASE}/applicant-subject-records/${recId}?${params.toString()}`,
+          null,
+          { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+      } catch (err) {
+        toast.error(`Failed to save ${field}.`);
+      } finally {
+        delete saveTimers.current[key];
+      }
+    }, 350);
+  };
 
   useEffect(() => {
-    if (applicantId && isOpen) {
-      setLoading(true);
-      axios
-        .get(`${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`)
-        .then((res) => {
-          setRecords(res.data);
-        })
-        .catch(() => setRecords([]))
-        .finally(() => setLoading(false));
+    return () => flushTimers();
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      flushTimers();
+      return;
     }
+    setLoading(true);
+    axios
+      .get(`${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`)
+      .then((res) => {
+        setRecords(res.data);
+      })
+      .catch(() => setRecords([]))
+      .finally(() => setLoading(false));
   }, [applicantId, isOpen]);
 
   // Fetch existing assignment for this applicant (only on mount or applicantId change)
@@ -280,43 +321,37 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
   };
 
 
-  // Toggle lock/unlock status
-  const handleToggleLock = async (recordId, currentStatus) => {
-    const newStatus = currentStatus === "APPROVED" ? "PENDING" : "APPROVED";
-    
+  // Toggle lock/unlock status via PUT; unlocking sets status to PENDING, locking sets to APPROVED
+  const handleToggleLock = async (rec) => {
+    const nextStatus = rec.status === "APPROVED" ? "PENDING" : "APPROVED";
+
     try {
       const params = new URLSearchParams();
-      params.append('status', newStatus);
+      params.append('status', nextStatus);
 
       await axios.put(
-        `${API_BASE}/applicant-subject-records/${recordId}?${params.toString()}`,
+        `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
         null,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        }
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
-      
-      const refreshResponse = await axios.get(
+
+      const refreshed = await axios.get(
         `${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`
       );
-      setRecords(refreshResponse.data);
-      
-      // Removed alert - just update silently
+      setRecords(refreshed.data);
     } catch (err) {
       console.error("Failed to toggle lock:", err);
-      // Only show alert on error
       toast.error("Failed to toggle lock status.");
     }
   };
 
   const modalContent = (
-    <Box sx={{ p: 3, height: '100%', overflow: 'auto' }}>
+    <Box sx={{ p: 2, height: '100%', overflow: 'auto' }}>
       {/* Header with Back Button */}
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
         <IconButton
           onClick={onClose}
+          size="small"
           sx={{
             color: maroon.main,
             '&:hover': {
@@ -326,93 +361,112 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
         >
           <ArrowBackIcon />
         </IconButton>
-        <GradeIcon sx={{ color: maroon.main, fontSize: 32 }} />
-        <Typography variant="h5" fontWeight="bold" color={maroon.dark}>
+        <GradeIcon sx={{ color: maroon.main, fontSize: 28 }} />
+        <Typography variant="h6" fontWeight="bold" color={maroon.dark}>
           Graded Accreditation Record
         </Typography>
       </Stack>
 
-      {/* Info Card */}
-    {/* Proper Header Section */}
-<Box
-  sx={{
-    width: '100%',
-    bgcolor: '#fff',
-    borderRadius: 2,
-    p: 2.5,
-    mb: 3,
-    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-  }}
->
-  <Stack
-    direction={{ xs: 'column', md: 'row' }}
-    justifyContent="space-between"
-    alignItems={{ xs: 'flex-start', md: 'center' }}
-    spacing={2}
-  >
-    {/* Left Side: Title + Description */}
-    <Stack direction="row" spacing={2} alignItems="center">
-      <SchoolIcon sx={{ color: gold.main, fontSize: 28 }} />
+      {/* Compact Header Section */}
+      <Box
+        sx={{
+          width: '100%',
+          bgcolor: '#fff',
+          borderRadius: 1.5,
+          p: 1.5,
+          mb: 2,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+        }}
+      >
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'flex-start', md: 'center' }}
+          spacing={1.5}
+        >
+          {/* Left Side: Title + Description */}
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <SchoolIcon sx={{ color: gold.main, fontSize: 22 }} />
+            <Box>
+              <Typography variant="subtitle1" fontWeight="600" color={maroon.main}>
+                Subject Evaluation & Grading
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Review and grade individual subjects for accreditation
+              </Typography>
+            </Box>
+          </Stack>
 
-      <Box>
-        <Typography variant="h6" fontWeight="bold" color={maroon.main}>
-          Subject Evaluation & Grading
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Review and grade individual subjects for accreditation completion
-        </Typography>
+          {/* Right Side: Adviser Selection */}
+          <Stack direction="row" spacing={1} alignItems="center">
+            <PersonIcon sx={{ color: maroon.main, fontSize: 20 }} />
+            <Autocomplete
+              options={advisers}
+              value={selectedAdviser}
+              onChange={handleAdviserChange}
+              getOptionLabel={(option) =>
+                option?.firstName
+                  ? `${option.firstName} ${option.lastName}`
+                  : option?.name || option?.email?.split("@")[0] || ""
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Assign Adviser"
+                  size="small"
+                  sx={{ 
+                    width: 200,
+                    '& .MuiInputBase-root': {
+                      fontSize: 13,
+                    }
+                  }}
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {savingAdviser ? <CircularProgress size={16} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+              disabled={savingAdviser}
+              noOptionsText="No evaluators found"
+              sx={{
+                '& .MuiAutocomplete-listbox': {
+                  '& .MuiAutocomplete-option': {
+                    fontSize: 13,
+                    py: 0.75,
+                  },
+                },
+              }}
+            />
+
+            {/* Delete Button */}
+            {selectedAdviser && existingAssignment && (
+              <Tooltip title="Delete assignment">
+                <IconButton
+                  size="small"
+                  onClick={handleDeleteAssignment}
+                  disabled={savingAdviser}
+                  sx={{
+                    color: '#d32f2f',
+                    '&:hover': { bgcolor: 'rgba(211,47,47,0.1)' },
+                  }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
+        </Stack>
       </Box>
-    </Stack>
-
-    {/* Right Side: Adviser Selection */}
-    <Stack direction="row" spacing={1.2} alignItems="center">
-      <PersonIcon sx={{ color: maroon.main }} />
-
-      <Autocomplete
-        options={advisers}
-        value={selectedAdviser}
-        onChange={handleAdviserChange}
-        getOptionLabel={(option) =>
-          option?.firstName
-            ? `${option.firstName} ${option.lastName}`
-            : option?.name || option?.email?.split("@")[0] || ""
-        }
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Assign Adviser"
-            size="small"
-            sx={{ width: 220 }}
-          />
-        )}
-        disabled={savingAdviser}
-        noOptionsText="No evaluators found"
-      />
-
-      {/* Delete Button */}
-      {selectedAdviser && existingAssignment && (
-        <Tooltip title="Delete adviser assignment">
-          <IconButton
-            size="small"
-            onClick={handleDeleteAssignment}
-            sx={{
-              color: '#d32f2f',
-              '&:hover': { bgcolor: 'rgba(211,47,47,0.1)' },
-            }}
-          >
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-    </Stack>
-  </Stack>
-</Box>
-
       
       {loading ? (
-        <Box sx={{ textAlign: "center", py: 6 }}>
-          <CircularProgress />
-          <Typography sx={{ mt: 2 }}>Loading records...</Typography>
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <CircularProgress size={32} />
+          <Typography variant="body2" sx={{ mt: 1.5 }}>Loading records...</Typography>
         </Box>
       ) : Object.keys(records).length > 0 ? (
         <Grow in={true} timeout={500}>
@@ -421,34 +475,35 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
               <StyledAccordion key={semester} defaultExpanded={index === 0}>
                 <StyledAccordionSummary
                   expandIcon={<ExpandMoreIcon sx={{ color: maroon.main }} />}
+                  sx={{ minHeight: 48, '& .MuiAccordionSummary-content': { my: 1 } }}
                 >
-                  <Stack direction="row" spacing={2} alignItems="center" sx={{ width: '100%' }}>
-                    <BookIcon sx={{ color: maroon.main }} />
+                  <Stack direction="row" spacing={1.5} alignItems="center" sx={{ width: '100%' }}>
+                    <BookIcon sx={{ color: maroon.main, fontSize: 20 }} />
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" fontWeight="bold" color={maroon.dark}>
+                      <Typography variant="subtitle1" fontWeight="600" color={maroon.dark}>
                         {semester}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary">
                         {records[semester].length} subjects
                       </Typography>
                     </Box>
                     <Chip
                       label={`${records[semester].filter(r => r.status === 'APPROVED').length} / ${records[semester].length} Approved`}
                       color={records[semester].every(r => r.status === 'APPROVED') ? 'success' : 'warning'}
-                      variant="outlined"
                       size="small"
+                      sx={{ height: 22, fontSize: 11 }}
                     />
                   </Stack>
                 </StyledAccordionSummary>
                 <AccordionDetails sx={{ p: 0 }}>
-                  <Table>
+                  <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <StyledTableCell sx={{ minWidth: 250 }}>Subject</StyledTableCell>
-                        <StyledTableCell sx={{ minWidth: 100 }}>Grade</StyledTableCell>
-                        <StyledTableCell sx={{ minWidth: 200 }}>Process of Accreditation</StyledTableCell>
-                        <StyledTableCell sx={{ minWidth: 200 }}>Substantive Basis</StyledTableCell>
-                        <StyledTableCell align="center" sx={{ minWidth: 150 }}>Lock/Unlock Record</StyledTableCell>
+                        <StyledTableCell sx={{ minWidth: 200 }}>Subject</StyledTableCell>
+                        <StyledTableCell sx={{ minWidth: 80 }}>Grade</StyledTableCell>
+                        <StyledTableCell sx={{ minWidth: 180 }}>Process of Accreditation</StyledTableCell>
+                        <StyledTableCell sx={{ minWidth: 180 }}>Substantive Basis</StyledTableCell>
+                        <StyledTableCell align="center" sx={{ minWidth: 100 }}>Status</StyledTableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -474,31 +529,13 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                 <TextField
                                   size="small"
                                   value={rec.grade || ""}
-                                  onChange={(e) => {
-                                    // Auto-save on change
-                                    const newGrade = e.target.value;
-                                    const params = new URLSearchParams();
-                                    if (newGrade) params.append('grade', newGrade);
-                                    
-                                    axios.put(
-                                      `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
-                                      null,
-                                      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-                                    ).then(() => {
-                                      // Update local state
-                                      setRecords(prev => ({
-                                        ...prev,
-                                        [semester]: prev[semester].map(r => 
-                                          r.id === rec.id ? { ...r, grade: newGrade } : r
-                                        )
-                                      }));
-                                    });
-                                  }}
+                                  onChange={(e) => queueSave(rec.id, semester, "grade", e.target.value)}
                                   fullWidth
-                                  placeholder="Enter grade"
+                                  placeholder="Grade"
                                   sx={{
                                     '& .MuiOutlinedInput-root': {
                                       borderRadius: 1,
+                                      fontSize: 13,
                                     }
                                   }}
                                 />
@@ -509,9 +546,10 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                   color={rec.grade ? 'text.primary' : 'text.secondary'}
                                   sx={{
                                     backgroundColor: alpha(gold.light, 0.3),
-                                    padding: 1,
+                                    padding: 0.75,
                                     borderRadius: 1,
-                                    border: `1px solid ${alpha(gold.main, 0.5)}`
+                                    border: `1px solid ${alpha(gold.main, 0.5)}`,
+                                    fontSize: 13,
                                   }}
                                 >
                                   {rec.grade || "Not graded"}
@@ -525,26 +563,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                 <TextField
                                   size="small"
                                   value={rec.processOfAccreditation || ""}
-                                  onChange={(e) => {
-                                    // Auto-save on change
-                                    const newProcess = e.target.value;
-                                    const params = new URLSearchParams();
-                                    if (newProcess) params.append('processOfAccreditation', newProcess);
-                                    
-                                    axios.put(
-                                      `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
-                                      null,
-                                      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-                                    ).then(() => {
-                                      // Update local state
-                                      setRecords(prev => ({
-                                        ...prev,
-                                        [semester]: prev[semester].map(r => 
-                                          r.id === rec.id ? { ...r, processOfAccreditation: newProcess } : r
-                                        )
-                                      }));
-                                    });
-                                  }}
+                                  onChange={(e) => queueSave(rec.id, semester, "processOfAccreditation", e.target.value)}
                                   fullWidth
                                   multiline
                                   rows={2}
@@ -552,21 +571,20 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                   sx={{
                                     '& .MuiOutlinedInput-root': {
                                       borderRadius: 1,
+                                      fontSize: 12,
                                     }
                                   }}
                                 />
                               ) : (
                                 <Typography 
-                                  variant="body2"
+                                  variant="caption"
                                   color={rec.processOfAccreditation ? 'text.primary' : 'text.secondary'}
                                   sx={{
                                     backgroundColor: alpha(gold.light, 0.3),
-                                    padding: 1,
+                                    padding: 0.75,
                                     borderRadius: 1,
                                     border: `1px solid ${alpha(gold.main, 0.5)}`,
-                                    maxWidth: 200,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
+                                    display: 'block',
                                   }}
                                 >
                                   {rec.processOfAccreditation || "Not specified"}
@@ -580,26 +598,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                 <TextField
                                   size="small"
                                   value={rec.substantiveBasis || ""}
-                                  onChange={(e) => {
-                                    // Auto-save on change
-                                    const newBasis = e.target.value;
-                                    const params = new URLSearchParams();
-                                    if (newBasis) params.append('substantiveBasis', newBasis);
-                                    
-                                    axios.put(
-                                      `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
-                                      null,
-                                      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-                                    ).then(() => {
-                                      // Update local state
-                                      setRecords(prev => ({
-                                        ...prev,
-                                        [semester]: prev[semester].map(r => 
-                                          r.id === rec.id ? { ...r, substantiveBasis: newBasis } : r
-                                        )
-                                      }));
-                                    });
-                                  }}
+                                  onChange={(e) => queueSave(rec.id, semester, "substantiveBasis", e.target.value)}
                                   fullWidth
                                   multiline
                                   rows={2}
@@ -607,21 +606,20 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                   sx={{
                                     '& .MuiOutlinedInput-root': {
                                       borderRadius: 1,
+                                      fontSize: 12,
                                     }
                                   }}
                                 />
                               ) : (
                                 <Typography 
-                                  variant="body2"
+                                  variant="caption"
                                   color={rec.substantiveBasis ? 'text.primary' : 'text.secondary'}
                                   sx={{
                                     backgroundColor: alpha(gold.light, 0.3),
-                                    padding: 1,
+                                    padding: 0.75,
                                     borderRadius: 1,
                                     border: `1px solid ${alpha(gold.main, 0.5)}`,
-                                    maxWidth: 200,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
+                                    display: 'block',
                                   }}
                                 >
                                   {rec.substantiveBasis || "Not specified"}
@@ -631,10 +629,10 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                             
                             {/* Actions Cell */}
                             <StyledTableCell align="center">
-                              <Tooltip title={isLocked ? "Unlock Record" : "Lock Record"}>
+                              <Tooltip title={isLocked ? "Unlock" : "Lock"}>
                                 <IconButton
                                   size="small"
-                                  onClick={() => handleToggleLock(rec.id, rec.status)}
+                                  onClick={() => handleToggleLock(rec)}
                                   sx={{
                                     color: isLocked ? '#ff9800' : '#4caf50',
                                     backgroundColor: alpha(isLocked ? '#ff9800' : '#4caf50', 0.1),
@@ -659,12 +657,12 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
         </Grow>
       ) : (
         <InfoCard>
-          <CardContent sx={{ textAlign: "center", py: 6 }}>
-            <AssignmentIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
+          <CardContent sx={{ textAlign: "center", py: 4 }}>
+            <AssignmentIcon sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.3, mb: 1 }} />
+            <Typography variant="body1" color="text.secondary" gutterBottom>
               No accreditation records found
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography variant="caption" color="text.secondary">
               No subject records have been created for this applicant yet.
             </Typography>
           </CardContent>

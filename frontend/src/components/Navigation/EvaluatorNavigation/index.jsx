@@ -74,8 +74,6 @@ const EvaluatorNavigation = ({ children }) => {
     }
   };
 
-  const shouldShowFilters = () => activeButton === "ApplicantsEval";
-
   // Get evaluator ID from localStorage
   const evaluatorId = localStorage.getItem("evaluatorId");
 
@@ -167,78 +165,18 @@ const EvaluatorNavigation = ({ children }) => {
         <Box sx={{ flexShrink: 0, bgcolor: "transparent", zIndex: 1100 }}>
           {/* Top Bar */}
           <AppBar position="static" color="transparent" elevation={0}>
-            <Toolbar sx={{ justifyContent: "space-between", p: 0 }}>
-              <Typography variant="h6" fontWeight="bold">
+            <Toolbar sx={{ justifyContent: "space-between", py: 1, px: 2, minHeight: 48 }}>
+              <Typography variant="h6" fontWeight="600" fontSize={18}>
                 {getPageTitle()}
               </Typography>
-
-              
             </Toolbar>
           </AppBar>
-
-          {/* Filters - Only show for Applicants */}
-          {shouldShowFilters() && (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 2,
-                flexWrap: "wrap",
-                px: 2,
-                py: 1,
-                position: "sticky",
-                top: "64px",
-                zIndex: 1000,
-              }}
-            >
-              <FormControl size="small" sx={{ minWidth: 150 }}>
-                <InputLabel>Status</InputLabel>
-                <Select label="Status" defaultValue="">
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="approved">Approved</MenuItem>
-                  <MenuItem value="rejected">Rejected</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl size="small" sx={{ minWidth: 150 }}>
-                <InputLabel>Course</InputLabel>
-                <Select label="Course" defaultValue="">
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="BSIT">BSIT</MenuItem>
-                  <MenuItem value="BSA">BSA</MenuItem>
-                  <MenuItem value="BSBA">BSBA</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl size="small" sx={{ minWidth: 150 }}>
-                <InputLabel>Category</InputLabel>
-                <Select label="Category" defaultValue="">
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="Internship">Internship</MenuItem>
-                  <MenuItem value="Scholarship">Scholarship</MenuItem>
-                  <MenuItem value="Training">Training</MenuItem>
-                </Select>
-              </FormControl>
-
-              <TextField
-                size="small"
-                label="Date Applied"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                sx={{ minWidth: 160 }}
-                defaultValue={dayjs().format("YYYY-MM-DD")}
-              />
-            </Box>
-          )}
         </Box>
         {/* Main Content */}
         <Box
           sx={{
             flexGrow: 1,
             overflowY: "auto",
-            px: 1,
-            py: 2,
             bgcolor: "transparent",
           }}
         >
