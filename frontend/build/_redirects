@@ -1,0 +1,11 @@
+# Netlify Redirect Rules for React Router SPA
+# This rule rewrites ALL paths (/*) to /index.html with status 200.
+# Why: Netlify serves static files. Without this, direct navigation or refresh on
+# routes like /login, /system-admin/login, /program-admin/login, /evaluator/login,
+# /accepted-dashboard, etc. would 404 because those files do not physically exist.
+# The 200 status makes it a rewrite (not a redirect), so the browser URL stays as-is
+# and React Router can parse and render the correct route client-side.
+# Place this file in the deploy root (public/ for CRA). Netlify copies it to the build output.
+# If you add server-side functions later, put more specific rules ABOVE this catch-all.
+
+/*    /index.html   200

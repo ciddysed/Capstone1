@@ -138,14 +138,8 @@ const StyledChip = styled(Chip)(({ theme }) => ({
 }));
 
 const DOCUMENT_TYPE_LABELS = [
-  "APPLICANTS_EVALUATION_SHEET",
   "INFORMATIVE_COPY_OF_TOR",
-  "PSA_AUTHENTICATED_BIRTH_CERTIFICATE",
-  "CERTIFICATE_OF_TRANSFER_CREDENTIAL",
-  "MARRIAGE_CERTIFICATE",
   "CERTIFICATE_OF_EMPLOYMENT",
-  "EMPLOYER_CERTIFIED_DETAILED_JOB_DESCRIPTION",
-  "EVIDENCE_OF_BUSINESS_OWNERSHIP"
 ];
 
 const formatDocumentType = (type) => {
@@ -615,7 +609,7 @@ const ViewApplicantPage = () => {
         
         <Grid container spacing={3}>
           {/* Applicant Profile Section */}
-          <Grid item xs={12} md={5}>
+          <Grid item xs={12} md={3}>
             <Grow in={true} timeout={600}>
               <AnimatedPaper elevation={3} sx={{ p: 3, height: '100%' }}>
                 <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
@@ -687,7 +681,7 @@ const ViewApplicantPage = () => {
           </Grid>
 
           {/* Right Section */}
-          <Grid item xs={12} md={7}>
+          <Grid item xs={12} md={9}>
             <Stack spacing={3} height="100%">
               {/* Applied Course */}
               <Grow in={true} timeout={700}>
@@ -729,29 +723,31 @@ const ViewApplicantPage = () => {
               {/* Uploaded Documents */}
               <Grow in={true} timeout={800}>
                 <AnimatedPaper elevation={3} sx={{ p: 3, flex: 1 }}>
-                  <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+                  <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
                     <DescriptionIcon sx={{ color: maroon.main }} />
                     <Typography variant="h6" fontWeight="bold" color={maroon.main}>
                       Submitted Documents
                     </Typography>
                   </Stack>
-                  <Divider sx={{ mb: 2, borderColor: alpha(gold.main, 0.5) }} />
+                  <Divider sx={{ mb: 3, borderColor: alpha(gold.main, 0.5) }} />
                   
                   <Box sx={{ 
                     bgcolor: alpha(theme.palette.background.default, 0.5),
                     borderRadius: 2,
                     border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-                    maxHeight: 300,
-                    overflow: 'auto'
+                    maxHeight: 'auto',
+                    overflow: 'visible',
+                    mx: -2
                   }}>
-                    <List dense>
-                      {DOCUMENT_TYPE_LABELS.map((docType) => {
+                    <List sx={{ p: 0 }}>
+                      {DOCUMENT_TYPE_LABELS.map((docType, index) => {
                         const doc = documents.find((d) => d.documentType === docType);
                         return (
                           <ListItem key={docType}
                             sx={{
-                              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-                              '&:last-child': { borderBottom: 'none' },
+                              py: 3,
+                              px: 3,
+                              borderBottom: index < DOCUMENT_TYPE_LABELS.length - 1 ? `1px solid ${alpha(theme.palette.divider, 0.3)}` : 'none',
                               transition: 'background-color 0.2s ease',
                               '&:hover': {
                                 backgroundColor: alpha(gold.light, 0.15),
@@ -759,7 +755,7 @@ const ViewApplicantPage = () => {
                             }}
                             secondaryAction={
                               doc ? (
-                                <Stack direction="row" spacing={1}>
+                                <Stack direction="row" spacing={1.5}>
                                   <Tooltip title="Preview Document">
                                     <IconButton
                                       edge="end"
@@ -811,6 +807,7 @@ const ViewApplicantPage = () => {
                                 fontWeight: doc ? 600 : 400,
                                 variant: 'body2',
                                 color: doc ? 'text.primary' : 'text.secondary',
+                                sx: { mb: doc ? 0.5 : 0 }
                               }}
                               secondaryTypographyProps={{
                                 variant: 'caption',

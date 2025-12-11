@@ -61,6 +61,7 @@ const LoginPage = () => {
     const userType = localStorage.getItem("userType");
     const applicantId = localStorage.getItem("applicantId");
     const programAdminId = localStorage.getItem("programAdminId");
+    const adviserId = localStorage.getItem("adviserId");
 
     if (userType === "applicant" && applicantId) {
       // Check if applicant has started their application
@@ -71,6 +72,8 @@ const LoginPage = () => {
       });
     } else if (userType === "evaluator") {
       navigate("/evaluator/homepage");
+    } else if (userType === "adviser" && adviserId) {
+      navigate("/adviser/homepage");
     } else if (userType === "program-admin" && programAdminId) {
       navigate("/program-admin/program-management");
     } else if (userType && userType.includes("admin")) {
