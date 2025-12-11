@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	TextField,
@@ -12,7 +12,6 @@ import {
 	Divider,
 	ToggleButtonGroup,
 	ToggleButton,
-	Box,
 } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -91,7 +90,6 @@ const EvaluatorAdviserLoginForm = ({
 		handleSubmit,
 		formState: { errors },
 		reset,
-		watch,
 		setValue,
 	} = useForm({
 		resolver: yupResolver(schema),
@@ -108,13 +106,7 @@ const EvaluatorAdviserLoginForm = ({
 		localStorage.removeItem("systemAdminId");
 	};
 
-	useEffect(() => {
-		if (currentFormType === "signup") {
-			fetchDepartments();
-		}
-	}, [currentFormType, currentRole]);
-
-	const fetchDepartments = async () => {
+	const fetchDepartments = useCallback(async () => {
 		const { apiBase } = roleConfigs[currentRole];
 		try {
 			const response = await fetch(`${apiBase}/departments`);
@@ -129,7 +121,13 @@ const EvaluatorAdviserLoginForm = ({
 			console.error("Error fetching departments:", error);
 			setDepartments([]);
 		}
-	};
+	}, [currentRole]);
+
+	useEffect(() => {
+		if (currentFormType === "signup") {
+			fetchDepartments();
+		}
+	}, [currentFormType, fetchDepartments]);
 
 	const onSubmit = async (data) => {
 		// Use the role from form data in signup, otherwise use currentRole
@@ -417,32 +415,6 @@ export const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
 	"&:hover": {
 		backgroundColor: "#800000",
 		color: "white",
-	},
-}));
-
-const RoleCard = styled(Box)(({ selected }) => ({
-	flex: 1,
-	padding: 16,
-	borderRadius: 12,
-	border: selected ? "2px solid #800000" : "1px solid #d9d9d9",
-	background: selected
-		? "linear-gradient(145deg, rgba(128, 0, 0, 0.08), rgba(255, 255, 255, 0.8))"
-		: "linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(245, 245, 245, 0.9))",
-	boxShadow: selected
-		? "0 8px 20px rgba(128, 0, 0, 0.18)"
-		: "0 4px 12px rgba(0, 0, 0, 0.08)",
-	cursor: "pointer",
-	transition: "all 0.2s ease",
-	outline: "none",
-	display: "flex",
-	flexDirection: "column",
-	gap: 4,
-	"&:hover": {
-		transform: "translateY(-2px)",
-		boxShadow: "0 10px 24px rgba(128, 0, 0, 0.18)",
-	},
-	"&:focus-visible": {
-		boxShadow: "0 0 0 3px rgba(128, 0, 0, 0.25)",
 	},
 }));
 

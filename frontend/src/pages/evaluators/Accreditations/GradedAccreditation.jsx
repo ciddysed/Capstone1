@@ -22,10 +22,6 @@ import {
   AccordionDetails,
   IconButton,
   Tooltip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Autocomplete,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
@@ -38,7 +34,6 @@ import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ClearIcon from '@mui/icons-material/Clear';
 import axios from "axios";
 import toast from "../../../utils/toast";
 
@@ -176,7 +171,7 @@ const GradedAccreditation = ({ applicantId, curriculumId }) => {
           setSelectedAdviser(null);
         });
     }
-  }, [applicantId]);
+  }, [applicantId, advisers]);
 
   // Fetch all evaluators for adviser selection
   useEffect(() => {
