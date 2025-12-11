@@ -215,23 +215,23 @@ const ApplicationDetailsDialog = ({
   const fetchEvaluationStatusesForPreferences = useCallback(async (applicantId, preferences) => {
     setLoadingEvaluations(true);
     try {
-      const response = await axios.get(`${EVALUATIONS_API_URL}/applicant/${applicantId}`);
-      const evaluations = response.data;
+      const response = await axios.get(`http://localhost:8080/api/preferences/applicant/${applicantId}/with-evaluation`);
+      const preferencesWithEval = response.data;
       
       const evaluationMap = {};
       
-      if (Array.isArray(evaluations) && evaluations.length > 0) {
-        for (const evaluation of evaluations) {
-          const courseId = evaluation?.course?.courseId;
+      if (Array.isArray(preferencesWithEval) && preferencesWithEval.length > 0) {
+        for (const pref of preferencesWithEval) {
+          const courseId = pref?.course?.courseId;
           if (courseId) {
             evaluationMap[courseId] = {
-              status: evaluation?.evaluationStatus || 'PENDING',
-              evaluatorName: evaluation?.evaluator ? 
-                `${evaluation.evaluator.firstName || ''} ${evaluation.evaluator.lastName || ''}`.trim() : 
+              status: pref?.evaluationStatus || 'PENDING',
+              evaluatorName: pref?.evaluator ? 
+                `${pref.evaluator.firstName || ''} ${pref.evaluator.lastName || ''}`.trim() : 
                 'Unknown Evaluator',
-              dateEvaluated: evaluation?.dateEvaluated || null,
-              comments: evaluation?.comments || '',
-              evaluationId: evaluation?.evaluationId
+              dateEvaluated: pref?.dateEvaluated || null,
+              comments: pref?.comments || '',
+              evaluationId: pref?.evaluationId
             };
           }
         }

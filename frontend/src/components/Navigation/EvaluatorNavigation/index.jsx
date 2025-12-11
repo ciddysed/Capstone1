@@ -241,7 +241,7 @@ const EvaluatorNavigation = ({ children, initialGradedState = null }) => {
           sx={{
             flexGrow: 1,
             overflowY: "auto",
-            px: 2,
+            px: 1,
             py: 2,
             bgcolor: "transparent",
           }}

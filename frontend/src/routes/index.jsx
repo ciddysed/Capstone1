@@ -33,6 +33,9 @@ import Accreditations from "../pages/evaluators/Accreditations/Accreditations";
 import GradedAccreditation from "../pages/evaluators/Accreditations/GradedAccreditation";
 import AccreditedAccounts from "../pages/evaluators/Accreditations/AccreditedAccounts";
 import AcceptedDashboard from "../pages/applicants/AcceptedDashboard";
+import AdviserApplicantsListPage from "../pages/advisers/ApplicantsListPage";
+import AdviserViewApplicantPage from "../pages/advisers/ViewApplicantPage";
+import AdviserGradedAccreditationsPage from "../pages/advisers/GradedAccreditationsPage";
 
 const AppRoutes = () => {
   return useRoutes([
@@ -182,6 +185,32 @@ const AppRoutes = () => {
       element: (
         <ProtectedRoute>
           <AccreditedAccounts />
+        </ProtectedRoute>
+      ),
+    },
+
+    // Adviser routes
+    {
+      path: "/adviser/applicants",
+      element: (
+        <ProtectedRoute>
+          <AdviserApplicantsListPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/adviser/applicants/view-applicant",
+      element: (
+        <ProtectedRoute>
+          <AdviserViewApplicantPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/adviser/graded-accreditations",
+      element: (
+        <ProtectedRoute>
+          <AdviserGradedAccreditationsPage />
         </ProtectedRoute>
       ),
     },

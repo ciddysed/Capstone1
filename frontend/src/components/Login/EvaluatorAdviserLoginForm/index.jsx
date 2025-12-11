@@ -30,7 +30,7 @@ const roleConfigs = {
 	adviser: {
 		label: "Adviser",
 		apiBase: "https://eteeap-foth.onrender.com/api/evaluators",
-		idKey: "adviserId",
+		idKey: "evaluatorId",
 		defaultHome: "/adviser/homepage",
 		adminHome: "/adviser/homepage",
 		forgotPasswordPath: "/evaluator/forget-password",
