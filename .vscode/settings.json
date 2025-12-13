@@ -1,0 +1,7 @@
+{
+    "java.project.sourcePaths": [
+        "src/main/java",
+        "frontend/src",
+        "logicControladmin-2/eteeapp/eteeapp/src/main/java/com/caps/eteeapp"
+    ]
+}
