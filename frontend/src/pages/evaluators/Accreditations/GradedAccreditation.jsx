@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useEffect, useState, useCallback, useRef } from "react";
+=======
+import React, { useEffect, useState } from "react";
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
 import {
   Box,
   Typography,
@@ -12,6 +16,10 @@ import {
   TextField,
   Stack,
   CircularProgress,
+<<<<<<< HEAD
+=======
+  
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
   Card,
   CardContent,
   Grow,
@@ -120,6 +128,7 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
   },
 }));
 
+<<<<<<< HEAD
 // Add a debounce utility function at the top (after imports)
 const debounce = (func, wait) => {
   let timeout;
@@ -232,12 +241,19 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
   const applicantId = getPersistedValue('applicantId', propApplicantId);
   const curriculumId = getPersistedValue('curriculumId', propCurriculumId);
 
+=======
+const GradedAccreditation = ({ applicantId, curriculumId }) => {
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [advisers, setAdvisers] = useState([]);
   const [selectedAdviser, setSelectedAdviser] = useState(null);
   const [existingAssignment, setExistingAssignment] = useState(null);
   const [savingAdviser, setSavingAdviser] = useState(false);
+<<<<<<< HEAD
+=======
+  
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
 
   useEffect(() => {
     if (applicantId) {
@@ -301,7 +317,11 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
   // Handle adviser selection and save to backend
   const handleAdviserChange = async (event, newValue) => {
     setSelectedAdviser(newValue);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
     if (!newValue || !applicantId) return;
 
     setSavingAdviser(true);
@@ -357,7 +377,11 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
       await axios.delete(`${API_BASE}/assignments/${existingAssignment.assignmentId}`);
       console.log("Assignment deleted successfully");
       toast.success("Adviser assignment deleted successfully.");
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
       // Clear the selection
       setSelectedAdviser(null);
       setExistingAssignment(null);
@@ -387,10 +411,18 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
     }
   };
 
+<<<<<<< HEAD
   // Toggle lock/unlock status
   const handleToggleLock = async (recordId, currentStatus) => {
     const newStatus = currentStatus === "APPROVED" ? "PENDING" : "APPROVED";
 
+=======
+
+  // Toggle lock/unlock status
+  const handleToggleLock = async (recordId, currentStatus) => {
+    const newStatus = currentStatus === "APPROVED" ? "PENDING" : "APPROVED";
+    
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
     try {
       const params = new URLSearchParams();
       params.append('status', newStatus);
@@ -404,12 +436,20 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
           }
         }
       );
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
       const refreshResponse = await axios.get(
         `${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`
       );
       setRecords(refreshResponse.data);
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
       // Removed alert - just update silently
     } catch (err) {
       console.error("Failed to toggle lock:", err);
@@ -418,6 +458,7 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
     }
   };
 
+<<<<<<< HEAD
   // Create a save function for each field type
   const saveGrade = useCallback(async (recordId, semester, newGrade) => {
     try {
@@ -485,6 +526,9 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
       console.error("Failed to save basis:", err);
     }
   }, []);
+=======
+  
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
 
   return (
     <Box sx={{ p: 3 }}>
@@ -513,7 +557,11 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
                 </Box>
               </Stack>
             </Box>
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
             {/* Adviser Selection - Autocomplete */}
             <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 280 }}>
               <PersonIcon sx={{ color: maroon.main, fontSize: 20 }} />
@@ -521,10 +569,17 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
                 options={advisers}
                 getOptionLabel={(option) => {
                   if (!option) return '';
+<<<<<<< HEAD
                   const name = option.firstName ? `${option.firstName} ${option.lastName || ''}`.trim() :
                     option.name ? option.name :
                       option.email ? option.email.split('@')[0] :
                         'Unknown';
+=======
+                  const name = option.firstName ? `${option.firstName} ${option.lastName || ''}`.trim() : 
+                               option.name ? option.name :
+                               option.email ? option.email.split('@')[0] :
+                               'Unknown';
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                   return name;
                 }}
                 isOptionEqualToValue={(option, value) => option?.evaluatorId === value?.evaluatorId}
@@ -573,7 +628,11 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
                 }}
                 noOptionsText="No evaluators found"
               />
+<<<<<<< HEAD
 
+=======
+              
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
               {/* Delete/Clear Assignment Button */}
               {selectedAdviser && existingAssignment && (
                 <Tooltip title="Delete adviser assignment">
@@ -596,7 +655,11 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
           </Stack>
         </CardContent>
       </InfoCard>
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
       {loading ? (
         <Box sx={{ textAlign: "center", py: 6 }}>
           <CircularProgress />
@@ -642,7 +705,11 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
                     <TableBody>
                       {records[semester].map((rec) => {
                         const isLocked = rec.status === "APPROVED";
+<<<<<<< HEAD
 
+=======
+                        
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                         return (
                           <StyledTableRow key={rec.id}>
                             <StyledTableCell>
@@ -655,6 +722,7 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
                                 </Typography>
                               </Box>
                             </StyledTableCell>
+<<<<<<< HEAD
 
                             {/* Grade Cell - Using EditableTextField */}
                             <StyledTableCell>
@@ -668,6 +736,46 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
                               ) : (
                                 <Typography
                                   variant="body2"
+=======
+                            
+                            {/* Grade Cell */}
+                            <StyledTableCell>
+                              {!isLocked ? (
+                                <TextField
+                                  size="small"
+                                  value={rec.grade || ""}
+                                  onChange={(e) => {
+                                    // Auto-save on change
+                                    const newGrade = e.target.value;
+                                    const params = new URLSearchParams();
+                                    if (newGrade) params.append('grade', newGrade);
+                                    
+                                    axios.put(
+                                      `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
+                                      null,
+                                      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+                                    ).then(() => {
+                                      // Update local state
+                                      setRecords(prev => ({
+                                        ...prev,
+                                        [semester]: prev[semester].map(r => 
+                                          r.id === rec.id ? { ...r, grade: newGrade } : r
+                                        )
+                                      }));
+                                    });
+                                  }}
+                                  fullWidth
+                                  placeholder="Enter grade"
+                                  sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                      borderRadius: 1,
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <Typography 
+                                  variant="body2" 
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                                   fontWeight={rec.grade ? 600 : 400}
                                   color={rec.grade ? 'text.primary' : 'text.secondary'}
                                   sx={{
@@ -681,6 +789,7 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
                                 </Typography>
                               )}
                             </StyledTableCell>
+<<<<<<< HEAD
 
                             {/* Process of Accreditation Cell - Using EditableTextField */}
                             <StyledTableCell>
@@ -694,6 +803,47 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
                                 />
                               ) : (
                                 <Typography
+=======
+                            
+                            {/* Process of Accreditation Cell */}
+                            <StyledTableCell>
+                              {!isLocked ? (
+                                <TextField
+                                  size="small"
+                                  value={rec.processOfAccreditation || ""}
+                                  onChange={(e) => {
+                                    // Auto-save on change
+                                    const newProcess = e.target.value;
+                                    const params = new URLSearchParams();
+                                    if (newProcess) params.append('processOfAccreditation', newProcess);
+                                    
+                                    axios.put(
+                                      `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
+                                      null,
+                                      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+                                    ).then(() => {
+                                      // Update local state
+                                      setRecords(prev => ({
+                                        ...prev,
+                                        [semester]: prev[semester].map(r => 
+                                          r.id === rec.id ? { ...r, processOfAccreditation: newProcess } : r
+                                        )
+                                      }));
+                                    });
+                                  }}
+                                  fullWidth
+                                  multiline
+                                  rows={2}
+                                  placeholder="Enter process"
+                                  sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                      borderRadius: 1,
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <Typography 
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                                   variant="body2"
                                   color={rec.processOfAccreditation ? 'text.primary' : 'text.secondary'}
                                   sx={{
@@ -710,6 +860,7 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
                                 </Typography>
                               )}
                             </StyledTableCell>
+<<<<<<< HEAD
 
                             {/* Substantive Basis Cell - Using EditableTextField */}
                             <StyledTableCell>
@@ -723,6 +874,47 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
                                 />
                               ) : (
                                 <Typography
+=======
+                            
+                            {/* Substantive Basis Cell */}
+                            <StyledTableCell>
+                              {!isLocked ? (
+                                <TextField
+                                  size="small"
+                                  value={rec.substantiveBasis || ""}
+                                  onChange={(e) => {
+                                    // Auto-save on change
+                                    const newBasis = e.target.value;
+                                    const params = new URLSearchParams();
+                                    if (newBasis) params.append('substantiveBasis', newBasis);
+                                    
+                                    axios.put(
+                                      `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
+                                      null,
+                                      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+                                    ).then(() => {
+                                      // Update local state
+                                      setRecords(prev => ({
+                                        ...prev,
+                                        [semester]: prev[semester].map(r => 
+                                          r.id === rec.id ? { ...r, substantiveBasis: newBasis } : r
+                                        )
+                                      }));
+                                    });
+                                  }}
+                                  fullWidth
+                                  multiline
+                                  rows={2}
+                                  placeholder="Enter basis"
+                                  sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                      borderRadius: 1,
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <Typography 
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                                   variant="body2"
                                   color={rec.substantiveBasis ? 'text.primary' : 'text.secondary'}
                                   sx={{
@@ -739,7 +931,11 @@ const GradedAccreditation = ({ applicantId: propApplicantId, curriculumId: propC
                                 </Typography>
                               )}
                             </StyledTableCell>
+<<<<<<< HEAD
 
+=======
+                            
+>>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                             {/* Actions Cell */}
                             <StyledTableCell align="center">
                               <Tooltip title={isLocked ? "Unlock Record" : "Lock Record"}>
