@@ -30,18 +30,14 @@ import {
   Avatar,
   Grid,
   Grow,
-  Tooltip,
   Fade,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DownloadIcon from "@mui/icons-material/Download";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PersonIcon from '@mui/icons-material/Person';
 import SendIcon from '@mui/icons-material/Send';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import EmailIcon from '@mui/icons-material/Email';
 import SchoolIcon from '@mui/icons-material/School';
 import HomeIcon from '@mui/icons-material/Home';
@@ -154,7 +150,6 @@ const ViewApplicantPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-<<<<<<< HEAD
   
   // Helper to get state from location or sessionStorage
   const getPersistedState = (key) => {
@@ -183,26 +178,10 @@ const ViewApplicantPage = () => {
     }
   }, [applicantId, navigate]);
 
-=======
-  // Get all necessary IDs from location state
-  const applicantId = location.state?.applicantId;
-  const evaluationId = location.state?.evaluationId;
-  const specificCourseId = location.state?.courseId;
-  const evaluatorId = localStorage.getItem("evaluatorId");
-
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
   const [applicant, setApplicant] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
-<<<<<<< HEAD
-=======
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [previewType, setPreviewType] = useState("");
-  const [previewFileName, setPreviewFileName] = useState("");
-  const [zoom, setZoom] = useState(1);
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
   const [coursePreferences, setCoursePreferences] = useState([]);
   
   // New evaluation states
@@ -215,12 +194,9 @@ const ViewApplicantPage = () => {
   const [adminInfo, setAdminInfo] = useState(null);
   const [forwardedAt, setForwardedAt] = useState(null);
 
-<<<<<<< HEAD
   // Add new state for confirmation dialog
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
-=======
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
   useEffect(() => {
     if (!applicantId) {
       console.error("No applicantId provided in location state");
@@ -430,7 +406,6 @@ const ViewApplicantPage = () => {
     }
   };
 
-<<<<<<< HEAD
   // Modified submit handler - check if status is final before submitting
   const handleSubmitClick = () => {
     if (!selectedCourse || !evaluationStatus) {
@@ -454,10 +429,6 @@ const ViewApplicantPage = () => {
   const handleSubmitEvaluation = async () => {
     setConfirmDialogOpen(false); // Close dialog if open
     
-=======
-  // Submit evaluation
-  const handleSubmitEvaluation = async () => {
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
     if (!selectedCourse || !evaluationStatus) {
       console.error("Missing required fields:", { 
         courseSelected: Boolean(selectedCourse), 
@@ -550,22 +521,10 @@ const ViewApplicantPage = () => {
     return formats[priority] || priority;
   };
 
-<<<<<<< HEAD
   // Helper to preview document - NOW OPENS IN NEW TAB
   const handlePreview = (doc) => {
     const url = `https://eteeap-foth.onrender.com/api/documents/preview/${doc.documentId}`;
     window.open(url, '_blank', 'noopener,noreferrer');
-=======
-  // Helper to preview document in modal
-  const handlePreview = (doc) => {
-    const url = `https://eteeap-foth.onrender.com/api/documents/preview/${doc.documentId}`;
-    setPreviewUrl(url);
-    const fileName = doc.fileName || doc.name || "";
-    setPreviewType(typeof fileName === "string" ? fileName.toLowerCase() : "");
-    setPreviewFileName(fileName);
-    setZoom(1); // Reset zoom on new preview
-    setPreviewOpen(true);
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
   };
 
   // Helper to download document
@@ -623,15 +582,12 @@ const ViewApplicantPage = () => {
     return statusMap[status] || "default";
   };
 
-<<<<<<< HEAD
   // Add helper function to check if evaluation is locked (after existing helper functions)
   const isEvaluationLocked = () => {
     const currentStatus = existingEvaluation?.evaluationStatus || currentEvaluation?.evaluationStatus;
     return currentStatus === "APPROVED" || currentStatus === "REJECTED";
   };
 
-=======
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
   return (
     <ThemeProvider theme={customTheme}>
       <ListLayout>
@@ -689,11 +645,7 @@ const ViewApplicantPage = () => {
           </Fade>
         )}
         
-<<<<<<< HEAD
         <Grid container spacing={2} sx={{ alignItems: 'flex-start' }}>
-=======
-        <Grid container spacing={3}>
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
           {/* Applicant Profile Section */}
           <Grid item xs={12} md={3}>
             <Grow in={true} timeout={600}>
@@ -766,13 +718,8 @@ const ViewApplicantPage = () => {
             </Grow>
           </Grid>
 
-<<<<<<< HEAD
           {/* Middle Section - Course & Documents */}
           <Grid item xs={12} md={5}>
-=======
-          {/* Right Section */}
-          <Grid item xs={12} md={9}>
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
             <Stack spacing={3} height="100%">
               {/* Applied Course */}
               <Grow in={true} timeout={700}>
@@ -826,12 +773,6 @@ const ViewApplicantPage = () => {
                     bgcolor: alpha(theme.palette.background.default, 0.5),
                     borderRadius: 2,
                     border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-<<<<<<< HEAD
-=======
-                    maxHeight: 'auto',
-                    overflow: 'visible',
-                    mx: -2
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                   }}>
                     <List sx={{ p: 0 }}>
                       {DOCUMENT_TYPE_LABELS.map((docType, index) => {
@@ -839,70 +780,15 @@ const ViewApplicantPage = () => {
                         return (
                           <ListItem key={docType}
                             sx={{
-<<<<<<< HEAD
                               py: 2,
                               px: 2,
-=======
-                              py: 3,
-                              px: 3,
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                               borderBottom: index < DOCUMENT_TYPE_LABELS.length - 1 ? `1px solid ${alpha(theme.palette.divider, 0.3)}` : 'none',
                               transition: 'background-color 0.2s ease',
                               '&:hover': {
                                 backgroundColor: alpha(gold.light, 0.15),
                               },
-<<<<<<< HEAD
                               flexWrap: 'wrap',
                             }}
-=======
-                            }}
-                            secondaryAction={
-                              doc ? (
-                                <Stack direction="row" spacing={1.5}>
-                                  <Tooltip title="Preview Document">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="preview"
-                                      onClick={() => handlePreview(doc)}
-                                      size="small"
-                                      sx={{ 
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        '&:hover': {
-                                          backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                                        }
-                                      }}
-                                    >
-                                      <VisibilityIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Download Document">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="download"
-                                      onClick={() => handleDownload(doc.documentId)}
-                                      size="small"
-                                      sx={{ 
-                                        backgroundColor: alpha(theme.palette.grey[700], 0.1),
-                                        color: theme.palette.grey[700],
-                                        '&:hover': {
-                                          backgroundColor: alpha(theme.palette.grey[700], 0.2),
-                                        }
-                                      }}
-                                    >
-                                      <DownloadIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Stack>
-                              ) : (
-                                <StyledChip 
-                                  label="Not Provided" 
-                                  size="small" 
-                                  variant="outlined"
-                                  color="default"
-                                />
-                              )
-                            }
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                           >
                             <ListItemText
                               primary={formatDocumentType(docType)}
@@ -911,7 +797,6 @@ const ViewApplicantPage = () => {
                                 fontWeight: doc ? 600 : 400,
                                 variant: 'body2',
                                 color: doc ? 'text.primary' : 'text.secondary',
-<<<<<<< HEAD
                               }}
                               secondaryTypographyProps={{
                                 variant: 'caption',
@@ -961,21 +846,6 @@ const ViewApplicantPage = () => {
                                 color="default"
                               />
                             )}
-=======
-                                sx: { mb: doc ? 0.5 : 0 }
-                              }}
-                              secondaryTypographyProps={{
-                                variant: 'caption',
-                                sx: { 
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 1,
-                                  WebkitBoxOrient: 'vertical',
-                                }
-                              }}
-                            />
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                           </ListItem>
                         );
                       })}
@@ -986,7 +856,6 @@ const ViewApplicantPage = () => {
             </Stack>
           </Grid>
 
-<<<<<<< HEAD
           {/* Right Section - Evaluation Form (Vertical) */}
           <Grid item xs={12} md={4}>
             <Grow in={true} timeout={900}>
@@ -1002,49 +871,22 @@ const ViewApplicantPage = () => {
                     Evaluation #{currentEvaluation.evaluationId}
                   </Typography>
                 )}
-=======
-          {/* Evaluation Form Section */}
-          <Grid item xs={12}>
-            <Grow in={true} timeout={900}>
-              <AnimatedPaper elevation={3} sx={{ p: 3 }}>
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
-                  <AssignmentIcon sx={{ color: maroon.main }} />
-                  <Typography variant="h6" fontWeight="bold" color={maroon.main}>
-                    Evaluation Form {currentEvaluation && `- Evaluation #${currentEvaluation.evaluationId}`}
-                  </Typography>
-                </Stack>
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                 <Divider sx={{ mb: 3, borderColor: alpha(gold.main, 0.5) }} />
 
                 {applicant && !checkForwardStatus() && (
                   <Alert 
                     severity="info" 
                     variant="outlined"
-<<<<<<< HEAD
                     sx={{ mb: 3, borderWidth: 2, fontSize: '0.75rem' }}
                   >
                     This application has not been forwarded for evaluation yet.
-=======
-                    sx={{ mb: 3, borderWidth: 2 }}
-                    action={
-                      <Button color="primary" size="small" variant="outlined" onClick={() => navigate("/evaluator/applicants")}>
-                        View Other Applications
-                      </Button>
-                    }
-                  >
-                    This application has not yet been forwarded for evaluation by an administrator. You cannot evaluate it until it's forwarded to you.
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                   </Alert>
                 )}
 
                 {submissionMessage.text && (
                   <Alert 
                     severity={submissionMessage.type} 
-<<<<<<< HEAD
                     sx={{ mb: 2, borderWidth: 2 }}
-=======
-                    sx={{ mb: 3, borderWidth: 2 }}
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
                     variant="outlined"
                     onClose={() => setSubmissionMessage({ type: "", text: "" })}
                   >
@@ -1052,7 +894,6 @@ const ViewApplicantPage = () => {
                   </Alert>
                 )}
 
-<<<<<<< HEAD
                 <Stack spacing={2.5}>
                   {/* Course Selection */}
                   <FormControl fullWidth size="small">
@@ -1169,120 +1010,10 @@ const ViewApplicantPage = () => {
                     </Box>
                   )}
                 </Stack>
-=======
-                <Grid container spacing={3} sx={{ mb: 2 }}>
-                  {/* Course Selection */}
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>Select Course to Evaluate</InputLabel>
-                      <Select
-                        value={selectedCourse?.courseId || ""}
-                        onChange={handleCourseChange}
-                        label="Select Course to Evaluate"
-                        disabled={Boolean(currentEvaluation || evaluationId)}
-                      >
-                        {getAvailableCoursesForEvaluation().map((course) => (
-                          <MenuItem key={course.courseId} value={course.courseId}>
-                            {course.courseName}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-
-                  {/* Evaluation Status */}
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>Evaluation Status</InputLabel>
-                      <Select
-                        value={evaluationStatus}
-                        onChange={(e) => setEvaluationStatus(e.target.value)}
-                        label="Evaluation Status"
-                        disabled={!selectedCourse || submitting || !checkForwardStatus()}
-                      >
-                        <MenuItem value="APPROVED">
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <CheckCircleIcon color="success" fontSize="small" />
-                            <span>Approved</span>
-                          </Stack>
-                        </MenuItem>
-                        <MenuItem value="REJECTED">Rejected</MenuItem>
-                        <MenuItem value="PENDING">Pending</MenuItem>
-                        <MenuItem value="UNDER_REVIEW">Under Review</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-
-                  {/* Remarks */}
-                  <Grid item xs={12}>
-                    <TextField
-                      label="Evaluation Remarks"
-                      multiline
-                      rows={4}
-                      value={remarks}
-                      onChange={(e) => setRemarks(e.target.value)}
-                      fullWidth
-                      variant="outlined"
-                      disabled={!selectedCourse || submitting || !checkForwardStatus()}
-                      placeholder="Provide detailed comments about your evaluation decision..."
-                    />
-                  </Grid>
-                </Grid>
-
-                {/* Submit Button & Evaluation Status */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  mt: 4,
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  gap: 2
-                }}>
-                  {/* Evaluation History */}
-                  {existingEvaluation && (
-                    <Box sx={{ 
-                      bgcolor: alpha(theme.palette.background.default, 0.5),
-                      p: 2,
-                      borderRadius: 2,
-                      border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
-                    }}>
-                      <Typography variant="subtitle2" fontWeight="medium" gutterBottom color="text.secondary">
-                        Previous Evaluation
-                      </Typography>
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        <StyledChip
-                          label={existingEvaluation.evaluationStatus || "UNKNOWN"} 
-                          color={getStatusChipColor(existingEvaluation.evaluationStatus)}
-                          variant="outlined"
-                        />
-                        <Stack direction="row" spacing={0.5} alignItems="center">
-                          <AccessTimeIcon fontSize="small" color="action" />
-                          <Typography variant="body2" color="text.secondary">
-                            {existingEvaluation.dateEvaluated ? 
-                              new Date(existingEvaluation.dateEvaluated).toLocaleString() : 
-                              "-"}
-                          </Typography>
-                        </Stack>
-                      </Stack>
-                    </Box>
-                  )}
-                  
-                  <ActionButton
-                    variant="contained"
-                    color="primary"
-                    onClick={handleSubmitEvaluation}
-                    disabled={!selectedCourse || !evaluationStatus || submitting || !checkForwardStatus()}
-                    sx={{ borderRadius: "24px", px: 4, py: 1 }}
-                    endIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
-                  >
-                    {submitting ? "Submitting..." : existingEvaluation || currentEvaluation ? "Update Evaluation" : "Submit Evaluation"}
-                  </ActionButton>
-                </Box>
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
               </AnimatedPaper>
             </Grow>
           </Grid>
         </Grid>
-<<<<<<< HEAD
 
         {/* Confirmation Dialog for Final Status */}
         <Dialog
@@ -1336,162 +1067,13 @@ const ViewApplicantPage = () => {
             >
               Yes, Submit Final Decision
             </Button>
-=======
-        
-        {/* Preview Modal */}
-        <Dialog
-          open={previewOpen}
-          onClose={() => setPreviewOpen(false)}
-          fullScreen
-          PaperProps={{
-            sx: {
-              borderRadius: 0,
-              overflow: 'hidden',
-            }
-          }}
-          TransitionComponent={Grow}
-          transitionDuration={300}
-        >
-          <DialogTitle sx={{ 
-            bgcolor: maroon.main,
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2
-          }}>
-            <DescriptionIcon />
-            <Typography variant="h6">
-              {previewFileName}
-            </Typography>
-          </DialogTitle>
-          <DialogContent
-            dividers
-            sx={{
-              minHeight: "100vh",
-              maxHeight: "100vh",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              bgcolor: "#f5f5f5",
-              p: 0,
-            }}
-          >
-            <Stack direction="row" spacing={1} sx={{ mb: 2, mt: 2 }}>
-              <Button 
-                variant="outlined"
-                size="small"
-                onClick={() => setZoom((z) => Math.max(z - 0.2, 0.2))}
-                disabled={zoom <= 0.2}
-                startIcon={<ZoomOutIcon />}
-              >
-                Zoom Out
-              </Button>
-              <Typography variant="body2" sx={{ 
-                minWidth: 60, 
-                textAlign: "center", 
-                bgcolor: alpha(theme.palette.background.paper, 0.7),
-                borderRadius: 1,
-                p: 0.5,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: `1px solid ${theme.palette.divider}`
-              }}>
-                {Math.round(zoom * 100)}%
-              </Typography>
-              <Button
-                variant="outlined" 
-                size="small"
-                onClick={() => setZoom((z) => Math.min(z + 0.2, 5))}
-                disabled={zoom >= 5}
-                endIcon={<ZoomInIcon />}
-              >
-                Zoom In
-              </Button>
-            </Stack>
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                flex: 1,
-                overflow: "auto",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "flex-start",
-                bgcolor: "#e0e0e0",
-              }}
-            >
-              {previewType.endsWith(".pdf") ? (
-                <Box sx={{ width: "100%", height: "100%", overflow: "auto" }}>
-                  <iframe
-                    src={previewUrl}
-                    title="PDF Preview"
-                    width={Math.round(window.innerWidth * 0.9 * zoom)}
-                    height={Math.round(window.innerHeight * 0.8 * zoom)}
-                    style={{
-                      border: "none",
-                      transform: `scale(${zoom})`,
-                      transformOrigin: "top left",
-                      display: "block",
-                    }}
-                  />
-                </Box>
-              ) : previewType.endsWith(".jpg") ||
-                previewType.endsWith(".jpeg") ||
-                previewType.endsWith(".png") ||
-                previewType.endsWith(".gif") ? (
-                <Box
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    overflow: "auto",
-                    textAlign: "center",
-                    p: 2,
-                  }}
-                >
-                  <img
-                    src={previewUrl}
-                    alt="Document Preview"
-                    style={{
-                      maxWidth: `${window.innerWidth * 0.9 * zoom}px`,
-                      maxHeight: `${window.innerHeight * 0.8 * zoom}px`,
-                      width: "auto",
-                      height: "auto",
-                      display: "block",
-                      margin: "0 auto",
-                      transform: `scale(${zoom})`,
-                      transformOrigin: "top left",
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    }}
-                  />
-                </Box>
-              ) : (
-                <Box sx={{ p: 4, textAlign: 'center' }}>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    Preview not available for this file type
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<DownloadIcon />}
-                    onClick={() => handleDownload(previewUrl.split('/').pop())}
-                  >
-                    Download File Instead
-                  </Button>
-                </Box>
-              )}
-            </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 2.5, bgcolor: alpha(gold.light, 0.2) }}>
-            <ActionButton onClick={() => setPreviewOpen(false)}>
-              Close Preview
-            </ActionButton>
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
           </DialogActions>
         </Dialog>
       </ListLayout>
     </ThemeProvider>
   );
 };
+
 
 // Enhanced DetailRow Component with icons
 const DetailRowStyled = ({ icon, label, value }) => (
@@ -1517,8 +1099,4 @@ const DetailRowStyled = ({ icon, label, value }) => (
   </Stack>
 );
 
-<<<<<<< HEAD
 export default ViewApplicantPage;
-=======
-export default ViewApplicantPage;
->>>>>>> 19ce17063712c10e533caa43e44952503871c35f
