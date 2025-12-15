@@ -27,6 +27,11 @@ const Notifications = () => {
   const evaluatorId = localStorage.getItem("evaluatorId");
   const navigate = useNavigate();
 
+  // Log evaluatorId for debugging
+  useEffect(() => {
+    console.log("Evaluator ID used for notifications:", evaluatorId);
+  }, [evaluatorId]);
+
   const fetchNotifications = async () => {
     setLoading(true);
     try {

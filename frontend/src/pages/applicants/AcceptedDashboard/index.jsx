@@ -171,9 +171,36 @@ const AcceptedDashboard = () => {
         const subjectRecordsResponse = await axios.get(
           `https://eteeap-foth.onrender.com/api/applicant-subject-records/applicant/${applicantId}/organized-clean`
         );
-        
-        // Calculate curriculum summary from the fetched data
-        const allRecords = Object.values(subjectRecordsResponse.data).flat();
+
+        // Sort and deduplicate subjects in each semester
+        const processSemesterSubjects = (data) => {
+          if (!data || typeof data !== 'object') return data;
+          const processed = {};
+          Object.keys(data).forEach((semester) => {
+            // Sort by subjectCode (or subjectId as fallback)
+            let arr = [...data[semester]].sort((a, b) => {
+              const codeA = a.subject?.subjectCode || '';
+              const codeB = b.subject?.subjectCode || '';
+              if (codeA && codeB) return codeA.localeCompare(codeB);
+              return (a.subject?.subjectId || a.id || 0) - (b.subject?.subjectId || b.id || 0);
+            });
+            // Deduplicate by subjectId (or subjectCode as fallback)
+            const seen = new Set();
+            arr = arr.filter((item) => {
+              const key = item.subject?.subjectId || item.subject?.subjectCode || item.id;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+            processed[semester] = arr;
+          });
+          return processed;
+        };
+
+        const processedSubjectRecords = processSemesterSubjects(subjectRecordsResponse.data);
+
+        // Calculate curriculum summary from the processed data
+        const allRecords = Object.values(processedSubjectRecords).flat();
         const summaryResponse = {
           data: {
             totalSubjects: allRecords.length,
@@ -182,12 +209,12 @@ const AcceptedDashboard = () => {
             rejectedCount: allRecords.filter(r => r.status === 'REJECTED').length
           }
         };
-        
+
         setApplicantData(applicantResponse.data);
         setAcceptanceData(acceptedResponse.data);
-        setSubjectRecords(subjectRecordsResponse.data);
+        setSubjectRecords(processedSubjectRecords);
         setCurriculumSummary(summaryResponse.data);
-        
+
         handleSuccess("Welcome to your acceptance dashboard!");
         
       } catch (error) {
@@ -573,49 +600,59 @@ const AcceptedDashboard = () => {
         {/* Right column - Acceptance Details */}
         <Grid item xs={12} md={4}>
           <Stack spacing={3}>
-            {/* Acceptance Details */}
+            {/* Acceptance Details - Improved UI, no course code */}
             <InfoCard 
-              title="Acceptance Details" 
-              icon={<AccountBalanceIcon />}
+              title={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AccountBalanceIcon sx={{ color: '#2e7d32', fontSize: 28 }} />
+                  <span>Acceptance Details</span>
+                </Box>
+              }
               accentColor="#2e7d32"
             >
-              <Stack spacing={2}>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Status</Typography>
-                  <Chip 
-                    label={acceptanceData?.status || "ACCEPTED"} 
-                    color="success" 
-                    variant="outlined" 
-                    sx={{ fontWeight: 600, mt: 0.5 }}
-                  />
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Acceptance Date</Typography>
-                  <Typography variant="body1" fontWeight={500}>
-                    {formatDate(acceptanceData?.acceptanceDate)}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Program</Typography>
-                  <Typography variant="body1" fontWeight={500}>
-                    {acceptanceData?.finalCourse?.courseName || 'N/A'}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Course Code</Typography>
-                  <Typography variant="body1" fontWeight={500}>
-                    {acceptanceData?.finalCourse?.courseCode || 'N/A'}
-                  </Typography>
-                </Box>
-                {acceptanceData?.remarks && (
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  background: 'linear-gradient(120deg, #e8f5e9 0%, #f1f8e9 100%)',
+                  boxShadow: '0 2px 8px rgba(46,125,50,0.07)',
+                  mb: 1
+                }}
+              >
+                <Stack spacing={2}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip 
+                      label={acceptanceData?.status || "ACCEPTED"} 
+                      color="success" 
+                      variant="filled" 
+                      sx={{ fontWeight: 700, fontSize: 16, px: 2, py: 1, letterSpacing: 1, textTransform: 'capitalize' }}
+                    />
+                  </Box>
                   <Box>
-                    <Typography variant="subtitle2" color="text.secondary">Remarks</Typography>
-                    <Typography variant="body2" sx={{ mt: 0.5, p: 1, bgcolor: alpha('#f5f5f5', 0.7), borderRadius: 1 }}>
-                      {acceptanceData.remarks}
+                    <Typography variant="subtitle2" color="text.secondary">Acceptance Date</Typography>
+                    <Typography variant="body1" fontWeight={600} color="#2e7d32">
+                      {formatDate(acceptanceData?.acceptanceDate)}
                     </Typography>
                   </Box>
-                )}
-              </Stack>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Program</Typography>
+                    <Typography variant="h6" fontWeight={700} color="#388e3c" sx={{ letterSpacing: 0.5 }}>
+                      {acceptanceData?.finalCourse?.courseName || 'N/A'}
+                    </Typography>
+                  </Box>
+                  {acceptanceData?.remarks && (
+                    <Box sx={{ mt: 1 }}>
+                      <Typography variant="subtitle2" color="text.secondary">Remarks</Typography>
+                      <Paper elevation={0} sx={{ mt: 0.5, p: 2, bgcolor: alpha('#c8e6c9', 0.5), borderLeft: '4px solid #2e7d32', borderRadius: 2 }}>
+                        <Typography variant="body2" color="#2e7d32">
+                          {acceptanceData.remarks}
+                        </Typography>
+                      </Paper>
+                    </Box>
+                  )}
+                </Stack>
+              </Paper>
             </InfoCard>
 
             {/* Pending Subjects Alert */}

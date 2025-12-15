@@ -159,6 +159,32 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
     return () => flushTimers();
   }, []);
 
+  // Helper to sort and deduplicate subjects in each semester
+  const sortSemesterSubjects = (data) => {
+    if (!data || typeof data !== 'object') return data;
+    const sorted = {};
+    Object.keys(data).forEach((semester) => {
+      // Sort first
+      let arr = [...data[semester]].sort((a, b) => {
+        const codeA = a.subject?.subjectCode || '';
+        const codeB = b.subject?.subjectCode || '';
+        if (codeA && codeB) return codeA.localeCompare(codeB);
+        // fallback to id if no code
+        return (a.subject?.subjectId || a.id || 0) - (b.subject?.subjectId || b.id || 0);
+      });
+      // Deduplicate by subjectId (or subjectCode as fallback)
+      const seen = new Set();
+      arr = arr.filter((item) => {
+        const key = item.subject?.subjectId || item.subject?.subjectCode || item.id;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      sorted[semester] = arr;
+    });
+    return sorted;
+  };
+
   useEffect(() => {
     if (!isOpen) {
       flushTimers();
@@ -168,7 +194,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
     axios
       .get(`${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`)
       .then((res) => {
-        setRecords(res.data);
+        setRecords(sortSemesterSubjects(res.data));
       })
       .catch(() => setRecords([]))
       .finally(() => setLoading(false));
@@ -312,7 +338,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
       const refreshed = await axios.get(
         `${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`
       );
-      setRecords(refreshed.data);
+      setRecords(sortSemesterSubjects(refreshed.data));
     } catch (err) {
       console.error("Failed to toggle lock:", err);
       toast.error("Failed to toggle lock status.");
