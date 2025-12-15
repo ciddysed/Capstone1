@@ -420,6 +420,26 @@ const ViewApplicantPage = () => {
     }
   };
 
+  // Helper: Call update-status-by-applicant-application-course endpoint in background
+  const updateStatusByApplicantApplicationAndCourse = async ({
+    applicantId,
+    applicationId,
+    courseId,
+    status,
+  }) => {
+    if (!applicantId || !applicationId || !courseId || !status) return;
+    try {
+      // Fire and forget, no UI feedback
+      fetch(
+        `https://eteeap-foth.onrender.com/api/evaluations/update-status-by-applicant-application-course?applicantId=${applicantId}&applicationId=${applicationId}&courseId=${courseId}&status=${status}`,
+        { method: "PUT" }
+      );
+    } catch (e) {
+      // Silently ignore errors
+      // console.error("Background status update failed", e);
+    }
+  };
+
   // Submit evaluation
   const handleSubmitEvaluation = async () => {
     setConfirmDialogOpen(false); // Close dialog if open
@@ -479,6 +499,21 @@ const ViewApplicantPage = () => {
         setExistingEvaluation(data);
         setCurrentEvaluation(data);
         
+        // --- Call background status update endpoint here ---
+        // Try to get applicationId from applicant object if available
+        const applicationId =
+          applicant?.applicationId ||
+          applicant?.currentApplicationId ||
+          data.applicationId ||
+          data.application?.applicationId;
+        updateStatusByApplicantApplicationAndCourse({
+          applicantId: Number(applicantId),
+          applicationId: Number(applicationId),
+          courseId: selectedCourse.courseId,
+          status: evaluationStatus,
+        });
+        // ---------------------------------------------------
+
         setSubmissionMessage({ 
           type: "success", 
           text: `Evaluation ${(existingEvaluation || currentEvaluation) ? "updated" : "submitted"} successfully` 
