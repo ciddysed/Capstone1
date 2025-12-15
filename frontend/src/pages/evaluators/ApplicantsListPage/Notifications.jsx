@@ -31,7 +31,7 @@ const Notifications = () => {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:8080/api/evaluations/notifications/evaluator/${evaluatorId}`
+        `https://eteeap-foth.onrender.com/api/evaluations/notifications/evaluator/${evaluatorId}`
       );
       if (!res.ok) throw new Error("Failed to fetch notifications");
       const data = await res.json();
@@ -45,7 +45,7 @@ const Notifications = () => {
   const markAsRead = async (notificationId) => {
     try {
       await fetch(
-        `http://localhost:8080/api/evaluations/notifications/${notificationId}/mark-as-read`,
+        `https://eteeap-foth.onrender.com/api/evaluations/notifications/${notificationId}/mark-as-read`,
         { method: "PUT" }
       );
       setNotifications((prev) =>
