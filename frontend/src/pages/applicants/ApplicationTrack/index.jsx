@@ -116,7 +116,12 @@ const ApplicationTracking = () => {
     instance.interceptors.response.use(
       (response) => response,
       (error) => {
-        
+        console.error("API Error:", error);
+        const errorMessage =
+          error.response?.data?.message ||
+          "An error occurred while communicating with the server";
+        handleError(errorMessage);
+        return Promise.reject(error);
       }
     );
 
