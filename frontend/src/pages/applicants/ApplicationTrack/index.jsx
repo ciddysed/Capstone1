@@ -117,10 +117,11 @@ const ApplicationTracking = () => {
       (response) => response,
       (error) => {
         console.error("API Error:", error);
-        const errorMessage =
-          error.response?.data?.message ||
-          
-        handleError(errorMessage);
+        // Remove usage of errorMessage before definition
+        // const errorMessage =
+        //   error.response?.data?.message ||
+        // handleError(errorMessage);
+        handleError(error.response?.data?.message);
         return Promise.reject(error);
       }
     );
