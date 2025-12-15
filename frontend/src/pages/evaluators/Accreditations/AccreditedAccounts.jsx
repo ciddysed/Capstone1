@@ -19,10 +19,10 @@ import {
   Grow,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import GradedAccreditation from "./GradedAccreditation";
+import PropTypes from 'prop-types';
 
 const API_ACCEPTED = "https://eteeap-foth.onrender.com/api/accepted-applicants";
 const API_SUBJECT_RECORDS = "https://eteeap-foth.onrender.com/api/applicant-subject-records";
@@ -107,16 +107,20 @@ const AccreditedAccounts = ({ onNavigateToGraded }) => {
         // Get applicantIds
         const applicantIds = data.map(item => item.applicant?.applicantId).filter(Boolean);
         // Fetch subject records for each applicant
-        const promises = applicantIds.map(id =>
-          fetch(`${API_SUBJECT_RECORDS}/applicant/${id}`)
-            .then(res => res.ok ? res.json() : [])
-            .catch(() => [])
-        );
-        const results = await Promise.all(promises);
+        const fetchSubjectRecords = async (id) => {
+          try {
+            const res = await fetch(`${API_SUBJECT_RECORDS}/applicant/${id}`);
+            if (res.ok) {
+              return await res.json();
+            }
+            return [];
+          } catch {
+            return [];
+          }
+        };
+        const results = await Promise.all(applicantIds.map(fetchSubjectRecords));
         // Only include applicants who have subject records
-        const accredited = data.filter((item, idx) =>
-          results[idx] && results[idx].length > 0
-        );
+        const accredited = data.filter((item, idx) => Array.isArray(results[idx]) && results[idx].length > 0);
         setAccreditedApplicants(accredited);
         setLoading(false);
       })
@@ -203,18 +207,22 @@ const AccreditedAccounts = ({ onNavigateToGraded }) => {
                           <Typography variant="body2">{app.finalCourse?.courseName}</Typography>
                         </StyledTableCell>
                         <StyledTableCell>
-                          <Chip
-                            label={app.status}
-                            color={
-                              app.status === "ACCEPTED"
-                                ? "success"
-                                : app.status === "ENROLLED"
-                                ? "info"
-                                : "error"
+                          {(() => {
+                            let chipColor = "error";
+                            if (app.status === "ACCEPTED") {
+                              chipColor = "success";
+                            } else if (app.status === "ENROLLED") {
+                              chipColor = "info";
                             }
-                            size="small"
-                            sx={{ height: 22, fontSize: 11 }}
-                          />
+                            return (
+                              <Chip
+                                label={app.status}
+                                color={chipColor}
+                                size="small"
+                                sx={{ height: 22, fontSize: 11 }}
+                              />
+                            );
+                          })()}
                         </StyledTableCell>
                         <StyledTableCell>
                           <Typography variant="body2">
@@ -262,6 +270,11 @@ const AccreditedAccounts = ({ onNavigateToGraded }) => {
       />
     </>
   );
+};
+
+
+AccreditedAccounts.propTypes = {
+  onNavigateToGraded: PropTypes.func,
 };
 
 export default AccreditedAccounts;

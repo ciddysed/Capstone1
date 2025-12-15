@@ -223,9 +223,6 @@ export default function ApplicationForm() {
     1: "FIRST",
     2: "SECOND",
     3: "THIRD",
-    "1": "FIRST",
-    "2": "SECOND",
-    "3": "THIRD",
     FIRST: "FIRST",
     SECOND: "SECOND",
     THIRD: "THIRD",
@@ -265,15 +262,11 @@ export default function ApplicationForm() {
   }
 
   const loadCachedPreferences = (appId) => {
-    try {
-      const raw = localStorage.getItem(prefCacheKey(appId))
-      if (!raw) return null
-      const parsed = JSON.parse(raw)
-      // ensure normalization
-      return (parsed || []).map(normalizePreference)
-    } catch (e) {
-      return null
-    }
+    const raw = localStorage.getItem(prefCacheKey(appId))
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    // ensure normalization
+    return (parsed || []).map(normalizePreference)
   }
   // --- end new helpers ---
 

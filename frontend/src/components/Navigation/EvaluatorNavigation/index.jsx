@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   Box,
   Typography,
-  TextField,
   AppBar,
   Toolbar,
   Divider,
@@ -10,19 +9,13 @@ import {
   ListItem,
   Button,
   Stack,
-  FormControl,
-  MenuItem,
-  Select,
-  InputLabel,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 import logo from "../../../assets/logo.png";
 import backgroundImage from "../../../assets/login-bg.png";
-import dayjs from "dayjs";
+
 import { useNavigate } from "react-router-dom";
 import Accreditations from "../../../pages/evaluators/Accreditations/Accreditations";
 import AccreditedAccounts from "../../../pages/evaluators/Accreditations/AccreditedAccounts";
-import NotificationCenter from "../../Notifications/NotificationCenter";
 import { handleLogout } from "../../../utils/logoutUtils";
 
 const EvaluatorNavigation = ({ children }) => {
@@ -75,7 +68,7 @@ const EvaluatorNavigation = ({ children }) => {
   };
 
   // Get evaluator ID from localStorage
-  const evaluatorId = localStorage.getItem("evaluatorId");
+  // const evaluatorId = localStorage.getItem("evaluatorId");
 
   return (
     <Box

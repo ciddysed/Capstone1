@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import PropTypes from 'prop-types';
 import {
   Box,
   Typography,
@@ -8,7 +9,6 @@ import {
   TableCell,
   TableBody,
   Chip,
-  Button,
   TextField,
   Stack,
   CircularProgress,
@@ -92,17 +92,6 @@ const InfoCard = styled(Card)(({ theme }) => ({
   borderTop: `3px solid ${maroon.main}`,
 }));
 
-const ActionButton = styled(Button)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius * 1.5,
-  textTransform: 'none',
-  fontWeight: 600,
-  boxShadow: 'none',
-  backgroundColor: maroon.main,
-  '&:hover': {
-    backgroundColor: maroon.dark,
-    boxShadow: '0 4px 12px rgba(106, 0, 0, 0.25)',
-  },
-}));
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   '&:before': {
@@ -304,21 +293,6 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
   };
 
   // Accreditation function (bulk create records from curriculum)
-  const handleCreateCurriculumRecord = async () => {
-    if (!applicantId || !curriculumId) return;
-    try {
-      await axios.post(
-        `${API_BASE}/applicants/${applicantId}/create-curriculum-record?curriculumId=${curriculumId}`
-      );
-      // Refresh records
-      axios
-        .get(`${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`)
-        .then((res) => setRecords(res.data));
-      toast.success("Curriculum records created successfully.");
-    } catch (err) {
-      toast.error("Failed to create curriculum records.");
-    }
-  };
 
 
   // Toggle lock/unlock status via PUT; unlocking sets status to PENDING, locking sets to APPROVED
@@ -709,6 +683,20 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
       </DialogContent>
     </Dialog>
   );
+};
+
+
+GradedAccreditation.propTypes = {
+  applicantId: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number
+  ]),
+  curriculumId: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number
+  ]),
+  onClose: PropTypes.func,
+  isOpen: PropTypes.bool,
 };
 
 export default GradedAccreditation;

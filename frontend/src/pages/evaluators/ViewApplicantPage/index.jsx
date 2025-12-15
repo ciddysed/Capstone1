@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import GradedAccreditation from "../Accreditations/GradedAccreditation";
 /* eslint-disable react-hooks/exhaustive-deps */
 import {
   Box,
@@ -143,7 +142,7 @@ const formatDocumentType = (type) => {
   if (!type) return "-";
   // Convert enum to readable label
   return type
-    .replace(/_/g, " ")
+    .replaceAll("_", " ")
     .replace(/\b\w/g, (l) => l.toUpperCase());
 };
 
@@ -197,20 +196,6 @@ const ViewApplicantPage = () => {
 
   // Add new state for confirmation dialog
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-
-  // State for Graded Accreditation Modal
-  const [gradedModalOpen, setGradedModalOpen] = useState(false);
-  const [gradedModalData, setGradedModalData] = useState({ applicantId: null, curriculumId: null });
-
-  // Handler to open Graded Accreditation modal
-  const handleOpenGradedModal = (applicantId, curriculumId) => {
-    setGradedModalData({ applicantId, curriculumId });
-    setGradedModalOpen(true);
-  };
-  const handleCloseGradedModal = () => {
-    setGradedModalOpen(false);
-    setGradedModalData({ applicantId: null, curriculumId: null });
-  };
 
   useEffect(() => {
     if (!applicantId) {
