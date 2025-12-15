@@ -23,6 +23,7 @@ const AdviserNavigation = ({ children, initialGradedState = null }) => {
   const navItems = ["Applicants", "Graded Accreditations", "Logout"];
   const navigate = useNavigate();
   const adviserId = localStorage.getItem("evaluatorId");
+  const adviserName = localStorage.getItem("adviserName") || localStorage.getItem("name") || "Adviser";
 
   const handleNavItemClick = (item) => {
     setActiveButton(item);
@@ -67,7 +68,7 @@ const AdviserNavigation = ({ children, initialGradedState = null }) => {
     >
       {/* Left NavBar */}
       <Box sx={{ width: 240, bgcolor: "#800000", color: "white", p: 2 }}>
-        {/* Logo */}
+        {/* Logo and Adviser Name */}
         <Stack
           sx={{
             bgcolor: "rgba(255, 255, 255, 0.3)",
@@ -78,6 +79,9 @@ const AdviserNavigation = ({ children, initialGradedState = null }) => {
           }}
         >
           <img src={logo} alt="Logo" style={{ height: 100 }} />
+          <Typography variant="subtitle1" fontWeight={700} color="#fff" sx={{ mt: 1, textAlign: 'center', letterSpacing: 0.5 }}>
+            {adviserName}
+          </Typography>
         </Stack>
 
         <Divider sx={{ borderColor: "rgba(255,255,255,0.3)" }} />

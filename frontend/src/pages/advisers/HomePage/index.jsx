@@ -22,12 +22,12 @@ import {
   Grow,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { useNavigate } from "react-router-dom";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PeopleIcon from "@mui/icons-material/People";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BookIcon from "@mui/icons-material/Book";
+import ApplicantDetailsModal from "./ApplicantDetailsModal";
 import MainLayout from "../../../templates/MainLayout";
 
 const maroon = {
@@ -96,10 +96,12 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
 }));
 
 const AdviserHomePage = () => {
-  const navigate = useNavigate();
+    // const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [applicants, setApplicants] = useState([]);
   const [recordsMap, setRecordsMap] = useState({});
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedApplicant, setSelectedApplicant] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -300,12 +302,13 @@ const AdviserHomePage = () => {
                                 backgroundColor: maroon.main,
                                 '&:hover': { backgroundColor: maroon.dark },
                               }}
-                              onClick={() => navigate("/adviser/applicants/view-applicant", {
-                                state: {
+                              onClick={() => {
+                                setSelectedApplicant({
                                   applicantId: app.applicant?.applicantId,
                                   courseId: app.finalCourse?.courseId,
-                                },
-                              })}
+                                });
+                                setDetailsOpen(true);
+                              }}
                             >
                               View Details
                             </Button>
@@ -479,6 +482,13 @@ const AdviserHomePage = () => {
           </Stack>
         </Paper>
       </Stack>
+      {/* Applicant Details Modal */}
+      <ApplicantDetailsModal
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        applicantId={selectedApplicant?.applicantId}
+        courseId={selectedApplicant?.courseId}
+      />
     </MainLayout>
   );
 };

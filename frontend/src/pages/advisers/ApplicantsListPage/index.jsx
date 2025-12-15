@@ -25,6 +25,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from "react-router-dom";
 import AdviserNavigation from "../../../components/Navigation/AdviserNavigation";
+import ApplicantDetailsModal from "./ApplicantDetailsModal";
 
 const maroon = {
   light: '#8D323C',
@@ -92,6 +93,8 @@ const ApplicantsListPage = () => {
   const adviserId = localStorage.getItem("evaluatorId");
   const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedApplicant, setSelectedApplicant] = useState(null);
 
   useEffect(() => {
     fetchApplicants();
@@ -184,12 +187,11 @@ const ApplicantsListPage = () => {
   };
 
   const handleViewApplicant = (applicant) => {
-    navigate("/adviser/applicants/view-applicant", {
-      state: {
-        applicantId: applicant.applicant?.applicantId,
-        courseId: applicant.finalCourse?.courseId,
-      },
+    setSelectedApplicant({
+      applicantId: applicant.applicant?.applicantId,
+      courseId: applicant.finalCourse?.courseId,
     });
+    setDetailsOpen(true);
   };
 
   return (
@@ -339,6 +341,13 @@ const ApplicantsListPage = () => {
           </InfoCard>
         </Grow>
       </Box>
+      {/* Applicant Details Modal */}
+      <ApplicantDetailsModal
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        applicantId={selectedApplicant?.applicantId}
+        courseId={selectedApplicant?.courseId}
+      />
     </AdviserNavigation>
   );
 };
