@@ -226,50 +226,72 @@ const Accreditations = ({ onNavigateToGraded }) => {
   };
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <SchoolIcon sx={{ color: maroon.main, fontSize: 28 }} />
-          <Typography variant="h6" fontWeight="bold" color={maroon.dark}>
-            Start Accreditation Process
-          </Typography>
-        </Stack>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
+        <SchoolIcon sx={{ color: maroon.main, fontSize: 32 }} />
+        <Typography variant="h5" fontWeight="bold" color={maroon.dark}>
+          Start Accreditation Process
+        </Typography>
+      </Stack>
 
-        {/* Course Filter - Inline */}
-        <Select
-          value={selectedCourse}
-          onChange={e => setSelectedCourse(e.target.value)}
-          displayEmpty
-          size="small"
-          sx={{ 
-            minWidth: 200,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 1.5,
-            }
-          }}
-        >
-          <MenuItem value="">All Courses</MenuItem>
-          {courses.map(course => (
-            <MenuItem key={course.courseId} value={course.courseId}>
-              {course.courseName}
-            </MenuItem>
-          ))}
-        </Select>
+      {/* Info Card */}
+      <InfoCard sx={{ mb: 3 }}>
+        <CardContent>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <PersonAddIcon sx={{ color: gold.main, fontSize: 24 }} />
+            <Box>
+              <Typography variant="h6" fontWeight="bold" color={maroon.main}>
+                Ready for Accreditation
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Select accepted applicants from your department to begin the accreditation process
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </InfoCard>
+
+      {/* Course and Adviser Filters */}
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
+        {/* Course Filter */}
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+            Filter by Course:
+          </Typography>
+          <Select
+            value={selectedCourse}
+            onChange={e => setSelectedCourse(e.target.value)}
+            displayEmpty
+            sx={{ 
+              width: "100%",
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
+          >
+            <MenuItem value="">All Courses</MenuItem>
+            {courses.map(course => (
+              <MenuItem key={course.courseId} value={course.courseId}>
+                {course.courseName}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
       </Stack>
 
       {/* Main Content */}
       <Grow in={true} timeout={500}>
         <InfoCard>
           <CardContent sx={{ p: 0 }}>
-            <Box sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}`, bgcolor: alpha(maroon.main, 0.02) }}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <AssignmentIcon sx={{ color: maroon.main, fontSize: 20 }} />
+            <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <AssignmentIcon sx={{ color: maroon.main }} />
                 <Box>
-                  <Typography variant="subtitle1" fontWeight="600" color={maroon.main}>
+                  <Typography variant="h6" fontWeight="bold" color={maroon.main}>
                     Accepted Applicants ({displayedApplicants.length})
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary">
                     Choose applicants to begin their academic journey through ETEEAP
                   </Typography>
                 </Box>
@@ -277,20 +299,21 @@ const Accreditations = ({ onNavigateToGraded }) => {
             </Box>
 
             {loading ? (
-              <Box sx={{ textAlign: "center", py: 4 }}>
-                <CircularProgress size={32} />
-                <Typography variant="body2" sx={{ mt: 1.5 }}>
+              <Box sx={{ textAlign: "center", py: 6 }}>
+                <CircularProgress />
+                <Typography sx={{ mt: 2 }}>
                   Loading accepted applicants...
                 </Typography>
               </Box>
             ) : displayedApplicants.length > 0 ? (
-              <Table size="small">
+              <Table>
                 <TableHead>
                   <TableRow>
                     <StyledTableCell>Applicant Name</StyledTableCell>
                     <StyledTableCell>Course</StyledTableCell>
                     <StyledTableCell>Status</StyledTableCell>
                     <StyledTableCell>Acceptance Date</StyledTableCell>
+                    <StyledTableCell>Remarks</StyledTableCell>
                     <StyledTableCell align="center">Actions</StyledTableCell>
                   </TableRow>
                 </TableHead>
@@ -298,8 +321,8 @@ const Accreditations = ({ onNavigateToGraded }) => {
                   {displayedApplicants.map(app => (
                     <StyledTableRow key={app.acceptedApplicantId}>
                       <StyledTableCell>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Avatar sx={{ bgcolor: maroon.main, width: 32, height: 32, fontSize: 14 }}>
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                          <Avatar sx={{ bgcolor: maroon.main }}>
                             {app.applicant?.firstName?.charAt(0)}
                           </Avatar>
                           <Typography variant="body2" fontWeight={500}>
@@ -307,9 +330,7 @@ const Accreditations = ({ onNavigateToGraded }) => {
                           </Typography>
                         </Stack>
                       </StyledTableCell>
-                      <StyledTableCell>
-                        <Typography variant="body2">{app.finalCourse?.courseName}</Typography>
-                      </StyledTableCell>
+                      <StyledTableCell>{app.finalCourse?.courseName}</StyledTableCell>
                       <StyledTableCell>
                         <Chip
                           label={app.status}
@@ -320,25 +341,23 @@ const Accreditations = ({ onNavigateToGraded }) => {
                               ? "info"
                               : "error"
                           }
+                          variant="outlined"
                           size="small"
-                          sx={{ height: 22, fontSize: 11 }}
                         />
                       </StyledTableCell>
                       <StyledTableCell>
-                        <Typography variant="body2">
-                          {app.acceptanceDate
-                            ? new Date(app.acceptanceDate).toLocaleDateString()
-                            : "-"}
-                        </Typography>
+                        {app.acceptanceDate
+                          ? new Date(app.acceptanceDate).toLocaleDateString()
+                          : "-"}
                       </StyledTableCell>
+                      <StyledTableCell>{app.remarks || "-"}</StyledTableCell>
                       <StyledTableCell align="center">
                         <ActionButton
                           variant="contained"
                           size="small"
                           onClick={() => handleAccreditClick(app)}
-                          sx={{ py: 0.5, px: 1.5, fontSize: 12 }}
                         >
-                          Start Process
+                          Start Accreditation
                         </ActionButton>
                       </StyledTableCell>
                     </StyledTableRow>
@@ -346,12 +365,16 @@ const Accreditations = ({ onNavigateToGraded }) => {
                 </TableBody>
               </Table>
             ) : (
-              <Box sx={{ textAlign: "center", py: 4 }}>
-                <SchoolIcon sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.3, mb: 1 }} />
-                <Typography variant="body1" color="text.secondary" gutterBottom>
+              <Box sx={{ 
+                textAlign: "center", 
+                py: 6,
+                px: 3
+              }}>
+                <SchoolIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
                   No accepted applicants found
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                   No accepted applicants available for accreditation in your department.
                 </Typography>
               </Box>
@@ -361,36 +384,36 @@ const Accreditations = ({ onNavigateToGraded }) => {
       </Grow>
 
       {/* Confirmation Dialog */}
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ bgcolor: maroon.main, color: "white", py: 1.5 }}>
-          <Typography variant="subtitle1" fontWeight="600">Confirm Accreditation Process</Typography>
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ bgcolor: maroon.main, color: "white", pb: 2 }}>
+          Confirm Accreditation Process
         </DialogTitle>
-        <DialogContent sx={{ pt: 2, pb: 1 }}>
-          <Typography variant="body2" sx={{ mb: 1.5 }}>
+        <DialogContent sx={{ pt: 3 }}>
+          <Typography variant="body1" sx={{ mb: 2 }}>
             You are about to start the accreditation process for:
           </Typography>
           {selectedApplicant && (
-            <Box sx={{ p: 1.5, bgcolor: alpha(gold.light, 0.2), borderRadius: 1, mb: 2 }}>
-              <Typography variant="body2" fontWeight="600">
+            <Box sx={{ p: 2, bgcolor: alpha(gold.light, 0.2), borderRadius: 1, mb: 3 }}>
+              <Typography variant="subtitle1" fontWeight="bold">
                 {`${selectedApplicant.applicant?.firstName || ""} ${selectedApplicant.applicant?.lastName || ""}`}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="body2" color="text.secondary">
                 Course: {selectedApplicant.finalCourse?.courseName}
               </Typography>
             </Box>
           )}
-          <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-            Select the curriculum:
+          <Typography variant="body2" sx={{ mb: 2, fontWeight: 500 }}>
+            Please select the curriculum that will be used for this accreditation:
           </Typography>
           <Select
             value={selectedCurriculumId}
             onChange={e => setSelectedCurriculumId(e.target.value)}
             displayEmpty
             fullWidth
-            size="small"
             sx={{ 
+              minWidth: 220,
               "& .MuiOutlinedInput-root": {
-                borderRadius: 1.5,
+                borderRadius: 2,
               }
             }}
           >
@@ -411,33 +434,30 @@ const Accreditations = ({ onNavigateToGraded }) => {
             ))}
           </Select>
           {!selectedCurriculumId && (
-            <Typography variant="caption" color="warning.main" sx={{ mt: 0.5, display: "block" }}>
-              * Required to proceed
+            <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: "block" }}>
+              * Curriculum selection is required to proceed
             </Typography>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 2, pb: 2, pt: 1 }}>
+        <DialogActions sx={{ p: 3, pt: 2 }}>
           <Button 
             onClick={() => setConfirmOpen(false)}
             variant="outlined"
-            size="small"
-            sx={{ borderRadius: 1.5, textTransform: 'none' }}
+            sx={{ borderRadius: 2 }}
           >
             Cancel
           </Button>
           <ActionButton
             onClick={handleConfirmAccredit}
             variant="contained"
-            size="small"
             disabled={!selectedCurriculumId || accreditLoading}
             sx={{ 
-              borderRadius: 1.5,
-              px: 2,
-              textTransform: 'none',
+              borderRadius: 2,
+              px: 3,
               bgcolor: (!selectedCurriculumId || accreditLoading) ? "grey.300" : maroon.main
             }}
           >
-            {accreditLoading ? "Creating..." : "Start Process"}
+            {accreditLoading ? "Creating Records..." : "Start Accreditation Process"}
           </ActionButton>
         </DialogActions>
       </Dialog>

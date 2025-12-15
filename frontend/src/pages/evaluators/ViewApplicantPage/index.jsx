@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import GradedAccreditation from "../Accreditations/GradedAccreditation";
 /* eslint-disable react-hooks/exhaustive-deps */
 import {
   Box,
@@ -30,18 +31,14 @@ import {
   Avatar,
   Grid,
   Grow,
-  Tooltip,
   Fade,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DownloadIcon from "@mui/icons-material/Download";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PersonIcon from '@mui/icons-material/Person';
 import SendIcon from '@mui/icons-material/Send';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import EmailIcon from '@mui/icons-material/Email';
 import SchoolIcon from '@mui/icons-material/School';
 import HomeIcon from '@mui/icons-material/Home';
@@ -154,21 +151,38 @@ const ViewApplicantPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  // Get all necessary IDs from location state
-  const applicantId = location.state?.applicantId;
-  const evaluationId = location.state?.evaluationId;
-  const specificCourseId = location.state?.courseId;
+  
+  // Helper to get state from location or sessionStorage
+  const getPersistedState = (key) => {
+    const storageKey = `viewApplicant_${key}`;
+    const locationValue = location.state?.[key];
+    
+    if (locationValue !== undefined && locationValue !== null) {
+      sessionStorage.setItem(storageKey, String(locationValue));
+      return locationValue;
+    }
+    
+    const stored = sessionStorage.getItem(storageKey);
+    return stored || null;
+  };
+
+  // Get IDs - persisted through refresh
+  const applicantId = getPersistedState('applicantId');
+  const evaluationId = getPersistedState('evaluationId');
+  const specificCourseId = getPersistedState('courseId');
   const evaluatorId = localStorage.getItem("evaluatorId");
+
+  // Redirect if no applicantId
+  useEffect(() => {
+    if (!applicantId) {
+      navigate("/evaluator/applicants");
+    }
+  }, [applicantId, navigate]);
 
   const [applicant, setApplicant] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [previewType, setPreviewType] = useState("");
-  const [previewFileName, setPreviewFileName] = useState("");
-  const [zoom, setZoom] = useState(1);
   const [coursePreferences, setCoursePreferences] = useState([]);
   
   // New evaluation states
@@ -181,16 +195,28 @@ const ViewApplicantPage = () => {
   const [adminInfo, setAdminInfo] = useState(null);
   const [forwardedAt, setForwardedAt] = useState(null);
 
+  // Add new state for confirmation dialog
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+
+  // State for Graded Accreditation Modal
+  const [gradedModalOpen, setGradedModalOpen] = useState(false);
+  const [gradedModalData, setGradedModalData] = useState({ applicantId: null, curriculumId: null });
+
+  // Handler to open Graded Accreditation modal
+  const handleOpenGradedModal = (applicantId, curriculumId) => {
+    setGradedModalData({ applicantId, curriculumId });
+    setGradedModalOpen(true);
+  };
+  const handleCloseGradedModal = () => {
+    setGradedModalOpen(false);
+    setGradedModalData({ applicantId: null, curriculumId: null });
+  };
+
   useEffect(() => {
     if (!applicantId) {
       console.error("No applicantId provided in location state");
       return;
     }
-    
-    console.log("Loading applicant details with:", { 
-      applicantId, evaluationId, specificCourseId, evaluatorId
-    });
-    
     // Fetch applicant profile
     fetch(`https://eteeap-foth.onrender.com/api/applicants/${applicantId}`)
       .then((res) => {
@@ -390,8 +416,29 @@ const ViewApplicantPage = () => {
     }
   };
 
+  // Modified submit handler - check if status is final before submitting
+  const handleSubmitClick = () => {
+    if (!selectedCourse || !evaluationStatus) {
+      setSubmissionMessage({ 
+        type: "error", 
+        text: "Please complete all required fields" 
+      });
+      return;
+    }
+
+    // If status is APPROVED or REJECTED, show confirmation dialog
+    if (evaluationStatus === "APPROVED" || evaluationStatus === "REJECTED") {
+      setConfirmDialogOpen(true);
+    } else {
+      // For PENDING or UNDER_REVIEW, submit directly
+      handleSubmitEvaluation();
+    }
+  };
+
   // Submit evaluation
   const handleSubmitEvaluation = async () => {
+    setConfirmDialogOpen(false); // Close dialog if open
+    
     if (!selectedCourse || !evaluationStatus) {
       console.error("Missing required fields:", { 
         courseSelected: Boolean(selectedCourse), 
@@ -484,15 +531,10 @@ const ViewApplicantPage = () => {
     return formats[priority] || priority;
   };
 
-  // Helper to preview document in modal
+  // Helper to preview document - NOW OPENS IN NEW TAB
   const handlePreview = (doc) => {
     const url = `https://eteeap-foth.onrender.com/api/documents/preview/${doc.documentId}`;
-    setPreviewUrl(url);
-    const fileName = doc.fileName || doc.name || "";
-    setPreviewType(typeof fileName === "string" ? fileName.toLowerCase() : "");
-    setPreviewFileName(fileName);
-    setZoom(1); // Reset zoom on new preview
-    setPreviewOpen(true);
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   // Helper to download document
@@ -548,6 +590,12 @@ const ViewApplicantPage = () => {
       UNDER_REVIEW: "secondary",
     };
     return statusMap[status] || "default";
+  };
+
+  // Add helper function to check if evaluation is locked (after existing helper functions)
+  const isEvaluationLocked = () => {
+    const currentStatus = existingEvaluation?.evaluationStatus || currentEvaluation?.evaluationStatus;
+    return currentStatus === "APPROVED" || currentStatus === "REJECTED";
   };
 
   return (
@@ -607,7 +655,7 @@ const ViewApplicantPage = () => {
           </Fade>
         )}
         
-        <Grid container spacing={3}>
+        <Grid container spacing={2} sx={{ alignItems: 'flex-start' }}>
           {/* Applicant Profile Section */}
           <Grid item xs={12} md={3}>
             <Grow in={true} timeout={600}>
@@ -680,8 +728,8 @@ const ViewApplicantPage = () => {
             </Grow>
           </Grid>
 
-          {/* Right Section */}
-          <Grid item xs={12} md={9}>
+          {/* Middle Section - Course & Documents */}
+          <Grid item xs={12} md={5}>
             <Stack spacing={3} height="100%">
               {/* Applied Course */}
               <Grow in={true} timeout={700}>
@@ -735,9 +783,6 @@ const ViewApplicantPage = () => {
                     bgcolor: alpha(theme.palette.background.default, 0.5),
                     borderRadius: 2,
                     border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-                    maxHeight: 'auto',
-                    overflow: 'visible',
-                    mx: -2
                   }}>
                     <List sx={{ p: 0 }}>
                       {DOCUMENT_TYPE_LABELS.map((docType, index) => {
@@ -745,60 +790,15 @@ const ViewApplicantPage = () => {
                         return (
                           <ListItem key={docType}
                             sx={{
-                              py: 3,
-                              px: 3,
+                              py: 2,
+                              px: 2,
                               borderBottom: index < DOCUMENT_TYPE_LABELS.length - 1 ? `1px solid ${alpha(theme.palette.divider, 0.3)}` : 'none',
                               transition: 'background-color 0.2s ease',
                               '&:hover': {
                                 backgroundColor: alpha(gold.light, 0.15),
                               },
+                              flexWrap: 'wrap',
                             }}
-                            secondaryAction={
-                              doc ? (
-                                <Stack direction="row" spacing={1.5}>
-                                  <Tooltip title="Preview Document">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="preview"
-                                      onClick={() => handlePreview(doc)}
-                                      size="small"
-                                      sx={{ 
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        '&:hover': {
-                                          backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                                        }
-                                      }}
-                                    >
-                                      <VisibilityIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Download Document">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="download"
-                                      onClick={() => handleDownload(doc.documentId)}
-                                      size="small"
-                                      sx={{ 
-                                        backgroundColor: alpha(theme.palette.grey[700], 0.1),
-                                        color: theme.palette.grey[700],
-                                        '&:hover': {
-                                          backgroundColor: alpha(theme.palette.grey[700], 0.2),
-                                        }
-                                      }}
-                                    >
-                                      <DownloadIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Stack>
-                              ) : (
-                                <StyledChip 
-                                  label="Not Provided" 
-                                  size="small" 
-                                  variant="outlined"
-                                  color="default"
-                                />
-                              )
-                            }
                           >
                             <ListItemText
                               primary={formatDocumentType(docType)}
@@ -807,19 +807,55 @@ const ViewApplicantPage = () => {
                                 fontWeight: doc ? 600 : 400,
                                 variant: 'body2',
                                 color: doc ? 'text.primary' : 'text.secondary',
-                                sx: { mb: doc ? 0.5 : 0 }
                               }}
                               secondaryTypographyProps={{
                                 variant: 'caption',
-                                sx: { 
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 1,
-                                  WebkitBoxOrient: 'vertical',
-                                }
                               }}
+                              sx={{ flex: 1, minWidth: 200 }}
                             />
+                            {doc ? (
+                              <Stack direction="row" spacing={1}>
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  startIcon={<VisibilityIcon />}
+                                  onClick={() => handlePreview(doc)}
+                                  sx={{
+                                    borderColor: maroon.main,
+                                    color: maroon.main,
+                                    textTransform: 'none',
+                                    '&:hover': {
+                                      borderColor: maroon.dark,
+                                      bgcolor: alpha(maroon.main, 0.08),
+                                    },
+                                  }}
+                                >
+                                  Preview
+                                </Button>
+                                <Button
+                                  variant="contained"
+                                  size="small"
+                                  startIcon={<DownloadIcon />}
+                                  onClick={() => handleDownload(doc.documentId)}
+                                  sx={{
+                                    bgcolor: maroon.main,
+                                    textTransform: 'none',
+                                    '&:hover': {
+                                      bgcolor: maroon.dark,
+                                    },
+                                  }}
+                                >
+                                  Download
+                                </Button>
+                              </Stack>
+                            ) : (
+                              <StyledChip 
+                                label="Not Provided" 
+                                size="small" 
+                                variant="outlined"
+                                color="default"
+                              />
+                            )}
                           </ListItem>
                         );
                       })}
@@ -830,37 +866,37 @@ const ViewApplicantPage = () => {
             </Stack>
           </Grid>
 
-          {/* Evaluation Form Section */}
-          <Grid item xs={12}>
+          {/* Right Section - Evaluation Form (Vertical) */}
+          <Grid item xs={12} md={4}>
             <Grow in={true} timeout={900}>
-              <AnimatedPaper elevation={3} sx={{ p: 3 }}>
+              <AnimatedPaper elevation={3} sx={{ p: 3, height: '100%' }}>
                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
                   <AssignmentIcon sx={{ color: maroon.main }} />
                   <Typography variant="h6" fontWeight="bold" color={maroon.main}>
-                    Evaluation Form {currentEvaluation && `- Evaluation #${currentEvaluation.evaluationId}`}
+                    Evaluation Form
                   </Typography>
                 </Stack>
+                {currentEvaluation && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                    Evaluation #{currentEvaluation.evaluationId}
+                  </Typography>
+                )}
                 <Divider sx={{ mb: 3, borderColor: alpha(gold.main, 0.5) }} />
 
                 {applicant && !checkForwardStatus() && (
                   <Alert 
                     severity="info" 
                     variant="outlined"
-                    sx={{ mb: 3, borderWidth: 2 }}
-                    action={
-                      <Button color="primary" size="small" variant="outlined" onClick={() => navigate("/evaluator/applicants")}>
-                        View Other Applications
-                      </Button>
-                    }
+                    sx={{ mb: 3, borderWidth: 2, fontSize: '0.75rem' }}
                   >
-                    This application has not yet been forwarded for evaluation by an administrator. You cannot evaluate it until it's forwarded to you.
+                    This application has not been forwarded for evaluation yet.
                   </Alert>
                 )}
 
                 {submissionMessage.text && (
                   <Alert 
                     severity={submissionMessage.type} 
-                    sx={{ mb: 3, borderWidth: 2 }}
+                    sx={{ mb: 2, borderWidth: 2 }}
                     variant="outlined"
                     onClose={() => setSubmissionMessage({ type: "", text: "" })}
                   >
@@ -868,271 +904,186 @@ const ViewApplicantPage = () => {
                   </Alert>
                 )}
 
-                <Grid container spacing={3} sx={{ mb: 2 }}>
+                <Stack spacing={2.5}>
                   {/* Course Selection */}
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>Select Course to Evaluate</InputLabel>
-                      <Select
-                        value={selectedCourse?.courseId || ""}
-                        onChange={handleCourseChange}
-                        label="Select Course to Evaluate"
-                        disabled={Boolean(currentEvaluation || evaluationId)}
-                      >
-                        {getAvailableCoursesForEvaluation().map((course) => (
-                          <MenuItem key={course.courseId} value={course.courseId}>
-                            {course.courseName}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Course to Evaluate</InputLabel>
+                    <Select
+                      value={selectedCourse?.courseId || ""}
+                      onChange={handleCourseChange}
+                      label="Course to Evaluate"
+                      disabled={Boolean(currentEvaluation || evaluationId) || isEvaluationLocked()}
+                    >
+                      {getAvailableCoursesForEvaluation().map((course) => (
+                        <MenuItem key={course.courseId} value={course.courseId}>
+                          {course.courseName}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
 
                   {/* Evaluation Status */}
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>Evaluation Status</InputLabel>
-                      <Select
-                        value={evaluationStatus}
-                        onChange={(e) => setEvaluationStatus(e.target.value)}
-                        label="Evaluation Status"
-                        disabled={!selectedCourse || submitting || !checkForwardStatus()}
-                      >
-                        <MenuItem value="APPROVED">
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <CheckCircleIcon color="success" fontSize="small" />
-                            <span>Approved</span>
-                          </Stack>
-                        </MenuItem>
-                        <MenuItem value="REJECTED">Rejected</MenuItem>
-                        <MenuItem value="PENDING">Pending</MenuItem>
-                        <MenuItem value="UNDER_REVIEW">Under Review</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Evaluation Status</InputLabel>
+                    <Select
+                      value={evaluationStatus}
+                      onChange={(e) => setEvaluationStatus(e.target.value)}
+                      label="Evaluation Status"
+                      disabled={!selectedCourse || submitting || !checkForwardStatus() || isEvaluationLocked()}
+                    >
+                      <MenuItem value="APPROVED">
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <CheckCircleIcon color="success" fontSize="small" />
+                          <span>Approved</span>
+                        </Stack>
+                      </MenuItem>
+                      <MenuItem value="REJECTED">Rejected</MenuItem>
+                      <MenuItem value="PENDING">Pending</MenuItem>
+                      <MenuItem value="UNDER_REVIEW">Under Review</MenuItem>
+                    </Select>
+                  </FormControl>
 
                   {/* Remarks */}
-                  <Grid item xs={12}>
-                    <TextField
-                      label="Evaluation Remarks"
-                      multiline
-                      rows={4}
-                      value={remarks}
-                      onChange={(e) => setRemarks(e.target.value)}
-                      fullWidth
-                      variant="outlined"
-                      disabled={!selectedCourse || submitting || !checkForwardStatus()}
-                      placeholder="Provide detailed comments about your evaluation decision..."
-                    />
-                  </Grid>
-                </Grid>
+                  <TextField
+                    label="Evaluation Remarks"
+                    multiline
+                    rows={5}
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    disabled={!selectedCourse || submitting || !checkForwardStatus() || isEvaluationLocked()}
+                    placeholder="Provide comments..."
+                  />
 
-                {/* Submit Button & Evaluation Status */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  mt: 4,
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  gap: 2
-                }}>
-                  {/* Evaluation History */}
+                  {/* Previous Evaluation Info */}
                   {existingEvaluation && (
                     <Box sx={{ 
-                      bgcolor: alpha(theme.palette.background.default, 0.5),
-                      p: 2,
+                      bgcolor: isEvaluationLocked() 
+                        ? alpha(existingEvaluation.evaluationStatus === "APPROVED" ? '#2e7d32' : '#d32f2f', 0.1)
+                        : alpha(theme.palette.background.default, 0.5),
+                      p: 1.5,
                       borderRadius: 2,
-                      border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+                      border: `1px solid ${
+                        isEvaluationLocked()
+                          ? alpha(existingEvaluation.evaluationStatus === "APPROVED" ? '#2e7d32' : '#d32f2f', 0.3)
+                          : alpha(theme.palette.divider, 0.5)
+                      }`,
                     }}>
-                      <Typography variant="subtitle2" fontWeight="medium" gutterBottom color="text.secondary">
-                        Previous Evaluation
+                      <Typography variant="caption" fontWeight="medium" color="text.secondary">
+                        {isEvaluationLocked() ? "Final Decision" : "Previous Evaluation"}
                       </Typography>
-                      <Stack direction="row" spacing={2} alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
                         <StyledChip
                           label={existingEvaluation.evaluationStatus || "UNKNOWN"} 
                           color={getStatusChipColor(existingEvaluation.evaluationStatus)}
-                          variant="outlined"
+                          variant={isEvaluationLocked() ? "filled" : "outlined"}
+                          size="small"
                         />
-                        <Stack direction="row" spacing={0.5} alignItems="center">
-                          <AccessTimeIcon fontSize="small" color="action" />
-                          <Typography variant="body2" color="text.secondary">
-                            {existingEvaluation.dateEvaluated ? 
-                              new Date(existingEvaluation.dateEvaluated).toLocaleString() : 
-                              "-"}
-                          </Typography>
-                        </Stack>
+                        <Typography variant="caption" color="text.secondary">
+                          {existingEvaluation.dateEvaluated ? 
+                            new Date(existingEvaluation.dateEvaluated).toLocaleDateString() : 
+                            "-"}
+                        </Typography>
                       </Stack>
                     </Box>
                   )}
-                  
-                  <ActionButton
-                    variant="contained"
-                    color="primary"
-                    onClick={handleSubmitEvaluation}
-                    disabled={!selectedCourse || !evaluationStatus || submitting || !checkForwardStatus()}
-                    sx={{ borderRadius: "24px", px: 4, py: 1 }}
-                    endIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
-                  >
-                    {submitting ? "Submitting..." : existingEvaluation || currentEvaluation ? "Update Evaluation" : "Submit Evaluation"}
-                  </ActionButton>
-                </Box>
+
+                  {/* Submit Button - Hidden when locked */}
+                  {!isEvaluationLocked() && (
+                    <ActionButton
+                      variant="contained"
+                      color="primary"
+                      onClick={handleSubmitClick}
+                      disabled={!selectedCourse || !evaluationStatus || submitting || !checkForwardStatus()}
+                      fullWidth
+                      sx={{ borderRadius: "12px", py: 1.5 }}
+                      endIcon={submitting ? <CircularProgress size={18} color="inherit" /> : <SendIcon />}
+                    >
+                      {submitting ? "Submitting..." : existingEvaluation || currentEvaluation ? "Update" : "Submit"}
+                    </ActionButton>
+                  )}
+
+                  {/* Show locked message instead of button */}
+                  {isEvaluationLocked() && (
+                    <Box sx={{ 
+                      textAlign: 'center', 
+                      py: 1.5,
+                      px: 2,
+                      bgcolor: alpha(theme.palette.grey[500], 0.1),
+                      borderRadius: 2,
+                    }}>
+                      <Typography variant="body2" color="text.secondary">
+                        🔒 Evaluation has been finalized
+                      </Typography>
+                    </Box>
+                  )}
+                </Stack>
               </AnimatedPaper>
             </Grow>
           </Grid>
         </Grid>
-        
-        {/* Preview Modal */}
+
+        {/* Confirmation Dialog for Final Status */}
         <Dialog
-          open={previewOpen}
-          onClose={() => setPreviewOpen(false)}
-          fullScreen
-          PaperProps={{
-            sx: {
-              borderRadius: 0,
-              overflow: 'hidden',
-            }
-          }}
-          TransitionComponent={Grow}
-          transitionDuration={300}
+          open={confirmDialogOpen}
+          onClose={() => setConfirmDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
         >
           <DialogTitle sx={{ 
-            bgcolor: maroon.main,
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2
+            bgcolor: evaluationStatus === "APPROVED" ? alpha('#2e7d32', 0.1) : alpha('#d32f2f', 0.1),
+            color: evaluationStatus === "APPROVED" ? '#2e7d32' : '#d32f2f',
+            fontWeight: 'bold',
           }}>
-            <DescriptionIcon />
-            <Typography variant="h6">
-              {previewFileName}
-            </Typography>
+            ⚠️ Confirm Final Decision
           </DialogTitle>
-          <DialogContent
-            dividers
-            sx={{
-              minHeight: "100vh",
-              maxHeight: "100vh",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              bgcolor: "#f5f5f5",
-              p: 0,
-            }}
-          >
-            <Stack direction="row" spacing={1} sx={{ mb: 2, mt: 2 }}>
-              <Button 
-                variant="outlined"
-                size="small"
-                onClick={() => setZoom((z) => Math.max(z - 0.2, 0.2))}
-                disabled={zoom <= 0.2}
-                startIcon={<ZoomOutIcon />}
-              >
-                Zoom Out
-              </Button>
-              <Typography variant="body2" sx={{ 
-                minWidth: 60, 
-                textAlign: "center", 
-                bgcolor: alpha(theme.palette.background.paper, 0.7),
-                borderRadius: 1,
-                p: 0.5,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: `1px solid ${theme.palette.divider}`
-              }}>
-                {Math.round(zoom * 100)}%
+          <DialogContent sx={{ pt: 3 }}>
+            <Typography variant="body1" gutterBottom>
+              You are about to mark this application as <strong>{evaluationStatus}</strong>.
+            </Typography>
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                <strong>Warning:</strong> After submitting this decision, the evaluation cannot be modified anymore. 
+                Please make sure you have reviewed all documents and information carefully.
               </Typography>
-              <Button
-                variant="outlined" 
-                size="small"
-                onClick={() => setZoom((z) => Math.min(z + 0.2, 5))}
-                disabled={zoom >= 5}
-                endIcon={<ZoomInIcon />}
-              >
-                Zoom In
-              </Button>
-            </Stack>
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                flex: 1,
-                overflow: "auto",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "flex-start",
-                bgcolor: "#e0e0e0",
+            </Alert>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Are you sure you want to proceed?
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, gap: 1 }}>
+            <Button 
+              onClick={() => setConfirmDialogOpen(false)}
+              variant="outlined"
+              sx={{ 
+                borderColor: 'grey.400',
+                color: 'text.secondary',
               }}
             >
-              {previewType.endsWith(".pdf") ? (
-                <Box sx={{ width: "100%", height: "100%", overflow: "auto" }}>
-                  <iframe
-                    src={previewUrl}
-                    title="PDF Preview"
-                    width={Math.round(window.innerWidth * 0.9 * zoom)}
-                    height={Math.round(window.innerHeight * 0.8 * zoom)}
-                    style={{
-                      border: "none",
-                      transform: `scale(${zoom})`,
-                      transformOrigin: "top left",
-                      display: "block",
-                    }}
-                  />
-                </Box>
-              ) : previewType.endsWith(".jpg") ||
-                previewType.endsWith(".jpeg") ||
-                previewType.endsWith(".png") ||
-                previewType.endsWith(".gif") ? (
-                <Box
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    overflow: "auto",
-                    textAlign: "center",
-                    p: 2,
-                  }}
-                >
-                  <img
-                    src={previewUrl}
-                    alt="Document Preview"
-                    style={{
-                      maxWidth: `${window.innerWidth * 0.9 * zoom}px`,
-                      maxHeight: `${window.innerHeight * 0.8 * zoom}px`,
-                      width: "auto",
-                      height: "auto",
-                      display: "block",
-                      margin: "0 auto",
-                      transform: `scale(${zoom})`,
-                      transformOrigin: "top left",
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    }}
-                  />
-                </Box>
-              ) : (
-                <Box sx={{ p: 4, textAlign: 'center' }}>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    Preview not available for this file type
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<DownloadIcon />}
-                    onClick={() => handleDownload(previewUrl.split('/').pop())}
-                  >
-                    Download File Instead
-                  </Button>
-                </Box>
-              )}
-            </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 2.5, bgcolor: alpha(gold.light, 0.2) }}>
-            <ActionButton onClick={() => setPreviewOpen(false)}>
-              Close Preview
-            </ActionButton>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitEvaluation}
+              variant="contained"
+              sx={{ 
+                bgcolor: evaluationStatus === "APPROVED" ? '#2e7d32' : '#d32f2f',
+                '&:hover': {
+                  bgcolor: evaluationStatus === "APPROVED" ? '#1b5e20' : '#b71c1c',
+                },
+              }}
+              endIcon={<SendIcon />}
+            >
+              Yes, Submit Final Decision
+            </Button>
           </DialogActions>
         </Dialog>
       </ListLayout>
     </ThemeProvider>
   );
 };
+
 
 // Enhanced DetailRow Component with icons
 const DetailRowStyled = ({ icon, label, value }) => (

@@ -560,21 +560,41 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                             {/* Process of Accreditation Cell */}
                             <StyledTableCell>
                               {!isLocked ? (
-                                <TextField
-                                  size="small"
-                                  value={rec.processOfAccreditation || ""}
-                                  onChange={(e) => queueSave(rec.id, semester, "processOfAccreditation", e.target.value)}
-                                  fullWidth
-                                  multiline
-                                  rows={2}
-                                  placeholder="Enter process"
-                                  sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                      borderRadius: 1,
-                                      fontSize: 12,
-                                    }
-                                  }}
-                                />
+                                (() => {
+                                  const allowedOptions = [
+                                    "TOR Accreditation",
+                                    "Portfolio Review",
+                                    "Remediation Class",
+                                    "Home Reading Report",
+                                    "One-on-One Tutorial",
+                                    "Problem Solving",
+                                    "Job Description Review"
+                                  ];
+                                  let value = (rec.processOfAccreditation || "").trim();
+                                  if (!allowedOptions.includes(value)) value = "";
+                                  return (
+                                    <TextField
+                                      select
+                                      size="small"
+                                      value={value}
+                                      onChange={(e) => queueSave(rec.id, semester, "processOfAccreditation", e.target.value)}
+                                      fullWidth
+                                      placeholder="Select process"
+                                      sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                          borderRadius: 1,
+                                          fontSize: 12,
+                                        }
+                                      }}
+                                    >
+                                      {/* Use MUI MenuItem instead of native option */}
+                                      {React.createElement(require('@mui/material').MenuItem, {value: ""}, "Select process")}
+                                      {allowedOptions.map(opt => (
+                                        React.createElement(require('@mui/material').MenuItem, {key: opt, value: opt}, opt)
+                                      ))}
+                                    </TextField>
+                                  );
+                                })()
                               ) : (
                                 <Typography 
                                   variant="caption"
