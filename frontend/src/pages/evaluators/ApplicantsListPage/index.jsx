@@ -30,6 +30,7 @@ import PendingIcon from '@mui/icons-material/Pending';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 
 // Custom maroon and gold color palette (matching ProgramAdmin)
 const maroon = {
@@ -310,6 +311,11 @@ const ApplicantsListPage = () => {
     });
   };
 
+  // Handler for notification icon click
+  const handleNotificationClick = () => {
+    navigate("/evaluator/applicants/notifications");
+  };
+
   // Get initials from name (matching ProgramAdmin)
   const getInitials = (name) => {
     if (!name) return "??";
@@ -339,6 +345,12 @@ const ApplicantsListPage = () => {
   return (
     <ThemeProvider theme={customTheme}>
       <ListLayoutWithFilters>
+        {/* Notification icon at top right */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mt: 2, mr: 2 }}>
+          <IconButton onClick={handleNotificationClick}>
+            <NotificationsNoneIcon fontSize="large" />
+          </IconButton>
+        </Box>
         <Grow in={true} timeout={500}>
           <AnimatedPaper elevation={3} sx={{ p: 3, my: 2, overflow: 'hidden' }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>

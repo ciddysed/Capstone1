@@ -36,6 +36,7 @@ import AcceptedDashboard from "../pages/applicants/AcceptedDashboard";
 import AdviserApplicantsListPage from "../pages/advisers/ApplicantsListPage";
 import AdviserViewApplicantPage from "../pages/advisers/ViewApplicantPage";
 import AdviserGradedAccreditationsPage from "../pages/advisers/GradedAccreditationsPage";
+import Notifications from "../pages/evaluators/ApplicantsListPage/Notifications";
 
 const AppRoutes = () => {
   return useRoutes([
@@ -127,6 +128,14 @@ const AppRoutes = () => {
       element: (
         <ProtectedRoute>
           <ApplicantsListPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/evaluator/applicants/notifications",
+      element: (
+        <ProtectedRoute>
+          <Notifications />
         </ProtectedRoute>
       ),
     },
