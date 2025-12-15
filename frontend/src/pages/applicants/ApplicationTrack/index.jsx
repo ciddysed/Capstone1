@@ -116,13 +116,7 @@ const ApplicationTracking = () => {
     instance.interceptors.response.use(
       (response) => response,
       (error) => {
-        console.error("API Error:", error);
-        // Remove usage of errorMessage before definition
-        // const errorMessage =
-        //   error.response?.data?.message ||
-        // handleError(errorMessage);
-        handleError(error.response?.data?.message);
-        return Promise.reject(error);
+        
       }
     );
 
