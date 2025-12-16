@@ -387,13 +387,7 @@ const AcceptedDashboard = () => {
                   label={`${notificationSummary.pending} Pending`}
                   sx={{ bgcolor: alpha('#ff9800', 0.1), color: '#ff9800', fontWeight: 600 }}
                 />
-                {notificationSummary.rejected > 0 && (
-                  <Chip 
-                    size="small" 
-                    label={`${notificationSummary.rejected} Rejected`}
-                    sx={{ bgcolor: alpha('#f44336', 0.1), color: '#f44336', fontWeight: 600 }}
-                  />
-                )}
+                {/* Rejected status removed as per new requirements */}
               </Box>
             )}
             <Button
@@ -447,14 +441,7 @@ const AcceptedDashboard = () => {
                       <Typography variant="body2" color="text.secondary">Pending</Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={6} md={3}>
-                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#f44336', 0.1), borderRadius: 2 }}>
-                      <Typography variant="h4" fontWeight={700} color="#f44336">
-                        {curriculumSummary.rejectedCount || 0}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">Rejected</Typography>
-                    </Box>
-                  </Grid>
+                  {/* Rejected status removed from summary cards */}
                   <Grid item xs={6} md={3}>
                     <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha(maroon.main, 0.1), borderRadius: 2 }}>
                       <Typography variant="h4" fontWeight={700} color={maroon.main}>
@@ -678,44 +665,7 @@ const AcceptedDashboard = () => {
               </InfoCard>
             )}
 
-            {/* Rejected Subjects Alert */}
-            {curriculumSummary && curriculumSummary.rejectedCount > 0 && (
-              <InfoCard 
-                title="Attention Needed" 
-                icon={<CancelIcon />}
-                accentColor="#f44336"
-              >
-                <Box sx={{ 
-                  p: 2, 
-                  borderRadius: 1, 
-                  bgcolor: alpha('#f44336', 0.1), 
-                  border: `1px solid ${alpha('#f44336', 0.3)}`
-                }}>
-                  <Typography variant="body2" fontWeight={600} color="#f44336" gutterBottom>
-                    {curriculumSummary.rejectedCount} subject{curriculumSummary.rejectedCount !== 1 ? 's were' : ' was'} not accredited
-                  </Typography>
-                  <Typography variant="caption" display="block" color="text.secondary" gutterBottom>
-                    You may need to take {curriculumSummary.rejectedCount === 1 ? 'this subject' : 'these subjects'} as part of your curriculum. Please contact your program evaluator for more information.
-                  </Typography>
-                  <Button 
-                    variant="outlined" 
-                    size="small"
-                    fullWidth
-                    sx={{ 
-                      mt: 1,
-                      borderColor: '#f44336', 
-                      color: '#f44336',
-                      '&:hover': { 
-                        bgcolor: alpha('#f44336', 0.1),
-                        borderColor: '#f44336' 
-                      }
-                    }}
-                  >
-                    View Rejected Subjects
-                  </Button>
-                </Box>
-              </InfoCard>
-            )}
+            {/* Rejected Subjects Alert removed as per new requirements */}
           </Stack>
         </Grid>
       </Grid>
