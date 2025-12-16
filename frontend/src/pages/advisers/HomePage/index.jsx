@@ -5,7 +5,12 @@ import PeopleIcon from "@mui/icons-material/People";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BookIcon from "@mui/icons-material/Book";
+import SaveIcon from "@mui/icons-material/Save";
+import EditIcon from "@mui/icons-material/Edit";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 import ApplicantDetailsModal from "./ApplicantDetailsModal";
+import GradedAccreditation from "./GradedAccreditation";
 import MainLayout from "../../../templates/MainLayout";
 import {
   Paper,
@@ -28,6 +33,8 @@ import {
   AccordionSummary,
   AccordionDetails,
   Grow,
+  TextField,
+  MenuItem,
 } from "@mui/material";
 
 
@@ -97,12 +104,16 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
 }));
 
 const AdviserHomePage = () => {
-    // const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [applicants, setApplicants] = useState([]);
   const [recordsMap, setRecordsMap] = useState({});
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [gradedModalOpen, setGradedModalOpen] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
+  const [gradedApplicant, setGradedApplicant] = useState(null);
+  const [editRow, setEditRow] = useState({}); // { [recordId]: true }
+  const [editFields, setEditFields] = useState({}); // { [recordId]: { grade, processOfAccreditation, substantiveBasis } }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -201,6 +212,60 @@ const AdviserHomePage = () => {
 
     fetchData();
   }, []);
+
+  const handleEditClick = (rec) => {
+    setEditRow((prev) => ({ ...prev, [rec.id]: true }));
+    setEditFields((prev) => ({
+      ...prev,
+      [rec.id]: {
+        grade: rec.grade || "",
+        processOfAccreditation: rec.processOfAccreditation || "",
+        substantiveBasis: rec.substantiveBasis || "",
+      },
+    }));
+  };
+
+  const handleEditFieldChange = (recId, field, value) => {
+    setEditFields((prev) => ({
+      ...prev,
+      [recId]: {
+        ...prev[recId],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSaveEdit = async (rec, semester, applicantId) => {
+    const updated = { ...editFields[rec.id], status: "APPROVED" }; // Set status to APPROVED
+    try {
+      const params = new URLSearchParams();
+      Object.entries(updated).forEach(([key, value]) => {
+        params.append(key, value ?? "");
+      });
+      await fetch(
+        `https://eteeap-foth.onrender.com/api/applicant-subject-records/${rec.id}?${params.toString()}`,
+        { method: "PUT", headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+      );
+      // Update local state after save
+      setRecordsMap((prev) => {
+        const newMap = { ...prev };
+        if (newMap[applicantId] && newMap[applicantId][semester]) {
+          newMap[applicantId][semester] = newMap[applicantId][semester].map((r) =>
+            r.id === rec.id ? { ...r, ...updated } : r
+          );
+        }
+        return newMap;
+      });
+      setEditRow((prev) => ({ ...prev, [rec.id]: false }));
+    } catch (err) {
+      window.alert("Failed to save changes.");
+    }
+  };
+
+  // Add cancel edit
+  const handleCancelEdit = (recId) => {
+    setEditRow((prev) => ({ ...prev, [recId]: false }));
+  };
 
   return (
     <MainLayout userType="adviser" data="Adviser Portal">
@@ -313,6 +378,26 @@ const AdviserHomePage = () => {
                             >
                               View Details
                             </Button>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              sx={{
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                backgroundColor: maroon.main,
+                                '&:hover': { backgroundColor: maroon.dark },
+                                ml: 1,
+                              }}
+                              onClick={() => {
+                                setGradedApplicant({
+                                  applicantId: app.applicant?.applicantId,
+                                  curriculumId: app.finalCourse?.courseId,
+                                });
+                                setGradedModalOpen(true);
+                              }}
+                            >
+                              Grade Subjects
+                            </Button>
                           </StyledTableCell>
                         </StyledTableRow>
                       ))}
@@ -396,47 +481,169 @@ const AdviserHomePage = () => {
                                     <TableRow>
                                       <StyledTableCell>Subject</StyledTableCell>
                                       <StyledTableCell>Grade</StyledTableCell>
+                                      <StyledTableCell>Process of Accreditation</StyledTableCell>
+                                      <StyledTableCell>Substantive Basis</StyledTableCell>
                                       <StyledTableCell>Status</StyledTableCell>
                                     </TableRow>
                                   </TableHead>
                                   <TableBody>
-                                    {records[semester].map((rec) => (
-                                      <StyledTableRow key={rec.id}>
-                                        <StyledTableCell>
-                                          <Box>
-                                            <Typography variant="body2" fontWeight={500}>
-                                              {rec.subject?.descriptiveTitle}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                              {rec.subject?.subjectCode}
-                                            </Typography>
-                                          </Box>
-                                        </StyledTableCell>
-                                        <StyledTableCell>
-                                          <Typography 
-                                            variant="body2" 
-                                            fontWeight={600}
-                                            sx={{
-                                              backgroundColor: alpha(gold.light, 0.3),
-                                              padding: 1,
-                                              borderRadius: 1,
-                                              border: `1px solid ${alpha(gold.main, 0.5)}`,
-                                              textAlign: 'center'
-                                            }}
-                                          >
-                                            {rec.grade || "N/A"}
-                                          </Typography>
-                                        </StyledTableCell>
-                                        <StyledTableCell>
-                                          <Chip
-                                            label={rec.status || "PENDING"}
-                                            color={rec.status === 'APPROVED' ? 'success' : rec.status === 'REJECTED' ? 'error' : 'warning'}
-                                            size="small"
-                                            variant="outlined"
-                                          />
-                                        </StyledTableCell>
-                                      </StyledTableRow>
-                                    ))}
+                                    {records[semester].map((rec) => {
+                                      const isPending = rec.status === "PENDING";
+                                      const isEditing = !!editRow[rec.id];
+                                      return (
+                                        <StyledTableRow key={rec.id}>
+                                          <StyledTableCell>
+                                            <Box>
+                                              <Typography variant="body2" fontWeight={500}>
+                                                {rec.subject?.descriptiveTitle}
+                                              </Typography>
+                                              <Typography variant="caption" color="text.secondary">
+                                                {rec.subject?.subjectCode}
+                                              </Typography>
+                                            </Box>
+                                          </StyledTableCell>
+                                          <StyledTableCell>
+                                            {isEditing ? (
+                                              <TextField
+                                                size="small"
+                                                value={editFields[rec.id]?.grade ?? ""}
+                                                onChange={e => handleEditFieldChange(rec.id, "grade", e.target.value)}
+                                                fullWidth
+                                                placeholder="Grade"
+                                                variant="outlined"
+                                                sx={{ minWidth: 90, background: "#fff" }}
+                                                inputProps={{ style: { fontWeight: 600 } }}
+                                              />
+                                            ) : (
+                                              <Typography variant="body2" fontWeight={600}>
+                                                {rec.grade || "N/A"}
+                                              </Typography>
+                                            )}
+                                          </StyledTableCell>
+                                          <StyledTableCell>
+                                            {isEditing ? (
+                                              <TextField
+                                                select
+                                                size="small"
+                                                value={editFields[rec.id]?.processOfAccreditation ?? ""}
+                                                onChange={e => handleEditFieldChange(rec.id, "processOfAccreditation", e.target.value)}
+                                                fullWidth
+                                                placeholder="Select process"
+                                                variant="outlined"
+                                                sx={{ minWidth: 160, background: "#fff" }}
+                                              >
+                                                <MenuItem value=""><em>None</em></MenuItem>
+                                                <MenuItem value="TOR Accreditation">TOR Accreditation</MenuItem>
+                                                <MenuItem value="Portfolio Review">Portfolio Review</MenuItem>
+                                                <MenuItem value="Remediation Class">Remediation Class</MenuItem>
+                                                <MenuItem value="Home Reading Report">Home Reading Report</MenuItem>
+                                                <MenuItem value="One-on-One Tutorial">One-on-One Tutorial</MenuItem>
+                                                <MenuItem value="Problem Solving">Problem Solving</MenuItem>
+                                                <MenuItem value="Job Description Review">Job Description Review</MenuItem>
+                                              </TextField>
+                                            ) : (
+                                              rec.processOfAccreditation || "N/A"
+                                            )}
+                                          </StyledTableCell>
+                                          <StyledTableCell>
+                                            {isEditing ? (
+                                              <TextField
+                                                size="small"
+                                                value={editFields[rec.id]?.substantiveBasis ?? ""}
+                                                onChange={e => handleEditFieldChange(rec.id, "substantiveBasis", e.target.value)}
+                                                fullWidth
+                                                multiline
+                                                rows={2}
+                                                placeholder="Enter basis"
+                                                variant="outlined"
+                                                sx={{ minWidth: 160, background: "#fff" }}
+                                              />
+                                            ) : (
+                                              rec.substantiveBasis || "N/A"
+                                            )}
+                                          </StyledTableCell>
+                                          <StyledTableCell>
+                                            <Stack direction="row" alignItems="center" spacing={1}>
+                                              <Chip
+                                                label={rec.status || "PENDING"}
+                                                color={rec.status === 'APPROVED' ? 'success' : rec.status === 'REJECTED' ? 'error' : 'warning'}
+                                                size="small"
+                                                variant="outlined"
+                                                icon={rec.status === "APPROVED" ? <CheckCircleIcon fontSize="small" /> : undefined}
+                                              />
+                                              {isPending && (
+                                                isEditing ? (
+                                                  <>
+                                                    <Button
+                                                      size="small"
+                                                      variant="contained"
+                                                      color="success"
+                                                      startIcon={<SaveIcon />}
+                                                      sx={{
+                                                        ml: 1,
+                                                        borderRadius: 2,
+                                                        minWidth: 0,
+                                                        px: 2,
+                                                        boxShadow: "none",
+                                                        fontWeight: 600,
+                                                        textTransform: "none",
+                                                        background: "linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)"
+                                                      }}
+                                                      onClick={() => handleSaveEdit(rec, semester, applicantId)}
+                                                    >
+                                                      Save
+                                                    </Button>
+                                                    <Button
+                                                      size="small"
+                                                      variant="outlined"
+                                                      color="inherit"
+                                                      startIcon={<CancelIcon />}
+                                                      sx={{
+                                                        ml: 1,
+                                                        borderRadius: 2,
+                                                        minWidth: 0,
+                                                        px: 2,
+                                                        fontWeight: 600,
+                                                        textTransform: "none",
+                                                        borderColor: "#aaa"
+                                                      }}
+                                                      onClick={() => handleCancelEdit(rec.id)}
+                                                    >
+                                                      Cancel
+                                                    </Button>
+                                                  </>
+                                                ) : (
+                                                  <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    color="primary"
+                                                    startIcon={<EditIcon />}
+                                                    sx={{
+                                                      ml: 1,
+                                                      borderRadius: 2,
+                                                      minWidth: 0,
+                                                      px: 2,
+                                                      fontWeight: 600,
+                                                      textTransform: "none",
+                                                      borderColor: maroon.main,
+                                                      color: maroon.main,
+                                                      "&:hover": {
+                                                        background: maroon.main,
+                                                        color: "#fff",
+                                                        borderColor: maroon.main,
+                                                      }
+                                                    }}
+                                                    onClick={() => handleEditClick(rec)}
+                                                  >
+                                                    Edit
+                                                  </Button>
+                                                )
+                                              )}
+                                            </Stack>
+                                          </StyledTableCell>
+                                        </StyledTableRow>
+                                      );
+                                    })}
                                   </TableBody>
                                 </Table>
                               </Box>
@@ -489,6 +696,12 @@ const AdviserHomePage = () => {
         onClose={() => setDetailsOpen(false)}
         applicantId={selectedApplicant?.applicantId}
         courseId={selectedApplicant?.courseId}
+      />
+      <GradedAccreditation
+        applicantId={gradedApplicant?.applicantId}
+        curriculumId={gradedApplicant?.curriculumId}
+        isOpen={gradedModalOpen}
+        onClose={() => setGradedModalOpen(false)}
       />
     </MainLayout>
   );

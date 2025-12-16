@@ -18,6 +18,7 @@ const EvaluatorsLoginPage = () => {
           handleSuccess={handleSuccess}
           handleError={handleError}
           defaultRole="evaluator"
+          allowedRoles={["evaluator"]}
         />
       </Stack>
       {snackbar}

@@ -18,6 +18,7 @@ const AdviserLoginPage = () => {
 					handleSuccess={handleSuccess}
 					handleError={handleError}
 					defaultRole="adviser"
+					allowedRoles={["adviser"]}
 				/>
 			</Stack>
 			{snackbar}

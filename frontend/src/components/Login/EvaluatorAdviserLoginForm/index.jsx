@@ -74,6 +74,7 @@ const EvaluatorAdviserLoginForm = ({
 	defaultRole = "evaluator",
 	handleSuccess,
 	handleError,
+	allowedRoles, // <-- new prop
 }) => {
 	const [currentFormType, setCurrentFormType] = useState(formType);
 	const [currentRole, setCurrentRole] = useState(defaultRole);
@@ -134,6 +135,16 @@ const EvaluatorAdviserLoginForm = ({
 		const submitRole = currentFormType === "signup" ? data.role : currentRole;
 		const { apiBase, idKey, defaultHome, adminHome } = roleConfigs[submitRole];
 
+		// Restrict login by allowedRoles if provided
+		if (
+			currentFormType === "login" &&
+			Array.isArray(allowedRoles) &&
+			!allowedRoles.includes(submitRole)
+		) {
+			handleError?.("You are not allowed to log in with this role on this page.");
+			return;
+		}
+
 		try {
 			if (currentFormType === "signup") {
 				const response = await fetch(`${apiBase}/register`, {
@@ -144,6 +155,7 @@ const EvaluatorAdviserLoginForm = ({
 						password: data.password,
 						name: data.name,
 						contactNumber: data.contactNumber,
+						role: data.role, // <-- Add role to the request body
 						department: data.department,
 					}),
 				});
@@ -191,6 +203,20 @@ const EvaluatorAdviserLoginForm = ({
 			}
 
 			if (response.status === 200 && typeof result === "object" && result !== null) {
+				// Check backend role against allowedRoles
+				const backendRole =
+					typeof result.role === "string"
+						? result.role.toLowerCase()
+						: submitRole;
+
+				if (
+					Array.isArray(allowedRoles) &&
+					!allowedRoles.includes(backendRole)
+				) {
+					handleError?.("You are not allowed to log in with this role on this page.");
+					return;
+				}
+
 				clearStoredIds();
 				const resolvedId =
 					(idKey in result && result[idKey]) ||
