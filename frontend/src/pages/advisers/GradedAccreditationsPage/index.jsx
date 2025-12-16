@@ -1,3 +1,15 @@
+import { styled } from '@mui/material/styles';
+import Tooltip from '@mui/material/Tooltip';
+import axios from 'axios';
+import { API_BASE } from '../../../config.js';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import BookIcon from '@mui/icons-material/Book';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import GradeIcon from '@mui/icons-material/Grade';
+import AdviserNavigation from "../../../components/Navigation/AdviserNavigation";
+import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
+import EditIcon from '@mui/icons-material/Edit';
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -19,83 +31,73 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import BookIcon from '@mui/icons-material/Book';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import GradeIcon from '@mui/icons-material/Grade';
-import AdviserNavigation from "../../../components/Navigation/AdviserNavigation";
 
-const API_BASE = 'https://eteeap-foth.onrender.com/api';
+const maroon = { main: '#800000', dark: '#4B0000' };
+const gold = { main: '#FFD700', light: '#FFF8DC' };
 
-const maroon = {
-  light: '#8D323C',
-  main: '#6A0000',
-  dark: '#450000',
-  contrastText: '#FFFFFF',
-};
-
-const gold = {
-  light: '#FFF0B9',
-  main: '#FFC72C',
-  dark: '#D4A500',
-  contrastText: '#000000',
-};
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  fontWeight: 500,
-  '&.MuiTableCell-head': {
-    backgroundColor: maroon.main,
-    color: maroon.contrastText,
-    fontSize: 14,
-    fontWeight: 600,
-  },
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: alpha(gold.light, 0.15),
-  },
-  '&:hover': {
-    backgroundColor: alpha(gold.light, 0.3),
-    transition: 'background-color 0.2s ease',
-  },
-  '&:last-child td, &:last-child th': {
-    border: 0,
-  },
-}));
-
-const InfoCard = styled(Card)(({ theme }) => ({
-  height: '100%',
-  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
-  borderRadius: theme.shape.borderRadius * 1.5,
-  transition: 'box-shadow 0.3s ease',
-  '&:hover': {
-    boxShadow: '0 4px 20px rgba(106, 0, 0, 0.15)',
-  },
-  borderTop: `3px solid ${maroon.main}`,
-}));
-
+// Styled Components
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
-  '&:before': {
-    display: 'none',
-  },
-  borderRadius: theme.shape.borderRadius * 1.5,
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: 'none',
+  borderRadius: theme.shape.borderRadius,
   marginBottom: theme.spacing(2),
 }));
-
 const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
-  backgroundColor: alpha(maroon.main, 0.1),
-  '&.Mui-expanded': {
-    backgroundColor: alpha(maroon.main, 0.15),
-  },
-  '& .MuiAccordionSummary-content': {
-    alignItems: 'center',
+  backgroundColor: theme.palette.action.hover,
+  borderRadius: theme.shape.borderRadius,
+  minHeight: 48,
+  '&.Mui-expanded': { minHeight: 48 },
+  '& .MuiAccordionSummary-content': { alignItems: 'center' },
+}));
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  fontWeight: 500,
+  fontSize: 15,
+  backgroundColor: theme.palette.background.default,
+}));
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  '&:nth-of-type(odd)': {
+    backgroundColor: theme.palette.action.hover,
   },
 }));
 
+// InfoCard fallback (simple Card wrapper)
+const InfoCard = ({ children, sx }) => (
+  <Card sx={{ borderRadius: 2, boxShadow: 2, ...sx }}>{children}</Card>
+);
+
+
+
+// Helper to sort and deduplicate subjects in each semester, using applicantId and subjectId for uniqueness
+const sortAndDeduplicateSemesterSubjects = (data, applicantId) => {
+  if (!data || typeof data !== 'object') return data;
+  const sorted = {};
+  Object.keys(data).forEach((semester) => {
+    sorted[semester] = data[semester];
+  });
+  return sorted;
+};
+
 const AdviserGradedAccreditationsPage = () => {
+      // Track which record is being edited: { [recordId]: true }
+      const [editingRecord, setEditingRecord] = useState({});
+    // Save grade for a subject record
+    const handleGradeChange = async (recId, semester, value, applicantId) => {
+      try {
+        await axios.put(
+          `${API_BASE}/applicant-subject-records/${recId}?grade=${encodeURIComponent(value)}`,
+          null,
+          { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+        // Refetch records for this applicant to update UI
+        const refreshed = await fetch(`${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`);
+        if (refreshed.ok) {
+          const newRecords = await refreshed.json();
+          setRecordsMap((prev) => ({ ...prev, [applicantId]: newRecords }));
+        }
+      } catch (err) {
+        alert('Failed to save grade.');
+      }
+    };
   const adviserId = localStorage.getItem("evaluatorId");
   const [applicants, setApplicants] = useState([]);
   const [recordsMap, setRecordsMap] = useState({});
@@ -256,7 +258,9 @@ const AdviserGradedAccreditationsPage = () => {
             {applicants.length > 0 ? (
               applicants.map((applicant) => {
                 const applicantId = applicant.applicant?.applicantId;
-                const records = recordsMap[applicantId] || {};
+                // Deduplicate and sort records per semester using applicantId for uniqueness
+                const recordsRaw = recordsMap[applicantId] || {};
+                const records = sortAndDeduplicateSemesterSubjects(recordsRaw, applicantId);
 
                 return (
                   <StyledAccordion key={applicantId} defaultExpanded={false}>
@@ -275,12 +279,27 @@ const AdviserGradedAccreditationsPage = () => {
                             {applicant.finalCourse?.courseName}
                           </Typography>
                         </Box>
-                        <Chip
-                          label={`${Object.values(records).flat().filter(r => r.status === 'APPROVED').length} / ${Object.values(records).flat().length} Approved`}
-                          color={Object.values(records).flat().every(r => r.status === 'APPROVED') ? 'success' : 'warning'}
-                          variant="outlined"
-                          size="small"
-                        />
+                        {/* Deduplicate across all semesters for this applicant */}
+                        {(() => {
+                          const allRecords = Object.values(records).flat();
+                          const seen = new Set();
+                          const uniqueRecords = allRecords.filter((rec) => {
+                            const key = rec.subject?.subjectId || rec.subject?.subjectCode || rec.subject?.descriptiveTitle || rec.id;
+                            if (seen.has(key)) return false;
+                            seen.add(key);
+                            return true;
+                          });
+                          const approvedCount = uniqueRecords.filter(r => r.status === 'APPROVED').length;
+                          const totalCount = uniqueRecords.length;
+                          return (
+                            <Chip
+                              label={`${approvedCount} / ${totalCount} Approved`}
+                              color={uniqueRecords.length > 0 && approvedCount === totalCount ? 'success' : 'warning'}
+                              variant="outlined"
+                              size="small"
+                            />
+                          );
+                        })()}
                       </Stack>
                     </StyledAccordionSummary>
                     <AccordionDetails sx={{ p: 0 }}>
@@ -307,43 +326,87 @@ const AdviserGradedAccreditationsPage = () => {
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {records[semester].map((rec) => (
-                                <StyledTableRow key={rec.id}>
-                                  <StyledTableCell>
-                                    <Box>
-                                      <Typography variant="body2" fontWeight={500}>
-                                        {rec.subject?.descriptiveTitle}
-                                      </Typography>
-                                      <Typography variant="caption" color="text.secondary">
-                                        {rec.subject?.subjectCode}
-                                      </Typography>
-                                    </Box>
-                                  </StyledTableCell>
-                                  <StyledTableCell>
-                                    <Typography 
-                                      variant="body2" 
-                                      fontWeight={600}
-                                      sx={{
-                                        backgroundColor: alpha(gold.light, 0.3),
-                                        padding: 1,
-                                        borderRadius: 1,
-                                        border: `1px solid ${alpha(gold.main, 0.5)}`,
-                                        textAlign: 'center'
-                                      }}
-                                    >
-                                      {rec.grade || "N/A"}
-                                    </Typography>
-                                  </StyledTableCell>
-                                  <StyledTableCell>
-                                    <Chip
-                                      label={rec.status || "PENDING"}
-                                      color={getStatusChipColor(rec.status)}
-                                      size="small"
-                                      variant="outlined"
-                                    />
-                                  </StyledTableCell>
-                                </StyledTableRow>
-                              ))}
+                              {records[semester].map((rec, idx) => {
+                                const rowKey = rec.id || `${rec.subject?.subjectId || ''}-${rec.subject?.subjectCode || ''}-${semester}-${idx}`;
+                                return (
+                                  <StyledTableRow key={rowKey}>
+                                    <StyledTableCell>
+                                      <Box>
+                                        <Typography variant="body2" fontWeight={500}>
+                                          {rec.subject?.descriptiveTitle}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                          {rec.subject?.subjectCode}
+                                        </Typography>
+                                      </Box>
+                                    </StyledTableCell>
+                                    <StyledTableCell>
+                                      {(
+                                        rec.grade === undefined ||
+                                        rec.grade === null ||
+                                        rec.grade === "" ||
+                                        (typeof rec.grade === "string" && rec.grade.trim().toLowerCase() === "n/a")
+                                      ) ? (
+                                        editingRecord[rowKey] ? (
+                                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <TextField
+                                              size="small"
+                                              value={rec.grade || ''}
+                                              onChange={e => handleGradeChange(rec.id, semester, e.target.value, applicantId)}
+                                              placeholder="Input grade"
+                                              sx={{ width: 90, mr: 1 }}
+                                              autoFocus
+                                              onBlur={() => setEditingRecord(prev => ({ ...prev, [rowKey]: false }))}
+                                            />
+                                            <Tooltip title="Save by clicking outside the box">
+                                              <span style={{ color: gold.main, fontSize: 12, marginLeft: 4 }}>*editing*</span>
+                                            </Tooltip>
+                                          </Box>
+                                        ) : (
+                                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <Tooltip title="Click to input grade">
+                                              <IconButton
+                                                size="small"
+                                                color="primary"
+                                                onClick={() => setEditingRecord(prev => ({ ...prev, [rowKey]: true }))}
+                                                sx={{ ml: 1 }}
+                                                aria-label="Edit Grade"
+                                              >
+                                                <EditIcon fontSize="small" />
+                                              </IconButton>
+                                            </Tooltip>
+                                            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                              No grade yet
+                                            </Typography>
+                                          </Box>
+                                        )
+                                      ) : (
+                                        <Typography
+                                          variant="body2"
+                                          fontWeight={600}
+                                          sx={{
+                                            backgroundColor: alpha(gold.light, 0.3),
+                                            padding: 1,
+                                            borderRadius: 1,
+                                            border: `1px solid ${alpha(gold.main, 0.5)}`,
+                                            textAlign: 'center'
+                                          }}
+                                        >
+                                          {rec.grade}
+                                        </Typography>
+                                      )}
+                                    </StyledTableCell>
+                                    <StyledTableCell>
+                                      <Chip
+                                        label={rec.status || "PENDING"}
+                                        color={getStatusChipColor(rec.status)}
+                                        size="small"
+                                        variant="outlined"
+                                      />
+                                    </StyledTableCell>
+                                  </StyledTableRow>
+                                );
+                              })}
                             </TableBody>
                           </Table>
                         </Box>

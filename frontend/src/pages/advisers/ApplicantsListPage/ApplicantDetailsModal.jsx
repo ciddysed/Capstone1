@@ -78,18 +78,6 @@ const DetailRowStyled = ({ icon, label, value }) => (
   </Stack>
 );
 
-const DOCUMENT_TYPE_LABELS = [
-  "INFORMATIVE_COPY_OF_TOR",
-  "CERTIFICATE_OF_EMPLOYMENT",
-];
-const formatDocumentType = (type) => {
-  const formats = {
-    "INFORMATIVE_COPY_OF_TOR": "Informative Copy of TOR",
-    "CERTIFICATE_OF_EMPLOYMENT": "Certificate of Employment",
-  };
-  return formats[type] || type;
-};
-
 const getInitials = (name) => {
   if (!name) return "??";
   return name
@@ -225,17 +213,20 @@ const ApplicantDetailsModal = ({ open, onClose, applicantId, courseId }) => {
                     <Divider sx={{ mb: 3, borderColor: alpha(gold.main, 0.5) }} />
                     <Box sx={{ bgcolor: alpha(theme.palette.background.default, 0.5), borderRadius: 2, border: `1px solid ${alpha(theme.palette.divider, 0.3)}`, maxHeight: 'auto', overflow: 'visible', mx: -2 }}>
                       <List sx={{ p: 0 }}>
-                        {DOCUMENT_TYPE_LABELS.map((docType, index) => {
-                          const doc = documents.find((d) => d.documentType === docType);
-                          return (
+                        {documents.length === 0 ? (
+                          <ListItem>
+                            <ListItemText primary="No documents uploaded." />
+                          </ListItem>
+                        ) : (
+                          documents.map((doc, index) => (
                             <ListItem
-                              key={docType}
+                              key={doc.documentId || index}
                               alignItems="flex-start"
                               sx={{
                                 py: 3,
                                 px: 3,
                                 borderBottom:
-                                  index < DOCUMENT_TYPE_LABELS.length - 1
+                                  index < documents.length - 1
                                     ? `1px solid ${alpha(theme.palette.divider, 0.3)}`
                                     : 'none',
                                 transition: 'background-color 0.2s ease',
@@ -246,13 +237,13 @@ const ApplicantDetailsModal = ({ open, onClose, applicantId, courseId }) => {
                             >
                               <Box sx={{ flex: 1, minWidth: 0 }}>
                                 <ListItemText
-                                  primary={formatDocumentType(docType)}
-                                  secondary={doc ? (doc.fileName || doc.name) : "Not Provided"}
+                                  primary={doc.documentType || 'Unknown Document'}
+                                  secondary={doc.fileName || doc.name || 'No file name'}
                                   primaryTypographyProps={{
-                                    fontWeight: doc ? 600 : 400,
+                                    fontWeight: 600,
                                     variant: 'body2',
-                                    color: doc ? 'text.primary' : 'text.secondary',
-                                    sx: { mb: doc ? 0.5 : 0 },
+                                    color: 'text.primary',
+                                    sx: { mb: 0.5 },
                                   }}
                                   secondaryTypographyProps={{
                                     variant: 'caption',
@@ -266,48 +257,46 @@ const ApplicantDetailsModal = ({ open, onClose, applicantId, courseId }) => {
                                   }}
                                 />
                               </Box>
-                              {doc && (
-                                <Box sx={{ display: 'flex', flex: 1, justifyContent: 'flex-end', alignItems: 'center', minWidth: 180 }}>
-                                  <Tooltip title="Preview Document">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="preview"
-                                      onClick={() => handlePreview(doc)}
-                                      size="small"
-                                      sx={{
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        '&:hover': {
-                                          backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                                        },
-                                        mr: 1.5
-                                      }}
-                                    >
-                                      <VisibilityIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Download Document">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="download"
-                                      onClick={() => handleDownload(doc.documentId)}
-                                      size="small"
-                                      sx={{
-                                        backgroundColor: alpha(theme.palette.grey[700], 0.1),
-                                        color: theme.palette.grey[700],
-                                        '&:hover': {
-                                          backgroundColor: alpha(theme.palette.grey[700], 0.2),
-                                        },
-                                      }}
-                                    >
-                                      <DownloadIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Box>
-                              )}
+                              <Box sx={{ display: 'flex', flex: 1, justifyContent: 'flex-end', alignItems: 'center', minWidth: 180 }}>
+                                <Tooltip title="Preview Document">
+                                  <IconButton
+                                    edge="end"
+                                    aria-label="preview"
+                                    onClick={() => handlePreview(doc)}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                      '&:hover': {
+                                        backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                                      },
+                                      mr: 1.5
+                                    }}
+                                  >
+                                    <VisibilityIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Download Document">
+                                  <IconButton
+                                    edge="end"
+                                    aria-label="download"
+                                    onClick={() => handleDownload(doc.documentId)}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: alpha(theme.palette.grey[700], 0.1),
+                                      color: theme.palette.grey[700],
+                                      '&:hover': {
+                                        backgroundColor: alpha(theme.palette.grey[700], 0.2),
+                                      },
+                                    }}
+                                  >
+                                    <DownloadIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
                             </ListItem>
-                          );
-                        })}
-                      </List>
+                          ))
+                        )}
+                      </List>   
                     </Box>
                   </AnimatedPaper>
                 </Stack>

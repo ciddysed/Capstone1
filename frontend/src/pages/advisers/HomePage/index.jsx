@@ -1,4 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { styled } from "@mui/material/styles";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import PeopleIcon from "@mui/icons-material/People";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import BookIcon from "@mui/icons-material/Book";
+import ApplicantDetailsModal from "./ApplicantDetailsModal";
+import MainLayout from "../../../templates/MainLayout";
 import {
   Paper,
   Stack,
@@ -21,14 +29,7 @@ import {
   AccordionDetails,
   Grow,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import PeopleIcon from "@mui/icons-material/People";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import BookIcon from "@mui/icons-material/Book";
-import ApplicantDetailsModal from "./ApplicantDetailsModal";
-import MainLayout from "../../../templates/MainLayout";
+
 
 const maroon = {
   light: "#8D323C",
