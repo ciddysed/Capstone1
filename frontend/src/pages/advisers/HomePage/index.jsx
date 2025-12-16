@@ -378,26 +378,7 @@ const AdviserHomePage = () => {
                             >
                               View Details
                             </Button>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              sx={{
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                backgroundColor: maroon.main,
-                                '&:hover': { backgroundColor: maroon.dark },
-                                ml: 1,
-                              }}
-                              onClick={() => {
-                                setGradedApplicant({
-                                  applicantId: app.applicant?.applicantId,
-                                  curriculumId: app.finalCourse?.courseId,
-                                });
-                                setGradedModalOpen(true);
-                              }}
-                            >
-                              Grade Subjects
-                            </Button>
+                            
                           </StyledTableCell>
                         </StyledTableRow>
                       ))}
