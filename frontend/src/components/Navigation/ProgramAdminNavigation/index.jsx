@@ -150,6 +150,10 @@ const ProgramAdminNavigation = ({ children }) => {
   const [openDialog, setOpenDialog] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  // Filter states
+  const [statusFilter, setStatusFilter] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
 
   const handleNavItemClick = (item) => {
     setActiveButton(item);
@@ -248,8 +252,25 @@ const ProgramAdminNavigation = ({ children }) => {
     }
   }, [activeButton]);
 
+  // Get unique courses for filter dropdown
+  const courseOptions = Array.from(new Set(applications.map(a => a.courseName || a.course?.courseName).filter(Boolean)));
+
+  // Filtering logic
+  const filteredApplications = applications.filter(app => {
+    let statusMatch = true, courseMatch = true, dateMatch = true;
+    if (statusFilter) statusMatch = app.status === statusFilter;
+    if (courseFilter) courseMatch = (app.courseName || app.course?.courseName) === courseFilter;
+    if (dateFilter) {
+      if (!app.applicationDate) return false;
+      const appDate = new Date(app.applicationDate);
+      const filterDate = new Date(dateFilter);
+      dateMatch = appDate.toISOString().slice(0,10) === filterDate.toISOString().slice(0,10);
+    }
+    return statusMatch && courseMatch && dateMatch;
+  });
+
   // Filter applications for current page
-  const displayedApplications = applications.slice(
+  const displayedApplications = filteredApplications.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
@@ -534,7 +555,11 @@ const ProgramAdminNavigation = ({ children }) => {
             >
               <FormControl size="small" sx={{ minWidth: 150 }}>
                 <InputLabel>Status</InputLabel>
-                <Select label="Status" defaultValue="">
+                <Select
+                  label="Status"
+                  value={statusFilter}
+                  onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
+                >
                   <MenuItem value="">All</MenuItem>
                   <MenuItem value="PENDING">Pending</MenuItem>
                   <MenuItem value="APPROVED">Approved</MenuItem>
@@ -546,22 +571,15 @@ const ProgramAdminNavigation = ({ children }) => {
 
               <FormControl size="small" sx={{ minWidth: 150 }}>
                 <InputLabel>Course</InputLabel>
-                <Select label="Course" defaultValue="">
+                <Select
+                  label="Course"
+                  value={courseFilter}
+                  onChange={e => { setCourseFilter(e.target.value); setPage(0); }}
+                >
                   <MenuItem value="">All</MenuItem>
-                  <MenuItem value="BSIT">BSIT</MenuItem>
-                  <MenuItem value="BSA">BSA</MenuItem>
-                  <MenuItem value="BSBA">BSBA</MenuItem>
-                  <MenuItem value="BSCS">BSCS</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl size="small" sx={{ minWidth: 150 }}>
-                <InputLabel>Priority</InputLabel>
-                <Select label="Priority" defaultValue="">
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="HIGH">High</MenuItem>
-                  <MenuItem value="MEDIUM">Medium</MenuItem>
-                  <MenuItem value="LOW">Low</MenuItem>
+                  {courseOptions.map(course => (
+                    <MenuItem key={course} value={course}>{course}</MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
@@ -569,9 +587,12 @@ const ProgramAdminNavigation = ({ children }) => {
                 size="small"
                 label="Date Applied"
                 type="date"
+                value={dateFilter}
+                onChange={e => { setDateFilter(e.target.value); setPage(0); }}
                 InputLabelProps={{ shrink: true }}
                 sx={{ minWidth: 160 }}
               />
+              <Button onClick={() => { setStatusFilter(""); setCourseFilter(""); setDateFilter(""); setPage(0); }} variant="outlined" size="small">Clear Filters</Button>
             </Box>
           )}
         </Box>

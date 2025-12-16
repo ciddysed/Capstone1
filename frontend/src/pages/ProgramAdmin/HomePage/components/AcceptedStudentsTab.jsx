@@ -27,6 +27,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
   TextField,
 } from "@mui/material";
 import PersonIcon from '@mui/icons-material/Person';
@@ -129,6 +133,10 @@ const AcceptedStudentsTab = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [editRemarks, setEditRemarks] = useState("");
+  // Filter states
+  const [statusFilter, setStatusFilter] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
 
   // Fetch accepted students
   const fetchAcceptedStudents = async () => {
@@ -200,11 +208,18 @@ const AcceptedStudentsTab = () => {
           },
         }
       );
-      await fetchAcceptedStudents();
+      // Optimistically update the UI
+      setAcceptedStudents(prev => prev.map(s =>
+        s.acceptedApplicantId === selectedStudent.acceptedApplicantId
+          ? { ...s, remarks: editRemarks, status: selectedStudent.status }
+          : s
+      ));
       setOpenEditDialog(false);
       setEditRemarks("");
       setSelectedStudent(null);
       toast.success("Remarks updated successfully");
+      // Optionally, re-fetch in the background to ensure consistency
+      fetchAcceptedStudents();
     } catch (error) {
       console.error("Error updating remarks:", error);
       toast.error("Failed to update remarks");
@@ -215,14 +230,33 @@ const AcceptedStudentsTab = () => {
     fetchAcceptedStudents();
   }, []);
 
+
+  // Get unique courses for filter dropdown
+  const courseOptions = Array.from(new Set(acceptedStudents.map(s => s.finalCourse?.courseName).filter(Boolean)));
+
+  // Filtering logic
+  const filteredStudents = acceptedStudents.filter(s => {
+    let statusMatch = true, courseMatch = true, dateMatch = true;
+    if (statusFilter) statusMatch = s.status === statusFilter;
+    if (courseFilter) courseMatch = s.finalCourse?.courseName === courseFilter;
+    if (dateFilter) {
+      if (!s.acceptanceDate) return false;
+      const studentDate = new Date(s.acceptanceDate);
+      const filterDate = new Date(dateFilter);
+      // Compare only date part
+      dateMatch = studentDate.toISOString().slice(0,10) === filterDate.toISOString().slice(0,10);
+    }
+    return statusMatch && courseMatch && dateMatch;
+  });
+
   // Get statistics
-  const totalAccepted = acceptedStudents.length;
-  const enrolledCount = acceptedStudents.filter(s => s.status === 'ENROLLED').length;
-  const acceptedCount = acceptedStudents.filter(s => s.status === 'ACCEPTED').length;
-  const withdrawnCount = acceptedStudents.filter(s => s.status === 'WITHDRAWN').length;
+  const totalAccepted = filteredStudents.length;
+  const enrolledCount = filteredStudents.filter(s => s.status === 'ENROLLED').length;
+  const acceptedCount = filteredStudents.filter(s => s.status === 'ACCEPTED').length;
+  const withdrawnCount = filteredStudents.filter(s => s.status === 'WITHDRAWN').length;
 
   // Filter students for current page
-  const displayedStudents = acceptedStudents.slice(
+  const displayedStudents = filteredStudents.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
@@ -236,6 +270,46 @@ const AcceptedStudentsTab = () => {
           Accepted Students
         </Typography>
       </Stack>
+
+      {/* Filter Bar */}
+      <Paper sx={{ mb: 3, p: 2, borderRadius: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+        <FormControl sx={{ minWidth: 160 }} size="small">
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Status"
+            onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
+          >
+            <MenuItem value="">All Statuses</MenuItem>
+            <MenuItem value="ACCEPTED">ACCEPTED</MenuItem>
+            <MenuItem value="ENROLLED">ENROLLED</MenuItem>
+            <MenuItem value="WITHDRAWN">WITHDRAWN</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 180 }} size="small">
+          <InputLabel>Course</InputLabel>
+          <Select
+            value={courseFilter}
+            label="Course"
+            onChange={e => { setCourseFilter(e.target.value); setPage(0); }}
+          >
+            <MenuItem value="">All Courses</MenuItem>
+            {courseOptions.map(course => (
+              <MenuItem key={course} value={course}>{course}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <TextField
+          label="Acceptance Date"
+          type="date"
+          size="small"
+          value={dateFilter}
+          onChange={e => { setDateFilter(e.target.value); setPage(0); }}
+          InputLabelProps={{ shrink: true }}
+          sx={{ minWidth: 180 }}
+        />
+        <Button onClick={() => { setStatusFilter(""); setCourseFilter(""); setDateFilter(""); setPage(0); }} variant="outlined" size="small">Clear Filters</Button>
+      </Paper>
 
       {/* Statistics Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
