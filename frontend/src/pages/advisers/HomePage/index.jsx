@@ -10,7 +10,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import ApplicantDetailsModal from "./ApplicantDetailsModal";
-import GradedAccreditation from "./GradedAccreditation";
 import MainLayout from "../../../templates/MainLayout";
 import {
   Paper,
@@ -109,9 +108,7 @@ const AdviserHomePage = () => {
   const [applicants, setApplicants] = useState([]);
   const [recordsMap, setRecordsMap] = useState({});
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [gradedModalOpen, setGradedModalOpen] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
-  const [gradedApplicant, setGradedApplicant] = useState(null);
   const [editRow, setEditRow] = useState({}); // { [recordId]: true }
   const [editFields, setEditFields] = useState({}); // { [recordId]: { grade, processOfAccreditation, substantiveBasis } }
 
@@ -378,26 +375,7 @@ const AdviserHomePage = () => {
                             >
                               View Details
                             </Button>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              sx={{
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                backgroundColor: maroon.main,
-                                '&:hover': { backgroundColor: maroon.dark },
-                                ml: 1,
-                              }}
-                              onClick={() => {
-                                setGradedApplicant({
-                                  applicantId: app.applicant?.applicantId,
-                                  curriculumId: app.finalCourse?.courseId,
-                                });
-                                setGradedModalOpen(true);
-                              }}
-                            >
-                              Grade Subjects
-                            </Button>
+                            
                           </StyledTableCell>
                         </StyledTableRow>
                       ))}
@@ -697,12 +675,12 @@ const AdviserHomePage = () => {
         applicantId={selectedApplicant?.applicantId}
         courseId={selectedApplicant?.courseId}
       />
-      <GradedAccreditation
+      {/* <GradedAccreditation
         applicantId={gradedApplicant?.applicantId}
         curriculumId={gradedApplicant?.curriculumId}
         isOpen={gradedModalOpen}
         onClose={() => setGradedModalOpen(false)}
-      />
+      /> */}
     </MainLayout>
   );
 };
