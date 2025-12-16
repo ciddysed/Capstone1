@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -89,15 +90,27 @@ const ActionButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const AccreditedAccounts = ({ onNavigateToGraded }) => {
+const AccreditedAccounts = () => {
   const theme = useTheme();
   const [accreditedApplicants, setAccreditedApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
   const [gradedModalOpen, setGradedModalOpen] = useState(false);
   const [selectedModalData, setSelectedModalData] = useState({
     applicantId: null,
     curriculumId: null,
   });
+  // Open modal automatically if redirected with state
+  useEffect(() => {
+    if (location.state && location.state.openApplicantId && location.state.openCurriculumId) {
+      setSelectedModalData({
+        applicantId: location.state.openApplicantId,
+        curriculumId: location.state.openCurriculumId,
+      });
+      setGradedModalOpen(true);
+    }
+    // eslint-disable-next-line
+  }, [location.state]);
 
   useEffect(() => {
     // Fetch all accepted applicants

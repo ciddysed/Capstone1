@@ -117,6 +117,11 @@ const ApplicationTracking = () => {
       (response) => response,
       (error) => {
         console.error("API Error:", error);
+        // Only show the generic error if it's not a 404 from acceptance check
+        if (error.response?.status === 404 && error.config.url?.includes('/accepted-applicants/applicant/')) {
+          // Do not show error banner for normal 'not accepted yet' case
+          return Promise.reject(error);
+        }
         const errorMessage =
           error.response?.data?.message ||
           "An error occurred while communicating with the server";

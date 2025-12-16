@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -95,7 +96,8 @@ const ActionButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const Accreditations = ({ onNavigateToGraded }) => {
+const Accreditations = () => {
+    const navigate = useNavigate();
   const theme = useTheme();
   const evaluatorId = localStorage.getItem("evaluatorId");
   const [acceptedApplicants, setAcceptedApplicants] = useState([]);
@@ -201,17 +203,21 @@ const Accreditations = ({ onNavigateToGraded }) => {
     }
 
     setAccreditLoading(true);
-    
     try {
       const applicantId = selectedApplicant.applicant?.applicantId;
       const params = new URLSearchParams({ curriculumId: selectedCurriculumId });
       const url = `https://eteeap-foth.onrender.com/api/applicants/${applicantId}/create-curriculum-record?${params.toString()}`;
-      
       const response = await fetch(url, { method: "POST" });
-      
       if (response.ok) {
-        // Success - navigate to graded accreditation using the callback
-        onNavigateToGraded(selectedApplicant.applicant?.applicantId, selectedCurriculumId);
+        // Close modal immediately
+        setConfirmOpen(false);
+        // Redirect to accredited accounts and open the modal for this applicant
+        navigate(`/evaluator/accredited-accounts`, {
+          state: {
+            openApplicantId: applicantId,
+            openCurriculumId: selectedCurriculumId
+          }
+        });
       } else {
         const errorText = await response.text();
         toast.error(`Failed to create curriculum record: ${response.status} ${errorText}`);
@@ -221,7 +227,6 @@ const Accreditations = ({ onNavigateToGraded }) => {
       toast.error("Network error while creating curriculum record. Please try again.");
     } finally {
       setAccreditLoading(false);
-      setConfirmOpen(false);
     }
   };
 
