@@ -911,94 +911,99 @@ const ApplicationTracking = () => {
                       </CardContent>
                     </Card>
 
-                    {/* Course Preferences Card */}
-                    <Card elevation={2} sx={{ 
-                      border: `2px solid ${alpha(gold.light, 0.2)}`,
-                      '&:hover': { 
-                        boxShadow: `0 8px 32px ${alpha(maroon.main, 0.12)}`,
-                        transform: 'translateY(-2px)'
-                      },
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <CardHeader
-                        title={
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <GraduationCapIcon sx={{ color: maroon.main, fontSize: 20 }} />
-                            <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>Course Preferences</Typography>
-                          </Box>
-                        }
-                        subheader="Your selected course preferences in order of priority"
-                        sx={{ 
-                          pb: 2,
-                          background: `linear-gradient(135deg, ${alpha(gold.light, 0.08)} 0%, ${alpha(maroon.main, 0.05)} 100%)`
-                        }}
-                      />
-                      <CardContent>
-                        <CoursePreferences
-                          isLoading={false}
-                          coursePreferences={coursePreferences}
-                          formatPriority={formatPriority}
-                          getCourseName={getCourseName}
-                          maroon={maroon}
-                          gold={gold}
-                        />
-                      </CardContent>
-                    </Card>
                   </Box>
                 </Grid>
 
                 {/* Right Column - Documents */}
                 <Grid item xs={12} lg={6}>
-                  <Card elevation={2} sx={{ 
-                    border: `2px solid ${alpha(gold.light, 0.2)}`,
-                    '&:hover': { 
-                      boxShadow: `0 8px 32px ${alpha(maroon.main, 0.12)}`,
-                      transform: 'translateY(-2px)'
-                    },
-                    transition: 'all 0.3s ease',
-                    height: 'fit-content'
-                  }}>
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <FileTextIcon sx={{ color: maroon.main, fontSize: 20 }} />
-                            <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>Application Documents</Typography>
-                          </Box>
-                          <Chip 
-                            label={documents.length} 
-                            size="small" 
-                            sx={{
-                              backgroundColor: gold.main,
-                              color: 'black',
-                              fontWeight: 600
-                            }}
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <Card elevation={2} sx={{ 
+                        border: `2px solid ${alpha(gold.light, 0.2)}`,
+                        '&:hover': { 
+                          boxShadow: `0 8px 32px ${alpha(maroon.main, 0.12)}`,
+                          transform: 'translateY(-2px)'
+                        },
+                        transition: 'all 0.3s ease',
+                        height: 'fit-content'
+                      }}>
+                        <CardHeader
+                          title={
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <FileTextIcon sx={{ color: maroon.main, fontSize: 20 }} />
+                                <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>Application Documents</Typography>
+                              </Box>
+                              <Chip 
+                                label={documents.length} 
+                                size="small" 
+                                sx={{
+                                  backgroundColor: gold.main,
+                                  color: 'black',
+                                  fontWeight: 600
+                                }}
+                              />
+                            </Box>
+                          }
+                          subheader="Manage your uploaded documents"
+                          sx={{ 
+                            pb: 2,
+                            background: `linear-gradient(135deg, ${alpha(gold.light, 0.08)} 0%, ${alpha(maroon.main, 0.05)} 100%)`
+                          }}
+                        />
+                        <CardContent>
+                          <DocumentHandler
+                            isLoading={loading.documents}
+                            documents={documents}
+                            documentsByType={documentsByType}
+                            apiBaseUrl={API_BASE_URL}
+                            uploadingFiles={uploadingFiles}
+                            handleFileUpload={handleFileUpload}
+                            handleFileChange={handleFileChange}
+                            missingDocuments={missingDocuments}
+                            handleMissingFileUpload={handleMissingFileUpload}
+                            requiredDocuments={REQUIRED_DOCUMENTS}
+                            maroon={maroon}
+                            gold={gold}
                           />
-                        </Box>
-                      }
-                      subheader="Manage your uploaded documents"
-                      sx={{ 
-                        pb: 2,
-                        background: `linear-gradient(135deg, ${alpha(gold.light, 0.08)} 0%, ${alpha(maroon.main, 0.05)} 100%)`
-                      }}
-                    />
-                    <CardContent>
-                      <DocumentHandler
-                        isLoading={loading.documents}
-                        documents={documents}
-                        documentsByType={documentsByType}
-                        apiBaseUrl={API_BASE_URL}
-                        uploadingFiles={uploadingFiles}
-                        handleFileUpload={handleFileUpload}
-                        handleFileChange={handleFileChange}
-                        missingDocuments={missingDocuments}
-                        handleMissingFileUpload={handleMissingFileUpload}
-                        requiredDocuments={REQUIRED_DOCUMENTS}
-                        maroon={maroon}
-                        gold={gold}
-                      />
-                    </CardContent>
-                  </Card>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <Card elevation={2} sx={{ 
+                        border: `2px solid ${alpha(gold.light, 0.2)}`,
+                        '&:hover': { 
+                          boxShadow: `0 8px 32px ${alpha(maroon.main, 0.12)}`,
+                          transform: 'translateY(-2px)'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}>
+                        <CardHeader
+                          title={
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <GraduationCapIcon sx={{ color: maroon.main, fontSize: 20 }} />
+                              <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>Course Preferences</Typography>
+                            </Box>
+                          }
+                          subheader="Your selected course preferences in order of priority"
+                          sx={{ 
+                            pb: 2,
+                            background: `linear-gradient(135deg, ${alpha(gold.light, 0.08)} 0%, ${alpha(maroon.main, 0.05)} 100%)`
+                          }}
+                        />
+                        <CardContent>
+                          <CoursePreferences
+                            isLoading={false}
+                            coursePreferences={coursePreferences}
+                            formatPriority={formatPriority}
+                            getCourseName={getCourseName}
+                            maroon={maroon}
+                            gold={gold}
+                          />
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </Grid>
                 </Grid>
               </Grid>
 

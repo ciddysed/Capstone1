@@ -12,7 +12,11 @@ import {
   ToggleButton,
   styled,
   MenuItem,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -48,6 +52,8 @@ const EvaluatorLoginForm = ({
 }) => {
   const [currentFormType, setCurrentFormType] = useState(formType);
   const [departments, setDepartments] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [evaluatorDepartment, setEvaluatorDepartment] = useState("");
   const schema = getValidationSchema(currentFormType);
   const navigate = useNavigate();
@@ -350,7 +356,7 @@ const EvaluatorLoginForm = ({
             )}
 
             <StyledTextField
-              type="password"
+              type={showPassword ? "text" : "password"}
               fullWidth
               placeholder="Enter your password"
               variant="outlined"
@@ -358,11 +364,24 @@ const EvaluatorLoginForm = ({
               {...register("password")}
               error={!!errors.password}
               helperText={errors.password?.message}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      edge="end"
+                      aria-label="toggle password visibility"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             {currentFormType === "signup" && (
               <StyledTextField
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Re-enter your password"
                 variant="outlined"
                 size="small"
@@ -370,6 +389,19 @@ const EvaluatorLoginForm = ({
                 {...register("reEnterPassword")}
                 error={!!errors.reEnterPassword}
                 helperText={errors.reEnterPassword?.message}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        edge="end"
+                        aria-label="toggle confirm password visibility"
+                      >
+                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             )}
 

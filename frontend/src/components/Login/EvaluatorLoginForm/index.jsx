@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from "react";
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButton from "@mui/material/IconButton";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -47,6 +51,8 @@ const EvaluatorLoginForm = ({
 }) => {
   const [currentFormType, setCurrentFormType] = useState(formType);
   const [departments, setDepartments] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const schema = getValidationSchema(currentFormType);
   const navigate = useNavigate();
 
@@ -294,7 +300,7 @@ const EvaluatorLoginForm = ({
           )}
 
           <StyledTextField
-            type="password"
+            type={showPassword ? "text" : "password"}
             fullWidth
             placeholder="Enter your password"
             variant="outlined"
@@ -302,11 +308,24 @@ const EvaluatorLoginForm = ({
             {...register("password")}
             error={!!errors.password}
             helperText={errors.password?.message}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    edge="end"
+                    aria-label="toggle password visibility"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
 
           {currentFormType === "signup" && (
             <StyledTextField
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               placeholder="Re-enter your password"
               variant="outlined"
               size="small"
@@ -314,6 +333,19 @@ const EvaluatorLoginForm = ({
               {...register("reEnterPassword")}
               error={!!errors.reEnterPassword}
               helperText={errors.reEnterPassword?.message}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      edge="end"
+                      aria-label="toggle confirm password visibility"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
           )}
           {currentFormType === "login" && (

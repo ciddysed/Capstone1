@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -9,7 +9,11 @@ import {
   ListItem,
   Button,
   Stack,
+  Paper,
+  CircularProgress,
 } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import logo from "../../../assets/logo.png";
 import backgroundImage from "../../../assets/login-bg.png";
 
@@ -33,8 +37,37 @@ const EvaluatorNavigation = ({ children }) => {
     },
     { title: "", items: [{ key: "Logout", label: "Logout" }] },
   ];
+
   const [activeButton, setActiveButton] = useState("ApplicantsEval");
+  const [evaluatorStatus, setEvaluatorStatus] = useState(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
+  const [lastChecked, setLastChecked] = useState(new Date());
   const navigate = useNavigate();
+  const evaluatorId = localStorage.getItem("evaluatorId");
+
+  // Registration status check logic (global block)
+  const checkStatus = () => {
+    if (!evaluatorId) return;
+    setLoadingStatus(true);
+    fetch(`https://eteeap-foth.onrender.com/api/evaluators/${evaluatorId}/status`)
+      .then((res) => res.json())
+      .then((data) => {
+        setEvaluatorStatus(data.status || "PENDING");
+      })
+      .catch((err) => {
+        setEvaluatorStatus("PENDING");
+        console.error("Error checking status:", err);
+      })
+      .finally(() => {
+        setLoadingStatus(false);
+        setLastChecked(new Date());
+      });
+  };
+
+  useEffect(() => {
+    checkStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleNavItemClick = (itemKey) => {
     setActiveButton(itemKey);
@@ -42,6 +75,71 @@ const EvaluatorNavigation = ({ children }) => {
   };
 
   const renderContent = () => {
+    // Universal block: If not approved, always show Registration In Progress
+    if (loadingStatus || evaluatorStatus !== "APPROVED") {
+      return (
+        <Stack
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          <Paper
+            elevation={3}
+            sx={{
+              px: 4,
+              py: 3,
+              backgroundColor: "#fff8dc",
+              maxWidth: 500,
+              textAlign: "center",
+              borderLeft: "8px solid #fdd835",
+            }}
+          >
+            <Stack
+              direction="row"
+              spacing={1}
+              justifyContent="center"
+              alignItems="center"
+              mb={2}
+            >
+              <InfoIcon color="warning" fontSize="large" />
+              <Typography variant="h6" fontWeight="bold" color="text.primary">
+                Registration In Progress
+              </Typography>
+            </Stack>
+            <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+              <CircularProgress color="warning" size={60} thickness={4} />
+            </Box>
+            <Typography variant="body1" color="text.secondary" gutterBottom>
+              Your registration has been received and is being processed by administrators.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              Once approved, you will have access to the evaluation system. You will receive an email notification when your account is ready.
+            </Typography>
+            <Divider sx={{ my: 2 }} />
+            <Box sx={{ mt: 2, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <Button
+                variant="outlined"
+                color="warning"
+                startIcon={loadingStatus ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
+                onClick={checkStatus}
+                disabled={loadingStatus}
+                sx={{ mb: 1 }}
+              >
+                {loadingStatus ? "Checking..." : "Check Status"}
+              </Button>
+              <Typography variant="caption" color="text.secondary">
+                Last checked: {lastChecked.toLocaleTimeString()}
+              </Typography>
+            </Box>
+          </Paper>
+        </Stack>
+      );
+    }
+
+    // Only render actual content if approved
     switch (activeButton) {
       case "ApplicantsEval":
         return children;
@@ -66,9 +164,6 @@ const EvaluatorNavigation = ({ children }) => {
         return "Applicants for Evaluation";
     }
   };
-
-  // Get evaluator ID from localStorage
-  // const evaluatorId = localStorage.getItem("evaluatorId");
 
   return (
     <Box

@@ -51,8 +51,8 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
 
     try {
       console.log("=== FRONTEND: Direct Password Reset START ===");
-      // Use POST method instead of PUT to match the backend endpoint
-      const response = await axios.post(
+      // Use PUT method to match the backend endpoint
+      const response = await axios.put(
         "https://eteeap-foth.onrender.com/api/applicants/reset-password",
         {
           email: data.email,
