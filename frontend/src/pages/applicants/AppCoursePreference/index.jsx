@@ -455,6 +455,15 @@ export default function ApplicationForm() {
     const actualDocumentType = isReplacement ? documentType.documentType : documentType
     const documentId = isReplacement ? documentType.id : null
 
+    // Prevent duplicate upload for the same document type
+    if (!isReplacement) {
+      const alreadyUploaded = files.some(f => String(f.documentType).toLowerCase() === String(actualDocumentType).toLowerCase());
+      if (alreadyUploaded) {
+        handleError("You have already uploaded a file for this document type. Please remove or replace it if you want to upload a new one.");
+        return;
+      }
+    }
+
     const formData = new FormData()
     formData.append("files", file)
     formData.append("applicantId", applicantId)
@@ -520,57 +529,70 @@ export default function ApplicationForm() {
   }
 
   // Remove file
-  const removeFile = (fileId) => {
-    setFiles((prev) => prev.filter((f) => f.id !== fileId))
+  const removeFile = async (fileId) => {
+    // Optimistically remove from UI
+    setFiles((prev) => prev.filter((f) => f.id !== fileId));
+    try {
+      await axios.delete(`https://eteeap-foth.onrender.com/api/documents/${fileId}`, getAuthConfig());
+      handleSuccess('File removed successfully.');
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      handleError('Failed to remove file from server. Please refresh and try again.');
+    }
   }
 
   // Handle submit
   const handleSubmit = async () => {
-    // Check if "INFORMATIVE_COPY_OF_TOR" is uploaded
-    const hasTOR = files.some(file => file.documentType === "INFORMATIVE_COPY_OF_TOR")
+    // Validation: Must have TOR, COE, and at least 3 files (TOR, COE, and any other)
+    const hasTOR = files.some(file => file.documentType === "INFORMATIVE_COPY_OF_TOR");
+    const hasCOE = files.some(file => file.documentType === "CERTIFICATE_OF_EMPLOYMENT");
     if (!hasTOR) {
-      handleError('You must upload the "Informative Copy of TOR" before submitting your application.')
-      return
+      handleError('You must upload the "Transcript of Records" before submitting your application.');
+      return;
+    }
+    if (!hasCOE) {
+      handleError('You must upload the "Certificate of Employment" before submitting your application.');
+      return;
+    }
+    if (files.length < 3) {
+      handleError('You must upload a minimum of 3 documents: Transcript of Records, Certificate of Employment, and at least one other required document.');
+      return;
     }
 
     try {
-      setSubmitting(true)
-      
+      setSubmitting(true);
       // Check if application already exists
       try {
-        const response = await axios.get(`https://eteeap-foth.onrender.com/api/applications/applicant/${applicantId}`, getAuthConfig())
+        const response = await axios.get(`https://eteeap-foth.onrender.com/api/applications/applicant/${applicantId}`, getAuthConfig());
         if (response.data && response.data.length > 0) {
-          setSuccessModalOpen(true)
-          setSubmitting(false)
-          return
+          setSuccessModalOpen(true);
+          setSubmitting(false);
+          return;
         }
       } catch (error) {
         if (error.response && error.response.status === 404) {
-          console.log("No existing application found. Proceeding to create a new application.")
+          console.log("No existing application found. Proceeding to create a new application.");
         } else {
-          console.error("Error checking existing application:", error)
-          handleError("Failed to check existing application. Please try again.")
-          setSubmitting(false)
-          return
+          console.error("Error checking existing application:", error);
+          handleError("Failed to check existing application. Please try again.");
+          setSubmitting(false);
+          return;
         }
       }
-
       // Create new application
       const newApplication = {
         status: "PENDING",
-      }
-
+      };
       await axios.post(`https://eteeap-foth.onrender.com/api/applications/applicant/${applicantId}`, newApplication, getAuthConfig({
         headers: { "Content-Type": "application/json" }
-      }))
-
-      handleSuccess("Application submitted successfully!")
-      setSubmitting(false)
-      navigate("/ApplicationTrack")
+      }));
+      handleSuccess("Application submitted successfully!");
+      setSubmitting(false);
+      navigate("/ApplicationTrack");
     } catch (error) {
-      console.error("Error submitting application:", error)
-      handleError("Failed to submit application. Please try again.")
-      setSubmitting(false)
+      console.error("Error submitting application:", error);
+      handleError("Failed to submit application. Please try again.");
+      setSubmitting(false);
     }
   }
 
@@ -1116,7 +1138,23 @@ export default function ApplicationForm() {
                               ) : (
                                 <AlertCircleIcon sx={{ color: "error.main", fontSize: 14 }} />
                               )}
-                              <Typography variant="caption">TOR Required</Typography>
+                              <Typography variant="caption">Transcript of Records Required</Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              {files.some((f) => f.documentType === "CERTIFICATE_OF_EMPLOYMENT") ? (
+                                <CheckCircleIcon sx={{ color: "success.main", fontSize: 14 }} />
+                              ) : (
+                                <AlertCircleIcon sx={{ color: "error.main", fontSize: 14 }} />
+                              )}
+                              <Typography variant="caption">Certificate of Employment Required</Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              {files.length >= 3 ? (
+                                <CheckCircleIcon sx={{ color: "success.main", fontSize: 14 }} />
+                              ) : (
+                                <ClockIcon sx={{ color: "warning.main", fontSize: 14 }} />
+                              )}
+                              <Typography variant="caption">Minimum of 3 Documents</Typography>
                             </Box>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                               {coursePreferences.length > 0 ? (
@@ -1125,14 +1163,6 @@ export default function ApplicationForm() {
                                 <ClockIcon sx={{ color: "warning.main", fontSize: 14 }} />
                               )}
                               <Typography variant="caption">Course Selected</Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              {files.length >= 3 ? (
-                                <CheckCircleIcon sx={{ color: "success.main", fontSize: 14 }} />
-                              ) : (
-                                <ClockIcon sx={{ color: "warning.main", fontSize: 14 }} />
-                              )}
-                              <Typography variant="caption">Min 3 Documents</Typography>
                             </Box>
                           </Box>
                         </CardContent>
@@ -1184,7 +1214,13 @@ export default function ApplicationForm() {
 
                     <Button
                       onClick={handleSubmit}
-                      disabled={submitting || !files.some((f) => f.documentType === "INFORMATIVE_COPY_OF_TOR")}
+                      disabled={
+                        submitting ||
+                        !files.some((f) => f.documentType === "INFORMATIVE_COPY_OF_TOR") ||
+                        !files.some((f) => f.documentType === "CERTIFICATE_OF_EMPLOYMENT") ||
+                        files.length < 3 ||
+                        coursePreferences.length === 0
+                      }
                       size="large"
                       variant="contained"
                       sx={{ 

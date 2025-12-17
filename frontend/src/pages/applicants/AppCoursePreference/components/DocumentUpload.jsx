@@ -15,104 +15,45 @@ const DocumentUpload = ({ documentTypes, files, handleFileUpload, getDocumentTyp
         boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)'
       }}>
         <Stack spacing={1.5}>
-          {documentTypes.map((docType) => {
-            const uploadedDoc = files.find(file => file.documentType === docType.value);
-            
-            return (
-              <DocumentItem key={docType.value}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                  <Typography variant="subtitle2" fontWeight={uploadedDoc ? 600 : 400} sx={{ 
-                    color: uploadedDoc ? maroon.main : 'text.primary',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    {docType.label}
-                    {uploadedDoc && 
-                      <Box component="span" sx={{ 
-                        ml: 1, 
-                        color: "success.main",
-                        bgcolor: alpha('#4caf50', 0.1),
-                        borderRadius: '50%',
-                        width: 18,
-                        height: 18,
-                        display: 'inline-flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        fontSize: '0.75rem'
-                      }}>
-                        ✓
-                      </Box>
-                    }
-                  </Typography>
-                </Box>
-                
-                {uploadedDoc ? (
-                  <Box 
-                    sx={{ 
-                      p: 1.5, 
-                      bgcolor: alpha(maroon.light, 0.05), 
-                      borderRadius: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      border: `1px solid ${alpha(maroon.main, 0.15)}`,
-                    }}
-                  >
-                    <Box 
-                      sx={{ 
-                        width: 8, 
-                        height: 8, 
-                        borderRadius: '50%', 
-                        bgcolor: maroon.main,
-                        mr: 1 
-                      }} 
-                    />
-                    <a 
-                      href={uploadedDoc.downloadUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      style={{ 
-                        color: maroon.main, 
-                        textDecoration: 'none',
-                        fontWeight: 500,
-                        flexGrow: 1,
-                        fontSize: '0.85rem'
-                      }}
-                    >
-                      {uploadedDoc.name}
-                    </a>
-                    <Button
-                      size="small"
-                      variant="text"
-                      color="primary"
-                      component="label"
-                      sx={{ minWidth: "auto", fontWeight: 600 }}
-                    >
-                      Change
-                      <input
-                        type="file"
-                        hidden
-                        onChange={(e) => handleFileUpload(e, uploadedDoc)}
-                      />
-                    </Button>
+          {documentTypes.filter(docType => {
+            const docTypeValue = String(docType.value).toLowerCase();
+            return !files.some(file => String(file.documentType).toLowerCase() === docTypeValue);
+          }).map((docType) => (
+            <DocumentItem key={docType.value}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                <Typography variant="subtitle2" fontWeight={400} sx={{ color: 'text.primary', display: 'flex', alignItems: 'center' }}>
+                  {docType.label}
+                </Typography>
+              </Box>
+              <UploadButton
+                variant="contained"
+                component="label"
+                startIcon={<UploadFile />}
+                size="small"
+              >
+                Upload {docType.label}
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) => handleFileUpload(e, docType.value)}
+                />
+              </UploadButton>
+            </DocumentItem>
+          ))}
+          {/* Show uploaded documents as a list below (no upload/replace option) */}
+          {files.length > 0 && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Uploaded Documents</Typography>
+              <Stack spacing={1}>
+                {files.map((uploadedDoc, idx) => (
+                  <Box key={uploadedDoc.documentType || idx} sx={{ display: 'flex', alignItems: 'center', p: 1, bgcolor: alpha(maroon.light, 0.05), borderRadius: 1, border: `1px solid ${alpha(maroon.main, 0.15)}` }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: maroon.main, mr: 1 }} />
+                    <Typography variant="body2" sx={{ flexGrow: 1 }}>{getDocumentTypeLabel ? getDocumentTypeLabel(uploadedDoc.documentType) : uploadedDoc.documentType}: {uploadedDoc.name}</Typography>
                   </Box>
-                ) : (
-                  <UploadButton
-                    variant="contained"
-                    component="label"
-                    startIcon={<UploadFile />}
-                    size="small"
-                  >
-                    Upload {docType.label}
-                    <input
-                      type="file"
-                      hidden
-                      onChange={(e) => handleFileUpload(e, docType.value)}
-                    />
-                  </UploadButton>
-                )}
-              </DocumentItem>
-            );
-          })}
+                ))}
+              </Stack>
+            </Box>
+          )}
         </Stack>
       </Box>
     </Box>

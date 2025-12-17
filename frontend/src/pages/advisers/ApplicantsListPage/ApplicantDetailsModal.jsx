@@ -211,8 +211,17 @@ const ApplicantDetailsModal = ({ open, onClose, applicantId, courseId }) => {
                       </Typography>
                     </Stack>
                     <Divider sx={{ mb: 3, borderColor: alpha(gold.main, 0.5) }} />
-                    <Box sx={{ bgcolor: alpha(theme.palette.background.default, 0.5), borderRadius: 2, border: `1px solid ${alpha(theme.palette.divider, 0.3)}`, maxHeight: 'auto', overflow: 'visible', mx: -2 }}>
-                      <List sx={{ p: 0 }}>
+                    <Box sx={{
+                      bgcolor: alpha(theme.palette.background.default, 0.5),
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
+                      maxHeight: 360,
+                      minHeight: 120,
+                      overflowY: 'auto',
+                      mx: -2,
+                      p: 0
+                    }}>
+                      <List sx={{ p: 0, minWidth: 0 }}>
                         {documents.length === 0 ? (
                           <ListItem>
                             <ListItemText primary="No documents uploaded." />
@@ -233,6 +242,8 @@ const ApplicantDetailsModal = ({ open, onClose, applicantId, courseId }) => {
                                 '&:hover': { backgroundColor: alpha(gold.light, 0.15) },
                                 display: 'flex',
                                 width: '100%',
+                                wordBreak: 'break-word',
+                                overflowWrap: 'anywhere',
                               }}
                             >
                               <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -243,7 +254,7 @@ const ApplicantDetailsModal = ({ open, onClose, applicantId, courseId }) => {
                                     fontWeight: 600,
                                     variant: 'body2',
                                     color: 'text.primary',
-                                    sx: { mb: 0.5 },
+                                    sx: { mb: 0.5, wordBreak: 'break-word', overflowWrap: 'anywhere' },
                                   }}
                                   secondaryTypographyProps={{
                                     variant: 'caption',
@@ -253,6 +264,8 @@ const ApplicantDetailsModal = ({ open, onClose, applicantId, courseId }) => {
                                       display: '-webkit-box',
                                       WebkitLineClamp: 1,
                                       WebkitBoxOrient: 'vertical',
+                                      wordBreak: 'break-word',
+                                      overflowWrap: 'anywhere',
                                     },
                                   }}
                                 />
@@ -296,7 +309,7 @@ const ApplicantDetailsModal = ({ open, onClose, applicantId, courseId }) => {
                             </ListItem>
                           ))
                         )}
-                      </List>   
+                      </List>
                     </Box>
                   </AnimatedPaper>
                 </Stack>
