@@ -412,22 +412,34 @@ const LoginForm = ({
             {currentFormType === "login" ? "Login" : "Signup"}
           </Button>
 
-          <Stack direction="row" justifyContent="flex-start">
+          <Stack direction="row" justifyContent="center" sx={{ mt: 1 }}>
             {currentFormType === "login" && (
               <Link
                 component="button"
                 variant="body2"
                 onClick={() => navigate("/forget-password")}
                 sx={{
-                  color: "black",
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                  background: "none",
-                  border: "none",
-                  padding: 0,
+                  color: "#800000",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  background: "#fff8f6",
+                  borderRadius: "8px",
+                  px: 2,
+                  py: 1,
+                  boxShadow: "0 2px 8px 0 rgba(128,0,0,0.08)",
+                  transition: "background 0.2s, color 0.2s",
+                  '&:hover': {
+                    background: '#ffe5e0',
+                    color: '#a00000',
+                    textDecoration: 'underline',
+                  },
                 }}
+                aria-label="Forgot password?"
               >
-                Forgot password?
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" style={{ marginRight: 4 }}><path d="M12 17a2 2 0 100-4 2 2 0 000 4zm6-2V9a6 6 0 10-12 0v6a6 6 0 0012 0zm-6-8a4 4 0 014 4v6a4 4 0 01-8 0V9a4 4 0 014-4z" fill="#800000"/></svg>
+                  Forgot password?
+                </span>
               </Link>
             )}
           </Stack>
