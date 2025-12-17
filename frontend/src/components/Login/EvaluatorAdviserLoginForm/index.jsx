@@ -417,6 +417,15 @@ const EvaluatorAdviserLoginForm = ({
 						/>
 					)}
 
+					<Button
+						type="submit"
+						variant="contained"
+						fullWidth
+						sx={{ backgroundColor: "#800000", borderRadius: "20px" }}
+					>
+						{currentFormType === "login" ? "Login" : "Signup"}
+					</Button>
+
 					{currentFormType === "login" && (
 						<Stack direction="row" justifyContent="flex-start">
 							<Link
@@ -436,15 +445,6 @@ const EvaluatorAdviserLoginForm = ({
 							</Link>
 						</Stack>
 					)}
-
-					<Button
-						type="submit"
-						variant="contained"
-						fullWidth
-						sx={{ backgroundColor: "#800000", borderRadius: "20px" }}
-					>
-						{currentFormType === "login" ? "Login" : "Signup"}
-					</Button>
 				</form>
 			</Stack>
 		</StyledPaper>

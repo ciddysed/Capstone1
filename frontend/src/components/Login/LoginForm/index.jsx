@@ -403,6 +403,15 @@ const LoginForm = ({
             </>
           )}
 
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{ backgroundColor: "#800000", borderRadius: "20px", mt: 2 }}
+          >
+            {currentFormType === "login" ? "Login" : "Signup"}
+          </Button>
+
           <Stack direction="row" justifyContent="flex-start">
             {currentFormType === "login" && (
               <Link
@@ -422,15 +431,6 @@ const LoginForm = ({
               </Link>
             )}
           </Stack>
-
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            sx={{ backgroundColor: "#800000", borderRadius: "20px", mt: 2 }}
-          >
-            {currentFormType === "login" ? "Login" : "Signup"}
-          </Button>
         </form>
       </Stack>
     </StyledPaper>

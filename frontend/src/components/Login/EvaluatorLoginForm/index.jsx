@@ -217,22 +217,22 @@ const EvaluatorLoginForm = ({
   return (
     <StyledPaper elevation={6}>
       <Typography variant="h5" textAlign="center" fontWeight="bold">
-        {currentFormType === "login"
-          ? "Evaluator Login Form"
-          : "Evaluator Signup Form"}
-      </Typography>
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{ backgroundColor: "#800000", borderRadius: "20px" }}
+          >
+            {currentFormType === "login" ? "Login" : "Signup"}
+          </Button>
 
-      <Stack direction="row" justifyContent="center">
-        <ToggleButtonGroup
-          value={currentFormType}
-          exclusive
-          onChange={handleToggle}
-          aria-label="Login or Signup"
-        >
-          <StyledToggleButton value="login">Login</StyledToggleButton>
-          <StyledToggleButton value="signup">Signup</StyledToggleButton>
-        </ToggleButtonGroup>
-      </Stack>
+          {currentFormType === "login" && (
+            <Stack direction="row" justifyContent="flex-start">
+              <Link href="#" variant="body2" sx={{ color: "black" }}>
+                Forgot password?
+              </Link>
+            </Stack>
+          )}
       <Stack gap={2}>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           {currentFormType === "signup" && (
