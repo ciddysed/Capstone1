@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Typography, Button, Stack, Box, styled, Modal } from "@mui/material";
-import backgroundImage from "../../../assets/login-bg.png";
+import backgroundImage from "../../../assets/login2-bg.png";
 import logo from "../../../assets/logo.png";
-
 import axios from "axios";
 import { API_BASE } from '../../../config';
 import useResponseHandler from "../../../utils/useResponseHandler";
@@ -212,10 +211,10 @@ const Homepage = () => {
         <Box
           sx={{
             textAlign: "center",
-            background: `linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%)`,
+            background: 'rgba(255,255,255,0.96)',
             borderRadius: 4,
-            border: `2px solid rgba(128, 0, 0, 0.2)`,
-            boxShadow: `0 8px 32px rgba(128, 0, 0, 0.1)`,
+            border: `2px solid rgba(128, 0, 0, 0.12)`,
+            boxShadow: `0 8px 32px rgba(128, 0, 0, 0.08)`,
             p: 4,
             maxWidth: 600,
             width: "100%",
@@ -242,10 +241,10 @@ const Homepage = () => {
         <Box
           sx={{
             textAlign: "center",
-            background: `linear-gradient(135deg, rgba(184, 134, 11, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%)`,
+            background: 'rgba(255,255,255,0.96)',
             borderRadius: 4,
-            border: `2px solid rgba(184, 134, 11, 0.3)`,
-            boxShadow: `0 8px 32px rgba(184, 134, 11, 0.1)`,
+            border: `2px solid rgba(184, 134, 11, 0.12)`,
+            boxShadow: `0 8px 32px rgba(184, 134, 11, 0.08)`,
             p: 4,
             maxWidth: 600,
             width: "100%",

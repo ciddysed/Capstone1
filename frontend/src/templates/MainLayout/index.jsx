@@ -29,7 +29,7 @@ const maroonTheme = {
   }
 }
 
-const MainLayout = ({ children, userType, data = "Account", adviserName }) => {
+const MainLayout = ({ children, userType, data = "Account", adviserName, backgroundImage }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
 
@@ -68,10 +68,10 @@ const MainLayout = ({ children, userType, data = "Account", adviserName }) => {
   return (
     <Stack
       sx={{
-        backgroundImage: 'none',
-        backgroundSize: 'initial',
-        backgroundRepeat: 'initial',
-        backgroundPosition: 'initial',
+        backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
+        backgroundSize: backgroundImage ? 'cover' : 'initial',
+        backgroundRepeat: backgroundImage ? 'no-repeat' : 'initial',
+        backgroundPosition: backgroundImage ? 'center' : 'initial',
         filter: 'none',
         minHeight: "100vh",
         width: "100%",

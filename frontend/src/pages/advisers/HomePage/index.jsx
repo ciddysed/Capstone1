@@ -11,6 +11,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import ApplicantDetailsModal from "./ApplicantDetailsModal";
 import MainLayout from "../../../templates/MainLayout";
+import login2Bg from '../../../assets/login2-bg.png';
 import {
   Paper,
   Stack,
@@ -288,8 +289,11 @@ const AdviserHomePage = () => {
           sx={{
             p: 4,
             borderRadius: 2,
-            background: `linear-gradient(135deg, ${maroon.main} 0%, ${maroon.dark} 100%)`,
+            background: `url(${login2Bg}) center/cover no-repeat`,
             color: "white",
+            minHeight: 300,
+            position: 'relative',
+            overflow: 'hidden',
           }}
         >
           <Stack spacing={1}>
