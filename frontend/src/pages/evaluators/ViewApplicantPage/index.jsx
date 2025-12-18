@@ -35,7 +35,6 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DownloadIcon from "@mui/icons-material/Download";
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PersonIcon from '@mui/icons-material/Person';
 import SendIcon from '@mui/icons-material/Send';
 import EmailIcon from '@mui/icons-material/Email';
@@ -668,7 +667,6 @@ const ViewApplicantPage = () => {
                   color="primary" 
                   variant="outlined" 
                   size="small"
-                  icon={<CheckCircleIcon fontSize="small" />} 
                 />
               </Stack>
             </AnimatedPaper>
@@ -951,12 +949,7 @@ const ViewApplicantPage = () => {
                       label="Evaluation Status"
                       disabled={!selectedCourse || submitting || !checkForwardStatus() || isEvaluationLocked()}
                     >
-                      <MenuItem value="APPROVED">
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <CheckCircleIcon color="success" fontSize="small" />
-                          <span>Approved</span>
-                        </Stack>
-                      </MenuItem>
+                      <MenuItem value="APPROVED">Approved</MenuItem>
                       <MenuItem value="REJECTED">Rejected</MenuItem>
                       <MenuItem value="PENDING">Pending</MenuItem>
                       <MenuItem value="UNDER_REVIEW">Under Review</MenuItem>

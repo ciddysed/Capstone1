@@ -1,6 +1,6 @@
 import React from "react";
 
-import backgroundImage from "../../../assets/login-bg.png";
+import backgroundImage from "../../../assets/login2-bg.png";
 import logo from "../../../assets/logo.png";
 import MinimalLayout from "../../../templates/MinimalLayout";
 import useResponseHandler from "../../../utils/useResponseHandler";

@@ -111,6 +111,21 @@ const AdviserHomePage = () => {
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [editRow, setEditRow] = useState({}); // { [recordId]: true }
   const [editFields, setEditFields] = useState({}); // { [recordId]: { grade, processOfAccreditation, substantiveBasis } }
+  const [adviserName, setAdviserName] = useState("");
+
+  useEffect(() => {
+    // Fetch adviser profile for name
+    const adviserId = localStorage.getItem("evaluatorId");
+    if (adviserId) {
+      fetch(`https://eteeap-foth.onrender.com/api/evaluators/${adviserId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && (data.name || (data.firstName && data.lastName))) {
+            setAdviserName(data.name || `${data.firstName} ${data.lastName}`);
+          }
+        });
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -265,7 +280,7 @@ const AdviserHomePage = () => {
   };
 
   return (
-    <MainLayout userType="adviser" data="Adviser Portal">
+    <MainLayout userType="adviser" data={adviserName || "Adviser Portal"} adviserName={adviserName}>
       <Stack spacing={4} sx={{ width: "100%" }}>
         {/* Welcome Card */}
         <Paper
@@ -279,7 +294,7 @@ const AdviserHomePage = () => {
         >
           <Stack spacing={1}>
             <Typography variant="h4" fontWeight="bold">
-              Welcome to Your Adviser Dashboard
+              {adviserName ? `Welcome ${adviserName}` : "Welcome to Your Adviser Dashboard"}
             </Typography>
             <Typography variant="body1" sx={{ opacity: 0.9 }}>
               Manage and review applications and accreditations for all accepted students

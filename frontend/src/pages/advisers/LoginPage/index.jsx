@@ -1,7 +1,7 @@
 import React from "react";
 import { Stack } from "@mui/material";
 
-import backgroundImage from "../../../assets/login-bg.png";
+import backgroundImage from "../../../assets/login2-bg.png";
 import logo from "../../../assets/logo.png";
 import EvaluatorAdviserLoginForm from "../../../components/Login/EvaluatorAdviserLoginForm";
 import MinimalLayout from "../../../templates/MinimalLayout";

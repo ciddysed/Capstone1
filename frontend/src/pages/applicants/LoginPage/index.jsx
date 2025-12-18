@@ -2,7 +2,7 @@ import { Stack } from "@mui/material";
 import { useState, useEffect } from "react";
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useNavigate } from "react-router-dom";
-import backgroundImage from "../../../assets/login-bg.png";
+import backgroundImage from "../../../assets/login2-bg.png";
 import logo from "../../../assets/logo.png";
 import LoginForm from "../../../components/Login/LoginForm";
 import SetUpProfile from "../../../components/Login/SetUpProfile";

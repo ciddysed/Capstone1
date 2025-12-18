@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Logout, Person as UserIcon, School as GraduationCapIcon } from "@mui/icons-material"; // Import logout icon
-import backgroundImage from "../../assets/login-bg.png";
 import NotificationCenter from "../../components/Notifications/NotificationCenter";
 import { handleLogout } from "../../utils/logoutUtils";
 
@@ -30,7 +29,7 @@ const maroonTheme = {
   }
 }
 
-const MainLayout = ({ children, userType, data = "Account" }) => {
+const MainLayout = ({ children, userType, data = "Account", adviserName }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
 
@@ -69,14 +68,17 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
   return (
     <Stack
       sx={{
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundImage: 'none',
+        backgroundSize: 'initial',
+        backgroundRepeat: 'initial',
+        backgroundPosition: 'initial',
+        filter: 'none',
         minHeight: "100vh",
         width: "100%",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        // No blur effect applied
       }}
     >
       {/* Enhanced Navbar */}
@@ -134,10 +136,10 @@ const MainLayout = ({ children, userType, data = "Account" }) => {
               
               <Box sx={{ textAlign: "right" }}>
                 <Typography variant="body2" fontWeight="medium" color="white">
-                  {data || "Loading..."}
+                  {adviserName && userType === 'adviser' ? adviserName : data || "Loading..."}
                 </Typography>
                 <Typography variant="caption" color="rgba(255,255,255,0.8)">
-                  {userType
+                  {userType === 'adviser' && adviserName ? 'Adviser Account' : userType
                     ? `${userType.charAt(0).toUpperCase() + userType.slice(1)} Account`
                     : "User Account"}
                 </Typography>
