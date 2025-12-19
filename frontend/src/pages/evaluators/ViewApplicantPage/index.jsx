@@ -425,12 +425,14 @@ const ViewApplicantPage = () => {
     applicationId,
     courseId,
     status,
+    comments, // add comments param
   }) => {
     if (!applicantId || !applicationId || !courseId || !status) return;
     try {
-      // Fire and forget, no UI feedback
+      // Encode comments for URL
+      const commentsParam = comments ? `&comments=${encodeURIComponent(comments)}` : "";
       fetch(
-        `https://eteeap-foth.onrender.com/api/evaluations/update-status-by-applicant-application-course?applicantId=${applicantId}&applicationId=${applicationId}&courseId=${courseId}&status=${status}`,
+        `https://eteeap-foth.onrender.com/api/evaluations/update-status-by-applicant-application-course?applicantId=${applicantId}&applicationId=${applicationId}&courseId=${courseId}&status=${status}${commentsParam}`,
         { method: "PUT" }
       );
     } catch (e) {
@@ -510,6 +512,7 @@ const ViewApplicantPage = () => {
           applicationId: Number(applicationId),
           courseId: selectedCourse.courseId,
           status: evaluationStatus,
+          comments: remarks, // pass remarks as comments
         });
         // ---------------------------------------------------
 

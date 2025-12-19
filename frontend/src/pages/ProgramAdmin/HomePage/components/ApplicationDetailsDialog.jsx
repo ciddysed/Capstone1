@@ -33,6 +33,7 @@ import {
   useMediaQuery,
   Grow,
   Paper,
+  TextField, // <-- Add this import
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -211,6 +212,17 @@ const ApplicationDetailsDialog = ({
   const [acceptRemarks, setAcceptRemarks] = useState("");
   const [acceptLoading, setAcceptLoading] = useState(false);
 
+  const [showResendDialog, setShowResendDialog] = useState(false);
+  const [pendingForwardAction, setPendingForwardAction] = useState(false);
+  const [alreadySentToEvaluator, setAlreadySentToEvaluator] = useState(false);
+
+  // New state for Application Remarks
+  const [applicationNotes, setApplicationNotes] = useState("");
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [notesEdit, setNotesEdit] = useState(false);
+  const [notesSaveLoading, setNotesSaveLoading] = useState(false);
+  const [notesError, setNotesError] = useState("");
+
   // Fetch evaluation statuses for course preferences
   const fetchEvaluationStatusesForPreferences = useCallback(async (applicantId, preferences) => {
     setLoadingEvaluations(true);
@@ -345,16 +357,25 @@ const ApplicationDetailsDialog = ({
     setForwardingLoading(true);
     try {
       const applicantId = selectedApplication.applicant?.applicantId;
+      const applicationId = selectedApplication.applicationId || selectedApplication.id; // <-- define applicationId here
       if (!applicantId) {
         throw new Error("Applicant ID not found");
       }
-
-      if (!selectedApplication.applicationId && !selectedApplication.id) {
+      if (!applicationId) {
         throw new Error("Application ID not found");
       }
 
-      console.log("Forwarding all preferences for applicant:", applicantId);
-      
+      // --- Check if application already has evaluations ---
+      const evalRes = await axios.get(`https://eteeap-foth.onrender.com/api/evaluations/by-application/${applicationId}`);
+      if (Array.isArray(evalRes.data) && evalRes.data.length > 0 && !pendingForwardAction) {
+        setShowResendDialog(true);
+        setPendingForwardAction(true);
+        setForwardingLoading(false);
+        return;
+      }
+      setPendingForwardAction(false);
+      // --------------------------------------------------
+
       // Get courses that haven't been forwarded yet (not evaluated or pending)
       const coursesToForward = coursePreferences.filter(pref => {
         const evaluation = preferenceEvaluations[pref.courseId];
@@ -368,13 +389,10 @@ const ApplicationDetailsDialog = ({
 
       const url = `${EVALUATIONS_API_URL}/forward-all-preferences/${applicantId}`;
       const requestData = { 
-        applicationId: selectedApplication.applicationId || selectedApplication.id,
+        applicationId: applicationId,
         courseIds: coursesToForward.map(pref => Number.parseInt(pref.courseId, 10))
       };
 
-      console.log("Making POST request to:", url);
-      console.log("Request payload:", requestData);
-      
       const response = await axios.post(url, requestData, {
         headers: { 
           'Content-Type': 'application/json',
@@ -382,8 +400,6 @@ const ApplicationDetailsDialog = ({
         },
         timeout: 30000,
       });
-      
-      console.log("Response received:", response);
       
       if (response.status === 200 || response.status === 201) {
         const forwardedCount = coursesToForward.length;
@@ -432,6 +448,19 @@ const ApplicationDetailsDialog = ({
     } finally {
       setForwardingLoading(false);
     }
+  };
+
+  // Handler for confirming resend
+  const handleConfirmResend = async () => {
+    setShowResendDialog(false);
+    setPendingForwardAction(false);
+    await forwardAllPreferencesToDepartments();
+  };
+
+  // Handler for canceling resend
+  const handleCancelResend = () => {
+    setShowResendDialog(false);
+    setPendingForwardAction(false);
   };
 
   // Handle previewing document
@@ -614,6 +643,63 @@ const ApplicationDetailsDialog = ({
   else if (forwardableCount === 0) forwardButtonLabel = "All Forwarded";
   else forwardButtonLabel = `Forward ${forwardableCount} Course${forwardableCount > 1 ? 's' : ''}`;
 
+  // Check if application already has evaluations (for note display)
+  useEffect(() => {
+    const checkAlreadySent = async () => {
+      if (!selectedApplication) return;
+      const applicationId = selectedApplication.applicationId || selectedApplication.id;
+      if (!applicationId) return;
+      try {
+        const evalRes = await axios.get(`https://eteeap-foth.onrender.com/api/evaluations/by-application/${applicationId}`);
+        setAlreadySentToEvaluator(Array.isArray(evalRes.data) && evalRes.data.length > 0);
+      } catch {
+        setAlreadySentToEvaluator(false);
+      }
+    };
+    checkAlreadySent();
+    // Only run when dialog opens or selectedApplication changes
+  }, [selectedApplication]);
+
+  // Fetch application notes when dialog opens or selectedApplication changes
+  useEffect(() => {
+    const fetchNotes = async () => {
+      if (!selectedApplication) return;
+      const applicationId = selectedApplication.applicationId || selectedApplication.id;
+      if (!applicationId) return;
+      setNotesLoading(true);
+      setNotesError("");
+      try {
+        const res = await axios.get(`https://eteeap-foth.onrender.com/api/applications/${applicationId}`);
+        setApplicationNotes(res.data.applicationNotes || "");
+      } catch (err) {
+        setNotesError("Failed to load application notes.");
+        setApplicationNotes("");
+      } finally {
+        setNotesLoading(false);
+      }
+    };
+    fetchNotes();
+  }, [selectedApplication]);
+
+  // Save notes handler
+  const handleSaveNotes = async () => {
+    if (!selectedApplication) return;
+    const applicationId = selectedApplication.applicationId || selectedApplication.id;
+    setNotesSaveLoading(true);
+    setNotesError("");
+    try {
+      await axios.put(`https://eteeap-foth.onrender.com/api/applications/${applicationId}`, {
+        applicationNotes
+      });
+      setNotesEdit(false);
+      toast.success("Application notes updated.");
+    } catch (err) {
+      setNotesError("Failed to save notes.");
+    } finally {
+      setNotesSaveLoading(false);
+    }
+  };
+
   return (
     <>
       <Dialog 
@@ -755,6 +841,7 @@ const ApplicationDetailsDialog = ({
                                 <StyledTableCell>Course</StyledTableCell>
                                 <StyledTableCell>Department</StyledTableCell>
                                 <StyledTableCell>Evaluation Status</StyledTableCell>
+                                <StyledTableCell>Remarks from Evaluator</StyledTableCell> {/* New column */}
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -793,17 +880,28 @@ const ApplicationDetailsDialog = ({
                                       <StyledTableCell>{preference.department}</StyledTableCell>
                                       <StyledTableCell>
                                         <Tooltip title={getEvaluationTooltipText(preference.courseId)} arrow placement="top">
-                                        <Box sx={{ display: 'inline-block' }}>
-                                          {loadingEvaluations ? (
-                                            <CircularProgress size={20} thickness={5} />
-                                          ) : (
-                                            getEvaluationStatusChip(preference.courseId)
-                                          )
-                                          }
-                                        </Box>
-                                      </Tooltip>
-                                    </StyledTableCell>
-                                  </StyledTableRow>
+                                          <Box sx={{ display: 'inline-block' }}>
+                                            {loadingEvaluations ? (
+                                              <CircularProgress size={20} thickness={5} />
+                                            ) : (
+                                              getEvaluationStatusChip(preference.courseId)
+                                            )
+                                            }
+                                          </Box>
+                                        </Tooltip>
+                                      </StyledTableCell>
+                                      <StyledTableCell>
+                                        {
+                                          // Show remarks/comments from evaluation, if available
+                                          (() => {
+                                            const evaluation = getEvaluationStatusForCourse(preference.courseId);
+                                            return evaluation && evaluation.comments
+                                              ? evaluation.comments
+                                              : <span style={{ color: "#888" }}>—</span>;
+                                          })()
+                                        }
+                                      </StyledTableCell>
+                                    </StyledTableRow>
                                   );
                                 });
                               })()}
@@ -940,7 +1038,14 @@ const ApplicationDetailsDialog = ({
                             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
                               Course Evaluation Forwarding
                             </Typography>
-                            
+                            {/* Show note if already sent */}
+                            {alreadySentToEvaluator && (
+                              <Box sx={{ mb: 2 }}>
+                                <Typography variant="body2" color="warning.main" sx={{ fontWeight: 500 }}>
+                                  Application already sent to evaluator{forwardedCount > 1 ? "s" : ""}.
+                                </Typography>
+                              </Box>
+                            )}
                             <Paper 
                               variant="outlined" 
                               sx={{ 
@@ -1027,6 +1132,80 @@ const ApplicationDetailsDialog = ({
                     </CardContent>
                   </InfoCard>
                 </Grid>
+
+                {/* --- Application Remarks Section (right side) --- */}
+                <Grid item xs={12} md={4}>
+                  <InfoCard>
+                    <CardContent>
+                      <Typography variant="h6" fontWeight="medium" color={maroon.main} gutterBottom>
+                        Application Remarks
+                      </Typography>
+                      <Divider sx={{ mb: 2, borderColor: alpha(gold.main, 0.5) }} />
+                      {notesLoading ? (
+                        <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+                          <CircularProgress size={24} />
+                        </Box>
+                      ) : (
+                        <>
+                          {notesError && (
+                            <Typography variant="body2" color="error" sx={{ mb: 1 }}>
+                              {notesError}
+                            </Typography>
+                          )}
+                          {!notesEdit ? (
+                            <Box>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                {applicationNotes ? applicationNotes : <span style={{ color: "#888" }}>No remarks yet.</span>}
+                              </Typography>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                sx={{ mt: 1 }}
+                                onClick={() => setNotesEdit(true)}
+                              >
+                                Edit Remarks
+                              </Button>
+                            </Box>
+                          ) : (
+                            <Box>
+                              <TextField
+                                multiline
+                                minRows={4}
+                                maxRows={8}
+                                fullWidth
+                                value={applicationNotes}
+                                onChange={e => setApplicationNotes(e.target.value)}
+                                disabled={notesSaveLoading}
+                                placeholder="Enter remarks about this application..."
+                                sx={{ mb: 1 }}
+                              />
+                              <Stack direction="row" spacing={1}>
+                                <Button
+                                  variant="contained"
+                                  color="primary"
+                                  size="small"
+                                  onClick={handleSaveNotes}
+                                  disabled={notesSaveLoading}
+                                >
+                                  {notesSaveLoading ? "Saving..." : "Save"}
+                                </Button>
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  onClick={() => setNotesEdit(false)}
+                                  disabled={notesSaveLoading}
+                                >
+                                  Cancel
+                                </Button>
+                              </Stack>
+                            </Box>
+                          )}
+                        </>
+                      )}
+                    </CardContent>
+                  </InfoCard>
+                </Grid>
+                {/* --- End Application Remarks Section --- */}
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 2.5, bgcolor: alpha(gold.light, 0.2) }}>
@@ -1106,6 +1285,29 @@ const ApplicationDetailsDialog = ({
             disabled={acceptLoading}
           >
             {acceptLoading ? "Accepting..." : "Accept Applicant"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Resend Confirmation Dialog */}
+      <Dialog
+        open={showResendDialog}
+        onClose={handleCancelResend}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Resend Evaluation?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Application already sent for evaluation. Do you want to resend evaluation?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelResend} variant="outlined">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmResend} variant="contained" color="primary">
+            Resend Evaluation
           </Button>
         </DialogActions>
       </Dialog>

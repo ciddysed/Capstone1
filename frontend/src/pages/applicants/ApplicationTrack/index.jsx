@@ -92,6 +92,12 @@ const ApplicationTracking = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const userType = localStorage.getItem("userType");
 
+  // New state for Application Notes
+  const [applicationNotes, setApplicationNotes] = useState("");
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [notesError, setNotesError] = useState("");
+  const [applicationId, setApplicationId] = useState(null);
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -614,6 +620,41 @@ const ApplicationTracking = () => {
     }, 0);
   };
 
+  // Fetch application notes when applicationId is set
+  useEffect(() => {
+    const fetchNotes = async () => {
+      if (!applicationId) return;
+      setNotesLoading(true);
+      setNotesError("");
+      try {
+        const res = await axios.get(`https://eteeap-foth.onrender.com/api/applications/${applicationId}`);
+        setApplicationNotes(res.data.applicationNotes || "");
+      } catch (err) {
+        setNotesError("Failed to load application remarks.");
+        setApplicationNotes("");
+      } finally {
+        setNotesLoading(false);
+      }
+    };
+    fetchNotes();
+  }, [applicationId]);
+
+  // Update applicationId when fetched from backend
+  useEffect(() => {
+    const fetchAndSetApplicationId = async () => {
+      if (!applicantId) return;
+      try {
+        const applicationsResponse = await api.get(`/applications/applicant/${applicantId}`);
+        if (applicationsResponse.data && applicationsResponse.data.length > 0) {
+          setApplicationId(applicationsResponse.data[0].applicationId || applicationsResponse.data[0].id);
+        }
+      } catch {
+        setApplicationId(null);
+      }
+    };
+    fetchAndSetApplicationId();
+  }, [applicantId, api]);
+
   return (
     <ThemeProvider theme={customTheme}>
       <Box sx={{ 
@@ -851,6 +892,50 @@ const ApplicationTracking = () => {
                             <Typography variant="body2">Document Count (Min 3)</Typography>
                           </Box>
                         </Box>
+                        {/* --- Application Remarks Section --- */}
+                        <Divider sx={{ my: 2, borderColor: alpha(gold.main, 0.2) }} />
+                        <Box
+                          sx={{
+                            mt: 1,
+                            p: 2,
+                            borderRadius: 2,
+                            background: `linear-gradient(90deg, ${alpha(gold.main, 0.18)} 0%, ${alpha(maroon.main, 0.08)} 100%)`,
+                            border: `2px solid ${alpha(gold.main, 0.5)}`,
+                            boxShadow: `0 2px 12px ${alpha(maroon.main, 0.07)}`,
+                          }}
+                        >
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              color: maroon.main,
+                              fontWeight: 800,
+                              mb: 1,
+                              letterSpacing: 0.5,
+                              fontSize: "1.15rem",
+                              textShadow: `0 1px 0 ${alpha(gold.main, 0.2)}`
+                            }}
+                          >
+                            Application Remarks
+                          </Typography>
+                          {notesLoading ? (
+                            <Typography variant="body1" color="text.secondary">Loading...</Typography>
+                          ) : notesError ? (
+                            <Typography variant="body1" color="error">{notesError}</Typography>
+                          ) : (
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                color: applicationNotes ? maroon.dark : "#888",
+                                fontWeight: applicationNotes ? 600 : 400,
+                                fontSize: "1.05rem",
+                                minHeight: 32
+                              }}
+                            >
+                              {applicationNotes ? applicationNotes : "No remarks yet."}
+                            </Typography>
+                          )}
+                        </Box>
+                        {/* --- End Application Remarks Section --- */}
                       </CardContent>
                     </Card>
 
