@@ -1065,19 +1065,7 @@ const ApplicationTracking = () => {
                         },
                         transition: 'all 0.3s ease'
                       }}>
-                        <CardHeader
-                          title={
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <GraduationCapIcon sx={{ color: maroon.main, fontSize: 20 }} />
-                              <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>Course Preferences</Typography>
-                            </Box>
-                          }
-                          subheader="Your selected course preferences in order of priority"
-                          sx={{ 
-                            pb: 2,
-                            background: `linear-gradient(135deg, ${alpha(gold.light, 0.08)} 0%, ${alpha(maroon.main, 0.05)} 100%)`
-                          }}
-                        />
+                        
                         <CardContent>
                           <CoursePreferences
                             isLoading={false}

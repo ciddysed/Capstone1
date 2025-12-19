@@ -139,19 +139,24 @@ const CoursePreferences = ({
                       </Typography>
                     )}
                   </Box>
-                  <Chip
-                    label={status}
-                    size="small"
-                    sx={{
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      backgroundColor: statusColor.bg,
-                      color: statusColor.color,
-                      border: `1px solid ${statusColor.border}`,
-                      minWidth: 80,
-                      height: 24,
-                    }}
-                  />
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, mb: 0.5 }}>
+                      Evaluation Status
+                    </Typography>
+                    <Chip
+                      label={status}
+                      size="small"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        backgroundColor: statusColor.bg,
+                        color: statusColor.color,
+                        border: `1px solid ${statusColor.border}`,
+                        minWidth: 80,
+                        height: 24,
+                      }}
+                    />
+                  </Box>
                 </Paper>
               );
             })}
