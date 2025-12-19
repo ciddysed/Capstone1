@@ -222,6 +222,7 @@ const ApplicationDetailsDialog = ({
   const [notesEdit, setNotesEdit] = useState(false);
   const [notesSaveLoading, setNotesSaveLoading] = useState(false);
   const [notesError, setNotesError] = useState("");
+  const [notesStatus, setNotesStatus] = useState(""); // <-- store status from GET
 
   // Fetch evaluation statuses for course preferences
   const fetchEvaluationStatusesForPreferences = useCallback(async (applicantId, preferences) => {
@@ -660,7 +661,7 @@ const ApplicationDetailsDialog = ({
     // Only run when dialog opens or selectedApplication changes
   }, [selectedApplication]);
 
-  // Fetch application notes when dialog opens or selectedApplication changes
+  // Fetch application notes and status when dialog opens or selectedApplication changes
   useEffect(() => {
     const fetchNotes = async () => {
       if (!selectedApplication) return;
@@ -671,9 +672,11 @@ const ApplicationDetailsDialog = ({
       try {
         const res = await axios.get(`https://eteeap-foth.onrender.com/api/applications/${applicationId}`);
         setApplicationNotes(res.data.applicationNotes || "");
+        setNotesStatus(res.data.status || ""); // fetch status for later PUT
       } catch (err) {
         setNotesError("Failed to load application notes.");
         setApplicationNotes("");
+        setNotesStatus("");
       } finally {
         setNotesLoading(false);
       }
@@ -681,16 +684,20 @@ const ApplicationDetailsDialog = ({
     fetchNotes();
   }, [selectedApplication]);
 
-  // Save notes handler
+  // Save notes handler (PUT with status as parameter)
   const handleSaveNotes = async () => {
     if (!selectedApplication) return;
     const applicationId = selectedApplication.applicationId || selectedApplication.id;
     setNotesSaveLoading(true);
     setNotesError("");
     try {
-      await axios.put(`https://eteeap-foth.onrender.com/api/applications/${applicationId}`, {
-        applicationNotes
-      });
+      await axios.put(
+        `https://eteeap-foth.onrender.com/api/applications/${applicationId}`,
+        {
+          applicationNotes,
+          status: notesStatus // always send status to avoid null
+        }
+      );
       setNotesEdit(false);
       toast.success("Application notes updated.");
     } catch (err) {

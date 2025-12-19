@@ -836,6 +836,65 @@ const ApplicationTracking = () => {
                 {/* Left Column - Personal Info & Course Preferences */}
                 <Grid item xs={12} lg={6}>
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    
+
+                    {/* Personal Information Card */}
+                    <Card elevation={2} sx={{ 
+                      border: `2px solid ${alpha(gold.light, 0.2)}`,
+                      '&:hover': { 
+                        boxShadow: `0 8px 32px ${alpha(maroon.main, 0.12)}`,
+                        transform: 'translateY(-2px)'
+                      },
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <CardHeader
+                        title={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <UserIcon sx={{ color: maroon.main, fontSize: 20 }} />
+                            <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>Personal Information</Typography>
+                          </Box>
+                        }
+                        sx={{ 
+                          pb: 2,
+                          background: `linear-gradient(135deg, ${alpha(gold.light, 0.08)} 0%, ${alpha(maroon.main, 0.05)} 100%)`
+                        }}
+                      />
+                      <CardContent>
+                        <Grid container spacing={3}>
+                          <Grid item xs={12} md={6}>
+                            <Box sx={{ mb: 1 }}>
+                              <Typography variant="body2" fontWeight="medium" color="text.primary">
+                                Full Name
+                              </Typography>
+                            </Box>
+                            <Paper variant="outlined" sx={{ 
+                              p: 2, 
+                              background: `linear-gradient(135deg, ${alpha(gold.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
+                              border: `1px solid ${alpha(gold.main, 0.2)}`
+                            }}>
+                              <Typography fontWeight="medium" color="text.primary">
+                                {userData.name}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                          <Grid item xs={12} md={6}>
+                            <Box sx={{ mb: 1 }}>
+                              <Typography variant="body2" fontWeight="medium" color="text.primary">
+                                Email Address
+                              </Typography>
+                            </Box>
+                            <Paper variant="outlined" sx={{ 
+                              p: 2, 
+                              background: `linear-gradient(135deg, ${alpha(gold.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
+                              border: `1px solid ${alpha(gold.main, 0.2)}`
+                            }}>
+                              <Typography color="text.primary">{userData.email}</Typography>
+                            </Paper>
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
+
                     {/* Application Status Card */}
                     <Card elevation={2} sx={{ 
                       border: `2px solid ${alpha(gold.light, 0.2)}`,
@@ -936,63 +995,6 @@ const ApplicationTracking = () => {
                           )}
                         </Box>
                         {/* --- End Application Remarks Section --- */}
-                      </CardContent>
-                    </Card>
-
-                    {/* Personal Information Card */}
-                    <Card elevation={2} sx={{ 
-                      border: `2px solid ${alpha(gold.light, 0.2)}`,
-                      '&:hover': { 
-                        boxShadow: `0 8px 32px ${alpha(maroon.main, 0.12)}`,
-                        transform: 'translateY(-2px)'
-                      },
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <CardHeader
-                        title={
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <UserIcon sx={{ color: maroon.main, fontSize: 20 }} />
-                            <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>Personal Information</Typography>
-                          </Box>
-                        }
-                        sx={{ 
-                          pb: 2,
-                          background: `linear-gradient(135deg, ${alpha(gold.light, 0.08)} 0%, ${alpha(maroon.main, 0.05)} 100%)`
-                        }}
-                      />
-                      <CardContent>
-                        <Grid container spacing={3}>
-                          <Grid item xs={12} md={6}>
-                            <Box sx={{ mb: 1 }}>
-                              <Typography variant="body2" fontWeight="medium" color="text.primary">
-                                Full Name
-                              </Typography>
-                            </Box>
-                            <Paper variant="outlined" sx={{ 
-                              p: 2, 
-                              background: `linear-gradient(135deg, ${alpha(gold.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
-                              border: `1px solid ${alpha(gold.main, 0.2)}`
-                            }}>
-                              <Typography fontWeight="medium" color="text.primary">
-                                {userData.name}
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                          <Grid item xs={12} md={6}>
-                            <Box sx={{ mb: 1 }}>
-                              <Typography variant="body2" fontWeight="medium" color="text.primary">
-                                Email Address
-                              </Typography>
-                            </Box>
-                            <Paper variant="outlined" sx={{ 
-                              p: 2, 
-                              background: `linear-gradient(135deg, ${alpha(gold.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
-                              border: `1px solid ${alpha(gold.main, 0.2)}`
-                            }}>
-                              <Typography color="text.primary">{userData.email}</Typography>
-                            </Paper>
-                          </Grid>
-                        </Grid>
                       </CardContent>
                     </Card>
 
