@@ -713,7 +713,7 @@ const ApplicationTracking = () => {
                     cursor: "pointer"
                   }}
                   onClick={handleClick}
-                >
+                > 
                   <UserIcon sx={{ color: maroon.main, fontSize: 16 }} />
                 </Box>
               </Box>

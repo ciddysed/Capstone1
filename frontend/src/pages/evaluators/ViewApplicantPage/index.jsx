@@ -948,7 +948,23 @@ const ViewApplicantPage = () => {
                     <InputLabel>Evaluation Status</InputLabel>
                     <Select
                       value={evaluationStatus}
-                      onChange={(e) => setEvaluationStatus(e.target.value)}
+                      onChange={async (e) => {
+                        const newStatus = e.target.value;
+                        if (existingEvaluation?.evaluationId) {
+                          try {
+                            await fetch(
+                              `https://eteeap-foth.onrender.com/api/evaluations/${existingEvaluation.evaluationId}/update-status?status=${newStatus}`,
+                              { method: "PUT" }
+                            );
+                            setEvaluationStatus(newStatus);
+                          } catch (err) {
+                            // Optionally show error to user
+                            console.error("Failed to update status", err);
+                          }
+                        } else {
+                          setEvaluationStatus(newStatus);
+                        }
+                      }}
                       label="Evaluation Status"
                       disabled={!selectedCourse || submitting || !checkForwardStatus() || isEvaluationLocked()}
                     >
@@ -958,7 +974,6 @@ const ViewApplicantPage = () => {
                       <MenuItem value="UNDER_REVIEW">Under Review</MenuItem>
                     </Select>
                   </FormControl>
-
                   {/* Remarks */}
                   <TextField
                     label="Evaluation Remarks"
