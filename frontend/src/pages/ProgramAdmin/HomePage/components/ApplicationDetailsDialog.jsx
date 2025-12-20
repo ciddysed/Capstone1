@@ -1170,7 +1170,7 @@ const ApplicationDetailsDialog = ({
                                 sx={{ mt: 1 }}
                                 onClick={() => setNotesEdit(true)}
                               >
-                                Edit Remarks
+                                Add Remarks
                               </Button>
                             </Box>
                           ) : (
