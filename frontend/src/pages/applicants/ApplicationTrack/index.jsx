@@ -35,6 +35,7 @@ import CoursePreferences from "./CoursePreferences";
 
 // Notifications
 import NotificationCenter from '../../../components/Notifications/NotificationCenter';
+import DashboardLink from '../../../components/DashboardLink';
 import useSubjectNotifications from '../../../hooks/useSubjectNotifications';
 
 import {
@@ -345,20 +346,12 @@ const ApplicationTracking = () => {
       console.log('Acceptance check response:', response);
       
       if (response.data && response.status === 200) {
-        console.log('Applicant is accepted! Redirecting...');
+        console.log('Applicant is accepted!');
         setIsAccepted(true);
-        
-        // Applicant is accepted, show success message and redirect
-        toast.success('Congratulations! Your application has been accepted. Redirecting to enrollment dashboard...', {
-          duration: 4000
+        // Show a notification only; let NotificationCenter handle redirect via user action
+        toast.success('Congratulations! Your application has been accepted. Please check your notifications to proceed to the enrollment dashboard.', {
+          duration: 6000
         });
-        
-        // Wait 2 seconds to let user see the message, then redirect
-        setTimeout(() => {
-          console.log('Navigating to /accepted-dashboard');
-          navigate('/accepted-dashboard', { replace: true });
-        }, 2000);
-        
         return true;
       }
       console.log('Applicant not accepted yet');
@@ -690,9 +683,10 @@ const ApplicationTracking = () => {
                 </Box>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                {/* Dashboard link always visible */}
+                <DashboardLink />
                 {/* Notification icon */}
                 <NotificationCenter userType={userType} userId={applicantId} />
-
                 <Box sx={{ textAlign: "right" }}>
                   <Typography variant="body2" fontWeight="medium" color="white">
                     {userData.name || "Loading..."}

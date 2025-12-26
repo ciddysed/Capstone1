@@ -33,6 +33,7 @@ import {
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 import useResponseHandler from "../../../utils/useResponseHandler"
+import DashboardLink from '../../../components/DashboardLink';
 
 // Document type definitions with user-friendly names
 const documentTypes = [
@@ -614,11 +615,15 @@ export default function ApplicationForm() {
   const isLoading = loading.profile || loading.courses || loading.documents || loading.preferences
 
   return (
-    <Box sx={{ 
-      minHeight: "100vh", 
-      background: `linear-gradient(135deg, ${alpha('#B8860B', 0.05)} 0%, ${alpha('#FFD700', 0.03)} 100%)`,
-      bgcolor: "grey.50" 
-    }}>
+    <>
+      <Box sx={{ position: 'absolute', top: 16, right: 32, zIndex: 10 }}>
+        <DashboardLink />
+      </Box>
+      <Box sx={{ 
+        minHeight: "100vh", 
+        background: `linear-gradient(135deg, ${alpha('#B8860B', 0.05)} 0%, ${alpha('#FFD700', 0.03)} 100%)`,
+        bgcolor: "grey.50" 
+      }}>
       {/* Header */}
       <Paper elevation={1} sx={{ borderRadius: 0, bgcolor: maroonTheme.primary.main }}>
         <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
@@ -1435,5 +1440,6 @@ export default function ApplicationForm() {
       {/* Snackbar for notifications */}
       {snackbar}
     </Box>
+    </>
   )
 }

@@ -46,6 +46,7 @@ import axios from "axios";
 import { styled } from "@mui/material/styles";
 import DialogContentText from "@mui/material/DialogContentText";
 import toast from "../../../../utils/toast";
+import { notifyApplicantAcceptedWithRemarks } from "../../../../utils/notificationManager";
 
 const API_URL = 'https://eteeap-foth.onrender.com/api/program-admins';
 const EVALUATIONS_API_URL = 'https://eteeap-foth.onrender.com/api/evaluations';
@@ -605,6 +606,11 @@ const ApplicationDetailsDialog = ({
       const applicantId = selectedApplication.applicant?.applicantId;
       const finalCourseId = approvedPref.courseId;
       const remarks = acceptRemarks;
+
+      // Optimistically notify applicant immediately for instant feedback
+      if (applicantId) {
+        notifyApplicantAcceptedWithRemarks(applicantId, remarks);
+      }
 
       await axios.post(
         `https://eteeap-foth.onrender.com/api/accepted-applicants/accept`,

@@ -91,7 +91,8 @@ export const createNotification = (userType, userId, notification) => {
       message: notification.message,
       type: notification.type || 'info',
       read: false,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      ...(notification.action ? { action: notification.action } : {})
     };
     
     notifications[userKey].unshift(newNotification); // Add to beginning

@@ -10,8 +10,8 @@ import {
   Box,
   Paper,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { Logout, Person as UserIcon, School as GraduationCapIcon } from "@mui/icons-material"; // Import logout icon
+import { useNavigate, useLocation } from "react-router-dom";
+import { Logout, Person as UserIcon, School as GraduationCapIcon, Lock as LockIcon } from "@mui/icons-material"; // Import logout icon and lock icon
 import NotificationCenter from "../../components/Notifications/NotificationCenter";
 import { handleLogout } from "../../utils/logoutUtils";
 
@@ -30,6 +30,8 @@ const maroonTheme = {
 }
 
 const MainLayout = ({ children, userType, data = "Account", adviserName, backgroundImage }) => {
+  const location = useLocation();
+  const [accepted, setAccepted] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
 
@@ -63,7 +65,38 @@ const MainLayout = ({ children, userType, data = "Account", adviserName, backgro
     return null;
   };
   
+
   const userId = getUserId();
+
+  // Check acceptance status for applicants
+  React.useEffect(() => {
+    if (userType === 'applicant' && userId) {
+      // Check localStorage or API for acceptance
+      const checkAccepted = async () => {
+        // Try localStorage first for quick UI
+        const acceptedFlag = localStorage.getItem('isAccepted');
+        if (acceptedFlag === 'true') {
+          setAccepted(true);
+          return;
+        }
+        // Fallback: check API
+        try {
+          const res = await fetch(`https://eteeap-foth.onrender.com/api/accepted-applicants/applicant/${userId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data._id) {
+              setAccepted(true);
+              localStorage.setItem('isAccepted', 'true');
+              return;
+            }
+          }
+        } catch (e) {}
+        setAccepted(false);
+        localStorage.setItem('isAccepted', 'false');
+      };
+      checkAccepted();
+    }
+  }, [userType, userId]);
 
   return (
     <Stack
@@ -98,6 +131,46 @@ const MainLayout = ({ children, userType, data = "Account", adviserName, backgro
         <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {/* Universal Acceptance Dashboard Link for Applicants */}
+              {userType === 'applicant' && location.pathname !== '/accepted-dashboard' && (
+                <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                  {accepted ? (
+                    <Typography
+                      component="a"
+                      href="#"
+                      onClick={e => {
+                        e.preventDefault();
+                        navigate('/accepted-dashboard');
+                      }}
+                      sx={{
+                        color: maroonTheme.secondary.light,
+                        fontWeight: 600,
+                        textDecoration: 'underline',
+                        cursor: 'pointer',
+                        mx: 1,
+                        fontSize: 16
+                      }}
+                    >
+                      Acceptance Dashboard
+                    </Typography>
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', opacity: 0.5, mx: 1 }}>
+                      <LockIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                      <Typography
+                        sx={{
+                          color: maroonTheme.secondary.light,
+                          fontWeight: 600,
+                          fontSize: 16,
+                          textDecoration: 'none',
+                          cursor: 'not-allowed',
+                        }}
+                      >
+                        Acceptance Dashboard
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
               <Box
                 sx={{
                   width: 40,

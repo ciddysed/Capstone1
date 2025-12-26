@@ -1,6 +1,7 @@
 // src/components/MinimalLayout/index.jsx
 import React from "react";
-import { Stack } from "@mui/material";
+import { Stack, Box } from "@mui/material";
+import DashboardLink from "../../components/DashboardLink";
 
 const MinimalLayout = ({ children, backgroundImage, backgroundVideo }) => {
   return (
@@ -15,6 +16,10 @@ const MinimalLayout = ({ children, backgroundImage, backgroundVideo }) => {
         overflow: "hidden",
       }}
     >
+      {/* Dashboard link at top right */}
+      <Box sx={{ position: "absolute", top: 16, right: 32, zIndex: 10 }}>
+        <DashboardLink />
+      </Box>
       {backgroundVideo && (
         <video
           autoPlay

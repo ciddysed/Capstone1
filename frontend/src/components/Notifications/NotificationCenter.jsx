@@ -1,9 +1,14 @@
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from 'react';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import PropTypes from 'prop-types';
 import { 
   Box, Typography, Badge, Menu, IconButton, 
   List, ListItem, ListItemText, Divider, CircularProgress, 
-  Avatar, alpha, Tooltip
+  Avatar, alpha, Tooltip, Button
 } from '@mui/material';
 import { Notifications as NotificationsIcon, Circle } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
@@ -34,8 +39,15 @@ const NotificationItem = styled(ListItem)(({ theme, read }) => ({
   },
 }));
 
+
+
 const NotificationCenter = ({ userType, userId }) => {
-  const [notifications, setNotifications] = useState([]);
+	const [notifications, setNotifications] = useState([]);
+
+  // Modal state for Yes/No prompt
+  const [modalOpen, setModalOpen] = useState(false);
+  const [pendingNotification, setPendingNotification] = useState(null);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [error, setError] = useState(null);
@@ -80,9 +92,7 @@ const NotificationCenter = ({ userType, userId }) => {
     };
 
     const getGlobal = () => {
-      // Use the most common host globals in environments where globalThis may not be recognized by the linter.
-      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') return window;
-      // Note: intentionally skipping direct `self` usage to avoid restricted global lint rules.
+      if (window !== undefined && typeof window.addEventListener === 'function') return window;
       if (typeof global !== 'undefined' && typeof global.addEventListener === 'function') return global;
       return null;
     };
@@ -183,151 +193,185 @@ const NotificationCenter = ({ userType, userId }) => {
   const unreadCount = notifications.filter(n => !n.read).length;
   
   return (
-    <Box>
-      <Tooltip title="Notifications">
-        <IconButton onClick={handleOpenMenu} color="inherit">
-          <Badge 
-            badgeContent={unreadCount} 
-            color="error"
-            overlap="circular"
-            sx={{
-              '& .MuiBadge-badge': {
-                backgroundColor: '#f44336',
-                color: 'white',
-                fontWeight: 'bold',
-              },
-            }}
-          >
-            <NotificationsIcon />
-          </Badge>
-        </IconButton>
-      </Tooltip>
-      
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleCloseMenu}
-        slotProps={{
-          paper: {
-            sx: {
-              width: 360,
-              maxHeight: 400,
-              overflow: 'auto',
-              mt: 1.5,
-              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
-              borderRadius: 2,
-            }
-          }
-        }}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      >
-        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: maroon.main }}>
-            Notifications
-          </Typography>
-          {notifications.length > 0 && (
-            <Typography 
-              variant="body2" 
-              color="primary" 
-              sx={{ cursor: 'pointer', fontWeight: 500 }}
-              onClick={handleMarkAllAsRead}
+    <>
+      <Box>
+        <Tooltip title="Notifications">
+          <IconButton onClick={handleOpenMenu} color="inherit">
+            <Badge 
+              badgeContent={unreadCount} 
+              color="error"
+              overlap="circular"
+              sx={{
+                '& .MuiBadge-badge': {
+                  backgroundColor: '#f44336',
+                  color: 'white',
+                  fontWeight: 'bold',
+                },
+              }}
             >
-              Mark all as read
+              <NotificationsIcon />
+            </Badge>
+          </IconButton>
+        </Tooltip>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleCloseMenu}
+          slotProps={{
+            paper: {
+              sx: {
+                width: 360,
+                maxHeight: 400,
+                overflow: 'auto',
+                mt: 1.5,
+                boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
+                borderRadius: 2,
+              }
+            }
+          }}
+          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        >
+          <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: maroon.main }}>
+              Notifications
             </Typography>
-          )}
-        </Box>
-        <Divider />
-        
-        {(() => {
-          // Extracted menu body for clarity instead of nested ternary
-          if (loading) {
-            return (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-                <CircularProgress size={30} sx={{ color: maroon.main }} />
-              </Box>
-            );
-          }
-
-          if (error) {
+            {notifications.length > 0 && (
+              <Typography 
+                variant="body2" 
+                color="primary" 
+                sx={{ cursor: 'pointer', fontWeight: 500 }}
+                onClick={handleMarkAllAsRead}
+              >
+                Mark all as read
+              </Typography>
+            )}
+          </Box>
+          <Divider />
+          {(() => {
+            if (loading) {
+              return (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                  <CircularProgress size={30} sx={{ color: maroon.main }} />
+                </Box>
+              );
+            }
+            if (error) {
+              return (
+                <Box sx={{ p: 3, textAlign: 'center' }}>
+                  <Typography variant="body2" color="error">
+                    {error}
+                  </Typography>
+                </Box>
+              );
+            }
+            if (notifications.length > 0) {
+              return (
+                <List disablePadding>
+                  {notifications.map(notification => {
+                    let action = notification.action;
+                    return (
+                      <NotificationItem 
+                        key={notification.id} 
+                        onClick={() => {
+                          setPendingNotification({ notification, action });
+                          setModalOpen(true);
+                        }}
+                        read={notification.read}
+                        sx={{ cursor: 'pointer' }}
+                      >
+                        <Box sx={{ pr: 2, display: 'flex', alignItems: 'center' }}>
+                          {notification.read ? (
+                            <Avatar sx={{ 
+                              width: 10, 
+                              height: 10, 
+                              bgcolor: 'transparent',
+                              border: `1px solid ${alpha(getIconColor(notification.type), 0.5)}`
+                            }} />
+                          ) : (
+                            <Circle sx={{ 
+                              width: 10, 
+                              height: 10, 
+                              color: getIconColor(notification.type)
+                            }} />
+                          )}
+                        </Box>
+                        <ListItemText 
+                          primary={
+                            <Typography variant="subtitle2" sx={{ fontWeight: notification.read ? 400 : 600 }}>
+                              {notification.title}
+                            </Typography>
+                          }
+                          secondary={
+                            <>
+                              <Typography 
+                                variant="body2" 
+                                component="p"
+                                sx={{ 
+                                  color: notification.read ? 'text.secondary' : 'text.primary',
+                                  mb: 0.5 
+                                }}
+                              >
+                                {notification.message}
+                              </Typography>
+                              <Typography 
+                                variant="caption" 
+                                component="p" 
+                                sx={{ color: 'text.disabled' }}
+                              >
+                                {formatRelativeTime(notification.createdAt)}
+                              </Typography>
+                            </>
+                          }
+                        />
+                      </NotificationItem>
+                    );
+                  })}
+                </List>
+              );
+            }
             return (
               <Box sx={{ p: 3, textAlign: 'center' }}>
-                <Typography variant="body2" color="error">
-                  {error}
+                <Typography variant="body2" color="text.secondary">
+                  No notifications
                 </Typography>
               </Box>
             );
-          }
-
-          if (notifications.length > 0) {
-            return (
-              <List disablePadding>
-                {notifications.map(notification => (
-                  <NotificationItem 
-                    key={notification.id} 
-                    onClick={() => handleMarkAsRead(notification.id)}
-                    read={notification.read}
-                  >
-                    <Box sx={{ pr: 2, display: 'flex', alignItems: 'center' }}>
-                      {notification.read ? (
-                        <Avatar sx={{ 
-                          width: 10, 
-                          height: 10, 
-                          bgcolor: 'transparent',
-                          border: `1px solid ${alpha(getIconColor(notification.type), 0.5)}`
-                        }} />
-                      ) : (
-                        <Circle sx={{ 
-                          width: 10, 
-                          height: 10, 
-                          color: getIconColor(notification.type)
-                        }} />
-                      )}
-                    </Box>
-                    <ListItemText 
-                      primary={
-                        <Typography variant="subtitle2" sx={{ fontWeight: notification.read ? 400 : 600 }}>
-                          {notification.title}
-                        </Typography>
-                      }
-                      secondary={
-                        <>
-                          <Typography 
-                            variant="body2" 
-                            component="p"
-                            sx={{ 
-                              color: notification.read ? 'text.secondary' : 'text.primary',
-                              mb: 0.5 
-                            }}
-                          >
-                            {notification.message}
-                          </Typography>
-                          <Typography 
-                            variant="caption" 
-                            component="p" 
-                            sx={{ color: 'text.disabled' }}
-                          >
-                            {formatRelativeTime(notification.createdAt)}
-                          </Typography>
-                        </>
-                      }
-                    />
-                  </NotificationItem>
-                ))}
-              </List>
-            );
-          }
-
-          return (
-            <Box sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                No notifications
-              </Typography>
-            </Box>
-          );
-        })()}
-      </Menu>
-    </Box>
+          })()}
+        </Menu>
+      </Box>
+      {/* Modal for notification details */}
+      <Dialog open={modalOpen} onClose={() => { setModalOpen(false); setPendingNotification(null); }}>
+        <DialogTitle>{pendingNotification?.notification?.title || 'Notification Details'}</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            {pendingNotification?.notification?.message}
+          </Typography>
+          {/* Acceptance notification: dashboard button removed as per new requirements */}
+          {/* Other notifications with action */}
+          {pendingNotification?.notification?.type !== 'applicant_accepted' && pendingNotification?.action && pendingNotification.action.label && pendingNotification.action.redirectUrl && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => {
+                handleMarkAsRead(pendingNotification.notification.id);
+                setModalOpen(false);
+                setPendingNotification(null);
+                navigate(pendingNotification.action.redirectUrl);
+              }}
+              sx={{ mt: 1 }}
+            >
+              {pendingNotification.action.label}
+            </Button>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setModalOpen(false); setPendingNotification(null); }} color="secondary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 NotificationCenter.propTypes = {

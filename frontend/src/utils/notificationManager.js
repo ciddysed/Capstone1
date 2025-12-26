@@ -156,6 +156,7 @@ export const notifyCourseRegistration = (applicantId) => {
   );
 };
 
+
 export const notifyEnrollmentComplete = (applicantId) => {
   return addNotification(
     'applicant',
@@ -164,4 +165,44 @@ export const notifyEnrollmentComplete = (applicantId) => {
     'Congratulations! Your enrollment is now complete.',
     'success'
   );
+};
+
+/**
+ * Notify applicant of acceptance with remarks and dashboard redirection
+ * @param {string|number} applicantId - The applicant's user ID
+ * @param {string} remarks - Remarks from the program admin
+ * @returns {Object|null} The created notification
+ */
+export const notifyApplicantAcceptedWithRemarks = (applicantId, remarks) => {
+  const title = '🎉 You have been accepted!';
+  let message = 'Congratulations! You have been accepted by the Program Admin.';
+  if (remarks && remarks.trim()) {
+    message += `\n\nRemarks: ${remarks}`;
+  }
+  // Custom action for dashboard redirection (frontend must handle this in NotificationCenter)
+  const action = {
+    label: 'Go to Dashboard',
+    redirectUrl: '/applicants/dashboard',
+  };
+  // Always create local notification and dispatch event immediately for instant UI update
+  const userType = 'applicant';
+  const userId = applicantId;
+  const clientTempId = `temp_${Date.now()}`;
+  const local = require('../services/localNotificationService').createNotification(userType, userId, {
+    title,
+    message,
+    type: 'success',
+    clientTempId,
+    action
+  });
+  try {
+    window.dispatchEvent(new CustomEvent('notifications:updated', {
+      detail: { userType, userId, notification: local }
+    }));
+  } catch (evtErr) {
+    // Ignore dispatch errors
+  }
+  // Also persist to backend (fire-and-forget)
+  addNotification(userType, userId, title, message, 'success');
+  return local;
 };

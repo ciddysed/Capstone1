@@ -20,6 +20,8 @@ import {
   Refresh as RefreshIcon
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
+import { Home as HomeIcon, ListAlt as TrackIcon, School as CourseIcon, Dashboard as DashboardIcon } from "@mui/icons-material";
 import axios from "axios";
 import PropTypes from 'prop-types';
 import MainLayout from "../../../templates/MainLayout";
@@ -304,6 +306,42 @@ const AcceptedDashboard = () => {
       userType="applicant"
       data={applicantData?.firstName ? `${applicantData.firstName} ${applicantData.lastName}` : "Applicant"}
     >
+      {/* Seamless Applicant Navigation Bar */}
+      <Paper elevation={2} sx={{ mb: 3, p: 1.5, borderRadius: 2, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'center', background: `linear-gradient(90deg, #fffbe6 0%, #fff 100%)`, border: '1px solid #ffe082' }}>
+        <Button
+          component={RouterLink}
+          to="/homepage"
+          startIcon={<HomeIcon />}
+          sx={{ fontWeight: 600 }}
+        >
+          Home
+        </Button>
+        <Button
+          component={RouterLink}
+          to="/ApplicationTrack"
+          startIcon={<TrackIcon />}
+          sx={{ fontWeight: 600 }}
+        >
+          Application Track
+        </Button>
+        <Button
+          component={RouterLink}
+          to="/AppCoursePreference"
+          startIcon={<CourseIcon />}
+          sx={{ fontWeight: 600 }}
+        >
+          Course Preference
+        </Button>
+        <Button
+          component={RouterLink}
+          to="/accepted-dashboard"
+          startIcon={<DashboardIcon />}
+          sx={{ fontWeight: 600 }}
+          disabled
+        >
+          Accepted Dashboard
+        </Button>
+      </Paper>
       {/* Congratulations Banner */}
       <Paper
         elevation={3}
@@ -335,7 +373,7 @@ const AcceptedDashboard = () => {
           </Grid>
           <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
             <EmojiEventsIcon sx={{ fontSize: 80, color: maroon.main, mb: 1 }} />
-            {/* Removed redundant 'View Application' button to avoid duplicate CTAs. Use the main navigation or page header to access application tracking. */}
+            {/* Removed redundant 'View Application' and Go to Dashboard button as per new requirements. Use the main navigation or page header to access application tracking. */}
           </Grid>
         </Grid>
       </Paper>
