@@ -1,9 +1,12 @@
 // src/components/MinimalLayout/index.jsx
 import React from "react";
+import { useLocation } from "react-router-dom";
 import { Stack, Box } from "@mui/material";
 import DashboardLink from "../../components/DashboardLink";
 
 const MinimalLayout = ({ children, backgroundImage, backgroundVideo }) => {
+  const location = useLocation();
+  const isApplicantPage = location.pathname.startsWith('/applicants');
   return (
     <Stack
       sx={{
@@ -16,10 +19,12 @@ const MinimalLayout = ({ children, backgroundImage, backgroundVideo }) => {
         overflow: "hidden",
       }}
     >
-      {/* Dashboard link at top right */}
-      <Box sx={{ position: "absolute", top: 16, right: 32, zIndex: 10 }}>
-        <DashboardLink />
-      </Box>
+      {/* Dashboard link at top right, only for applicant pages */}
+      {isApplicantPage && (
+        <Box sx={{ position: "absolute", top: 16, right: 32, zIndex: 10 }}>
+          <DashboardLink />
+        </Box>
+      )}
       {backgroundVideo && (
         <video
           autoPlay
