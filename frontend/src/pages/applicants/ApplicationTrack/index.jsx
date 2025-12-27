@@ -361,7 +361,7 @@ const ApplicationTracking = () => {
       // If 404 or error, applicant is not accepted yet
       return false;
     }
-  }, [api, navigate, isAccepted]);
+  }, [api, isAccepted]);
 
   // Separate effect for fetching data after applicantId is set
   useEffect(() => {
