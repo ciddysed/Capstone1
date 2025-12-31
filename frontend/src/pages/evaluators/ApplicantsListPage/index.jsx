@@ -345,12 +345,7 @@ const ApplicantsListPage = () => {
   return (
     <ThemeProvider theme={customTheme}>
       <ListLayoutWithFilters>
-        {/* Notification icon at top right */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mt: 2, mr: 2 }}>
-          <IconButton onClick={handleNotificationClick}>
-            <NotificationsNoneIcon fontSize="large" />
-          </IconButton>
-        </Box>
+        {/* Removed notification icon at top right */}
         <Grow in={true} timeout={500}>
           <AnimatedPaper elevation={3} sx={{ p: 3, my: 2, overflow: 'hidden' }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>

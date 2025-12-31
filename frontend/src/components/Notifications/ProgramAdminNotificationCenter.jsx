@@ -12,10 +12,8 @@ import {
 } from '@mui/material';
 import { Notifications as NotificationsIcon, Circle } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import * as localNotificationService from '../../services/localNotificationService';
 import notificationService from '../../services/notificationService';
 
-// Custom maroon and gold color palette
 const maroon = {
   light: '#8D323C',
   main: '#6A0000',
@@ -23,9 +21,6 @@ const maroon = {
   contrastText: '#FFFFFF',
 };
 
-// gold color removed (unused)
-
-// Styled components
 const NotificationItem = styled(ListItem)(({ theme, read }) => ({
   padding: theme.spacing(1.5, 2),
   borderBottom: `1px solid ${theme.palette.divider}`,
@@ -39,90 +34,67 @@ const NotificationItem = styled(ListItem)(({ theme, read }) => ({
   },
 }));
 
-
-
-const NotificationCenter = ({ userType, userId }) => {
-	const [notifications, setNotifications] = useState([]);
-
-  // Modal state for Yes/No prompt
+const ProgramAdminNotificationCenter = ({ programAdminId }) => {
+  const [notifications, setNotifications] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingNotification, setPendingNotification] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+    // Handle notification action
+    const handleNotificationAction = async (notification) => {
+      if (!notification.action) return;
+      setActionLoading(true);
+      try {
+      const actionObj = notification.action;
+      if (actionObj.type === 'navigate' && actionObj.target) {
+        navigate(actionObj.target);
+      } else if (actionObj.type === 'api' && actionObj.endpoint) {
+        await fetch(actionObj.endpoint, { method: actionObj.method || 'POST' });
+      }
+      handleMarkAsRead(notification.id);
+      setModalOpen(false);
+      setPendingNotification(null);
+      } catch (err) {
+        // Optionally show error
+      }
+      setActionLoading(false);
+    };
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [error, setError] = useState(null);
-  
-  // Fetch notifications from backend or localStorage (fallback)
-  const fetchNotifications = useCallback(() => {
-    if (!userId) return;
 
+  // Fetch notifications from backend
+  const fetchNotifications = useCallback(() => {
+    if (!programAdminId) return;
     setLoading(true);
     setError(null);
-
-    // Try backend first, fallback to localStorage on error
-    notificationService.getNotifications(userType, userId)
+    notificationService.getNotifications('program-admin', programAdminId)
       .then(data => {
         setNotifications(data || []);
         setLoading(false);
       })
       .catch(err => {
-        console.warn('Notification API unavailable, falling back to localStorage', err);
-        const userNotifications = localNotificationService.getNotifications(userType, userId);
-        setNotifications(userNotifications || []);
+        setNotifications([]);
+        setError('Failed to load notifications');
         setLoading(false);
       });
-  }, [userId, userType]);
-  
+  }, [programAdminId]);
+
   useEffect(() => {
     fetchNotifications();
-
-    // Set up polling for new notifications (every minute in development)
     const intervalId = setInterval(fetchNotifications, 60000);
-
-    // Listen for notification updates dispatched elsewhere (optimistic create reconciliation)
-    const handler = (e) => {
-      const detail = e?.detail || {};
-      // If detail contains userType/userId, only refresh for that user
-      if (detail.userType && detail.userId) {
-        if (String(detail.userType) !== String(userType) || String(detail.userId) !== String(userId)) {
-          return;
-        }
-      }
-      fetchNotifications();
-    };
-
-    const getGlobal = () => {
-      if (window !== undefined && typeof window.addEventListener === 'function') return window;
-      if (typeof global !== 'undefined' && typeof global.addEventListener === 'function') return global;
-      return null;
-    };
-
-    const eventTarget = getGlobal();
-
-    if (eventTarget && typeof eventTarget.addEventListener === 'function') {
-      eventTarget.addEventListener('notifications:updated', handler);
-    }
-
-    return () => {
-      clearInterval(intervalId);
-      if (eventTarget && typeof eventTarget.removeEventListener === 'function') {
-        eventTarget.removeEventListener('notifications:updated', handler);
-      }
-    };
-  }, [fetchNotifications, userType, userId]);
-
+    return () => clearInterval(intervalId);
+  }, [fetchNotifications]);
 
   // Menu handlers
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
-  
   const handleCloseMenu = () => {
     setAnchorEl(null);
   };
-  
+
   const handleMarkAsRead = (notificationId) => {
-    // Try backend first
     notificationService.markAsRead(notificationId)
       .then(ok => {
         if (!ok) throw new Error('API markAsRead failed');
@@ -133,8 +105,6 @@ const NotificationCenter = ({ userType, userId }) => {
         ));
       })
       .catch(() => {
-        // Fallback to localStorage
-        localNotificationService.markAsRead(notificationId);
         setNotifications(notifications.map(notification => 
           notification.id === notificationId 
             ? { ...notification, read: true } 
@@ -142,22 +112,18 @@ const NotificationCenter = ({ userType, userId }) => {
         ));
       });
   };
-  
+
   const handleMarkAllAsRead = () => {
-    // Try backend first
-    notificationService.markAllAsRead(userType, userId)
+    notificationService.markAllAsRead('program-admin', programAdminId)
       .then(ok => {
         if (!ok) throw new Error('API markAllAsRead failed');
         setNotifications(notifications.map(notification => ({ ...notification, read: true })));
       })
       .catch(() => {
-        // Fallback to localStorage
-        localNotificationService.markAllAsRead(userType, userId);
         setNotifications(notifications.map(notification => ({ ...notification, read: true })));
       });
   };
-  
-  // Format relative time
+
   const formatRelativeTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -166,7 +132,6 @@ const NotificationCenter = ({ userType, userId }) => {
     const diffMin = Math.floor(diffSec / 60);
     const diffHour = Math.floor(diffMin / 60);
     const diffDay = Math.floor(diffHour / 24);
-    
     if (diffDay > 7) {
       return date.toLocaleDateString();
     } else if (diffDay > 0) {
@@ -179,19 +144,18 @@ const NotificationCenter = ({ userType, userId }) => {
       return 'Just now';
     }
   };
-  
-  // Get icon color based on notification type
+
   const getIconColor = (type) => {
     switch (type) {
-      case 'success': return '#4caf50';
-      case 'warning': return '#ff9800';
-      case 'error': return '#f44336';
-      case 'info': default: return '#2196f3';
+      case 'SUCCESS': return '#4caf50';
+      case 'WARNING': return '#ff9800';
+      case 'ERROR': return '#f44336';
+      case 'INFO': default: return '#2196f3';
     }
   };
-  
+
   const unreadCount = notifications.filter(n => !n.read).length;
-  
+
   return (
     <>
       <Box>
@@ -268,72 +232,69 @@ const NotificationCenter = ({ userType, userId }) => {
             if (notifications.length > 0) {
               return (
                 <List disablePadding>
-                  {notifications.map(notification => {
-                    let actionObj;
-                    try {
-                      actionObj = typeof notification.action === 'string'
-                        ? JSON.parse(notification.action)
-                        : notification.action;
-                    } catch {
-                      actionObj = null;
-                    }
-                    return (
-                      <NotificationItem 
-                        key={notification.id} 
-                        onClick={() => {
-                          setPendingNotification({ notification, action: actionObj });
-                          setModalOpen(true);
-                        }}
-                        read={notification.read}
-                        sx={{ cursor: 'pointer' }}
-                      >
-                        <Box sx={{ pr: 2, display: 'flex', alignItems: 'center' }}>
-                          {notification.read ? (
-                            <Avatar sx={{ 
-                              width: 10, 
-                              height: 10, 
-                              bgcolor: 'transparent',
-                              border: `1px solid ${alpha(getIconColor(notification.type), 0.5)}`
-                            }} />
-                          ) : (
-                            <Circle sx={{ 
-                              width: 10, 
-                              height: 10, 
-                              color: getIconColor(notification.type)
-                            }} />
-                          )}
-                        </Box>
-                        <ListItemText 
-                          primary={
+                  {notifications.map(notification => (
+                    <NotificationItem 
+                      key={notification.id} 
+                      onClick={() => {
+                        setPendingNotification(notification);
+                        setModalOpen(true);
+                      }}
+                      read={notification.read}
+                      sx={{ cursor: 'pointer' }}
+                    >
+                      <Box sx={{ pr: 2, display: 'flex', alignItems: 'center' }}>
+                        {notification.read ? (
+                          <Avatar sx={{ 
+                            width: 10, 
+                            height: 10, 
+                            bgcolor: 'transparent',
+                            border: `1px solid ${alpha(getIconColor(notification.type), 0.5)}`
+                          }} />
+                        ) : (
+                          <Circle sx={{ 
+                            width: 10, 
+                            height: 10, 
+                            color: getIconColor(notification.type)
+                          }} />
+                        )}
+                      </Box>
+                      <ListItemText 
+                        primary={
+                          <Box>
                             <Typography variant="subtitle2" sx={{ fontWeight: notification.read ? 400 : 600 }}>
                               {notification.title}
                             </Typography>
-                          }
-                          secondary={
-                            <>
-                              <Typography 
-                                variant="body2" 
-                                component="p"
-                                sx={{ 
-                                  color: notification.read ? 'text.secondary' : 'text.primary',
-                                  mb: 0.5 
-                                }}
-                              >
-                                {notification.message}
+                            {notification.category && (
+                              <Typography variant="caption" sx={{ ml: 1, color: 'primary.main', fontWeight: 500 }}>
+                                {notification.category}
                               </Typography>
-                              <Typography 
-                                variant="caption" 
-                                component="p" 
-                                sx={{ color: 'text.disabled' }}
-                              >
-                                {formatRelativeTime(notification.createdAt)}
-                              </Typography>
-                            </>
-                          }
-                        />
-                      </NotificationItem>
-                    );
-                  })}
+                            )}
+                          </Box>
+                        }
+                        secondary={
+                          <>
+                            <Typography 
+                              variant="body2" 
+                              component="p"
+                              sx={{ 
+                                color: notification.read ? 'text.secondary' : 'text.primary',
+                                mb: 0.5 
+                              }}
+                            >
+                              {notification.message}
+                            </Typography>
+                            <Typography 
+                              variant="caption" 
+                              component="p" 
+                              sx={{ color: 'text.disabled' }}
+                            >
+                              {formatRelativeTime(notification.createdAt)}
+                            </Typography>
+                          </>
+                        }
+                      />
+                    </NotificationItem>
+                  ))}
                 </List>
               );
             }
@@ -349,26 +310,38 @@ const NotificationCenter = ({ userType, userId }) => {
       </Box>
       {/* Modal for notification details */}
       <Dialog open={modalOpen} onClose={() => { setModalOpen(false); setPendingNotification(null); }}>
-        <DialogTitle>{pendingNotification?.notification?.title || 'Notification Details'}</DialogTitle>
+        <DialogTitle>{pendingNotification?.title || 'Notification Details'}</DialogTitle>
         <DialogContent>
           <Typography sx={{ mb: 2 }}>
-            {pendingNotification?.notification?.message}
+            {pendingNotification?.message}
           </Typography>
-          {pendingNotification?.action && pendingNotification.action.label && pendingNotification.action.target && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => {
-                handleMarkAsRead(pendingNotification.notification.id);
-                setModalOpen(false);
-                setPendingNotification(null);
-                navigate(pendingNotification.action.target);
-              }}
-              sx={{ mt: 1 }}
-            >
-              {pendingNotification.action.label}
-            </Button>
+          {pendingNotification?.category && (
+            <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 500 }}>
+              Category: {pendingNotification.category}
+            </Typography>
           )}
+          {pendingNotification?.action && (() => {
+            let actionObj;
+            try {
+              actionObj = typeof pendingNotification.action === 'string'
+                ? JSON.parse(pendingNotification.action)
+                : pendingNotification.action;
+            } catch {
+              actionObj = null;
+            }
+            return actionObj ? (
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  disabled={actionLoading}
+                  onClick={() => handleNotificationAction({ ...pendingNotification, action: actionObj })}
+                >
+                  {actionObj.label || 'Take Action'}
+                </Button>
+              </Box>
+            ) : null;
+          })()}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setModalOpen(false); setPendingNotification(null); }} color="secondary">
@@ -379,10 +352,9 @@ const NotificationCenter = ({ userType, userId }) => {
     </>
   );
 };
-NotificationCenter.propTypes = {
-  userType: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  userId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+
+ProgramAdminNotificationCenter.propTypes = {
+  programAdminId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
-export default NotificationCenter;
-                     
+export default ProgramAdminNotificationCenter;

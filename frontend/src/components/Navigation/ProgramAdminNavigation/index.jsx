@@ -45,7 +45,7 @@ import axios from "axios";
 // Import the tab components
 import AcceptedStudentsTab from "../../../pages/ProgramAdmin/HomePage/components/AcceptedStudentsTab";
 import ApplicationDetailsDialog from "../../../pages/ProgramAdmin/HomePage/components/ApplicationDetailsDialog";
-import NotificationCenter from "../../Notifications/NotificationCenter";
+import ProgramAdminNotificationCenter from "../../Notifications/ProgramAdminNotificationCenter";
 
 const API_URL = "https://eteeap-foth.onrender.com/api/program-admins";
 
@@ -531,8 +531,8 @@ const ProgramAdminNavigation = ({ children }) => {
                   }}
                 />
                 
-                {/* Replace the notification icon with the NotificationCenter component */}
-                <NotificationCenter userType="program-admin" userId={programAdminId} />
+                {/* Program Admin Notification Center */}
+                <ProgramAdminNotificationCenter programAdminId={programAdminId} />
                 
               </Box>
             </Toolbar>
