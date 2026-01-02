@@ -28,7 +28,7 @@ import {
   Warning as AlertCircleIcon,
   Add as PlusIcon,
   Close as XIcon,
-  
+
 } from "@mui/icons-material"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
@@ -67,7 +67,7 @@ const maroonTheme = {
 export default function ApplicationForm() {
   const navigate = useNavigate()
   const { handleSuccess, handleError, snackbar } = useResponseHandler()
-  
+
   const [applicantId, setApplicantId] = useState(null)
   const [userData, setUserData] = useState({
     name: "",
@@ -98,11 +98,11 @@ export default function ApplicationForm() {
   const getOrdinalSuffix = (num) => {
     const number = Number(num)
     if (isNaN(number)) return ''
-    
+
     if (number % 100 >= 11 && number % 100 <= 13) {
       return 'th'
     }
-    
+
     switch (number % 10) {
       case 1: return 'st'
       case 2: return 'nd'
@@ -146,7 +146,7 @@ export default function ApplicationForm() {
     } finally {
       setLoading(prev => ({ ...prev, profile: false }))
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Fetch courses from backend
@@ -191,7 +191,7 @@ export default function ApplicationForm() {
     } finally {
       setLoading(prev => ({ ...prev, courses: false }))
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Fetch uploaded documents
@@ -214,7 +214,7 @@ export default function ApplicationForm() {
     } finally {
       setLoading(prev => ({ ...prev, documents: false }))
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // --- NEW helpers: normalize preference + localStorage cache keys ---
@@ -283,7 +283,7 @@ export default function ApplicationForm() {
       }
 
       const response = await axios.get(`https://eteeap-foth.onrender.com/api/preferences/applicant/${applicantId}`, getAuthConfig())
-      
+
       // normalize and sort
       const normalized = (response.data || []).map(normalizePreference)
       const sortedPrefs = sortPreferences(normalized)
@@ -298,7 +298,7 @@ export default function ApplicationForm() {
     } finally {
       setLoading(prev => ({ ...prev, preferences: false }))
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Initialize component
@@ -364,7 +364,7 @@ export default function ApplicationForm() {
     // Check if this course is already selected in another priority level (use numeric compare)
     const isDuplicate = coursePreferences.some(
       pref => Number(pref.course?.courseId) === Number(selectedCourse.courseId) &&
-             pref.priorityOrder !== priorityOrders[currentPriorityIndex]
+        pref.priorityOrder !== priorityOrders[currentPriorityIndex]
     )
 
     if (isDuplicate) {
@@ -478,19 +478,19 @@ export default function ApplicationForm() {
         }))
 
         handleSuccess(`${getDocumentTypeLabel(actualDocumentType)} replaced successfully!`)
-        
+
         // Update the specific file in the files array
-        setFiles((prevFiles) => 
-          prevFiles.map(prevFile => 
-            prevFile.id === documentId 
+        setFiles((prevFiles) =>
+          prevFiles.map(prevFile =>
+            prevFile.id === documentId
               ? {
-                  name: response.data.fileName,
-                  id: response.data.documentId,
-                  downloadUrl: response.data.downloadUrl,
-                  documentType: actualDocumentType,
-                  size: response.data.fileSize || 0,
-                  uploadDate: new Date(response.data.uploadDate)
-                }
+                name: response.data.fileName,
+                id: response.data.documentId,
+                downloadUrl: response.data.downloadUrl,
+                documentType: actualDocumentType,
+                size: response.data.fileSize || 0,
+                uploadDate: new Date(response.data.uploadDate)
+              }
               : prevFile
           )
         )
@@ -501,7 +501,7 @@ export default function ApplicationForm() {
         }))
 
         handleSuccess(`${getDocumentTypeLabel(actualDocumentType)} uploaded successfully!`)
-        
+
         const uploadedFile = {
           name: response.data.fileName,
           id: response.data.documentId,
@@ -614,424 +614,350 @@ export default function ApplicationForm() {
   // Check if all data has finished loading
   const isLoading = loading.profile || loading.courses || loading.documents || loading.preferences
 
+  const RequirementRow = ({ ok, label }) => (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      {ok ? (
+        <CheckCircleIcon sx={{ color: "success.main", fontSize: 14 }} />
+      ) : (
+        <AlertCircleIcon sx={{ color: "error.main", fontSize: 14 }} />
+      )}
+      <Typography variant="caption">{label}</Typography>
+    </Box>
+  );
+
+
   return (
     <>
       <Box sx={{ position: 'absolute', top: 16, right: 32, zIndex: 10 }}>
         <DashboardLink />
       </Box>
-      <Box sx={{ 
-        minHeight: "100vh", 
+      <Box sx={{
+        minHeight: "100vh",
         background: `linear-gradient(135deg, ${alpha('#B8860B', 0.05)} 0%, ${alpha('#FFD700', 0.03)} 100%)`,
-        bgcolor: "grey.50" 
+        bgcolor: "grey.50"
       }}>
-      {/* Header */}
-      <Paper elevation={1} sx={{ borderRadius: 0, bgcolor: maroonTheme.primary.main }}>
-        <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  bgcolor: "white",
-                  borderRadius: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <GraduationCapIcon sx={{ color: maroonTheme.primary.main, fontSize: 24 }} />
+        {/* Header */}
+        <Paper elevation={1} sx={{ borderRadius: 0, bgcolor: maroonTheme.primary.main }}>
+          <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    bgcolor: "white",
+                    borderRadius: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <GraduationCapIcon sx={{ color: maroonTheme.primary.main, fontSize: 24 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h5" fontWeight="bold" color="white">
+                    ETEEAP APPLICANT APPLICATION FORM
+                  </Typography>
+                  <Typography variant="body2" color="rgba(255,255,255,0.8)">
+                    Complete your application for admission
+                  </Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography variant="h5" fontWeight="bold" color="white">
-                  ETEEAP APPLICANT APPLICATION FORM
-                </Typography>
-                <Typography variant="body2" color="rgba(255,255,255,0.8)">
-                  Complete your application for admission
-                </Typography>
-              </Box>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box sx={{ textAlign: "right" }}>
-                <Typography variant="body2" fontWeight="medium" color="white">
-                  {userData.name || "Loading..."}
-                </Typography>
-                <Typography variant="caption" color="rgba(255,255,255,0.8)">
-                  {userData.email || "Loading..."}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  bgcolor: "white",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <UserIcon sx={{ color: maroonTheme.primary.main, fontSize: 16 }} />
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ textAlign: "right" }}>
+                  <Typography variant="body2" fontWeight="medium" color="white">
+                    {userData.name || "Loading..."}
+                  </Typography>
+                  <Typography variant="caption" color="rgba(255,255,255,0.8)">
+                    {userData.email || "Loading..."}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    bgcolor: "white",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <UserIcon sx={{ color: maroonTheme.primary.main, fontSize: 16 }} />
+                </Box>
               </Box>
             </Box>
           </Box>
-        </Box>
-      </Paper>
+        </Paper>
 
-      {/* Progress Bar */}
-      <Paper elevation={1} sx={{ borderRadius: 0, background: `linear-gradient(135deg, ${alpha('#FFD700', 0.1)} 0%, ${alpha('#B8860B', 0.08)} 100%)` }}>
-        <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-            <Typography variant="body2" fontWeight="medium" color="text.primary">
-              Application Progress
+        {/* Progress Bar */}
+        <Paper elevation={1} sx={{ borderRadius: 0, background: `linear-gradient(135deg, ${alpha('#FFD700', 0.1)} 0%, ${alpha('#B8860B', 0.08)} 100%)` }}>
+          <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+              <Typography variant="body2" fontWeight="medium" color="text.primary">
+                Application Progress
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {Math.round(calculateProgress())}% Complete
+              </Typography>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={calculateProgress()}
+              sx={{
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: alpha('#FFD700', 0.2),
+                '& .MuiLinearProgress-bar': {
+                  background: `linear-gradient(90deg, ${maroonTheme.primary.main} 0%, ${maroonTheme.secondary.main} 100%)`
+                }
+              }}
+            />
+          </Box>
+        </Paper>
+
+        {/* Loading State */}
+        {isLoading ? (
+          <Box sx={{
+            display: "flex",
+            flexDirection: 'column',
+            justifyContent: "center",
+            alignItems: "center",
+            my: 6,
+            backgroundColor: alpha('#FFFFFF', 0.9),
+            p: 4,
+            borderRadius: 4,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            width: '100%',
+            maxWidth: 400,
+            mx: "auto"
+          }}>
+            <CircularProgress size={60} sx={{ color: maroonTheme.primary.main, mb: 3 }} />
+            <Typography variant="h6" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>
+              Loading Application Data
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {Math.round(calculateProgress())}% Complete
+            <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+              Please wait while we prepare your application...
             </Typography>
           </Box>
-          <LinearProgress
-            variant="determinate"
-            value={calculateProgress()}
-            sx={{ 
-              height: 8, 
-              borderRadius: 4,
-              backgroundColor: alpha('#FFD700', 0.2),
-              '& .MuiLinearProgress-bar': {
-                background: `linear-gradient(90deg, ${maroonTheme.primary.main} 0%, ${maroonTheme.secondary.main} 100%)`
-              }
-            }}
-          />
-        </Box>
-      </Paper>
-
-      {/* Loading State */}
-      {isLoading ? (
-        <Box sx={{ 
-          display: "flex", 
-          flexDirection: 'column',
-          justifyContent: "center", 
-          alignItems: "center",
-          my: 6,
-          backgroundColor: alpha('#FFFFFF', 0.9),
-          p: 4,
-          borderRadius: 4,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-          width: '100%',
-          maxWidth: 400,
-          mx: "auto"
-        }}>
-          <CircularProgress size={60} sx={{ color: maroonTheme.primary.main, mb: 3 }} />
-          <Typography variant="h6" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>
-            Loading Application Data
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-            Please wait while we prepare your application...
-          </Typography>
-        </Box>
-      ) : (
-        <>
-          {/* Main Content */}
-          <Box sx={{ maxWidth: "1400px", mx: "auto", px: 3, py: 4 }}>
-            <Grid container spacing={3}>
-              {/* Left Column - Personal Info & Course Preferences */}
-              <Grid item xs={12} lg={6}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                  {/* Personal Information */}
-                  <Card elevation={2} sx={{ 
-                    border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
-                    '&:hover': { 
-                      boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
-                      transform: 'translateY(-2px)'
-                    },
-                    transition: 'all 0.3s ease'
-                  }}>
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <UserIcon sx={{ color: maroonTheme.primary.main, fontSize: 20 }} />
-                          <Typography variant="h6" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Personal Information</Typography>
-                        </Box>
-                      }
-                      sx={{ 
-                        pb: 2,
-                        background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
-                      }}
-                    />
-                    <CardContent>
-                      <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
-                          <Box sx={{ mb: 1 }}>
-                            <Typography variant="body2" fontWeight="medium" color="text.primary">
-                              Full Name
-                            </Typography>
+        ) : (
+          <>
+            {/* Main Content */}
+            <Box sx={{ maxWidth: "1400px", mx: "auto", px: 3, py: 4 }}>
+              <Grid container spacing={3}>
+                {/* Left Column - Personal Info & Course Preferences */}
+                <Grid item xs={12} lg={6}>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    {/* Personal Information */}
+                    <Card elevation={2} sx={{
+                      border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
+                      '&:hover': {
+                        boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
+                        transform: 'translateY(-2px)'
+                      },
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <CardHeader
+                        title={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <UserIcon sx={{ color: maroonTheme.primary.main, fontSize: 20 }} />
+                            <Typography variant="h6" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Personal Information</Typography>
                           </Box>
-                          <Paper variant="outlined" sx={{ 
-                            p: 2, 
-                            background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
-                            border: `1px solid ${alpha(maroonTheme.secondary.main, 0.2)}`
-                          }}>
-                            <Typography fontWeight="medium" color="text.primary">
-                              {userData.name}
-                            </Typography>
-                          </Paper>
+                        }
+                        sx={{
+                          pb: 2,
+                          background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
+                        }}
+                      />
+                      <CardContent>
+                        <Grid container spacing={3}>
+                          <Grid item xs={12} md={6}>
+                            <Box sx={{ mb: 1 }}>
+                              <Typography variant="body2" fontWeight="medium" color="text.primary">
+                                Full Name
+                              </Typography>
+                            </Box>
+                            <Paper variant="outlined" sx={{
+                              p: 2,
+                              background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
+                              border: `1px solid ${alpha(maroonTheme.secondary.main, 0.2)}`
+                            }}>
+                              <Typography fontWeight="medium" color="text.primary">
+                                {userData.name}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                          <Grid item xs={12} md={6}>
+                            <Box sx={{ mb: 1 }}>
+                              <Typography variant="body2" fontWeight="medium" color="text.primary">
+                                Email Address
+                              </Typography>
+                            </Box>
+                            <Paper variant="outlined" sx={{
+                              p: 2,
+                              background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
+                              border: `1px solid ${alpha(maroonTheme.secondary.main, 0.2)}`
+                            }}>
+                              <Typography color="text.primary">{userData.email}</Typography>
+                            </Paper>
+                          </Grid>
                         </Grid>
-                        <Grid item xs={12} md={6}>
-                          <Box sx={{ mb: 1 }}>
-                            <Typography variant="body2" fontWeight="medium" color="text.primary">
-                              Email Address
-                            </Typography>
-                          </Box>
-                          <Paper variant="outlined" sx={{ 
-                            p: 2, 
-                            background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.8)} 100%)`,
-                            border: `1px solid ${alpha(maroonTheme.secondary.main, 0.2)}`
-                          }}>
-                            <Typography color="text.primary">{userData.email}</Typography>
-                          </Paper>
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
 
-                  {/* Course Preferences */}
-                  <Card elevation={2} sx={{ 
-                    border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
-                    '&:hover': { 
-                      boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
-                      transform: 'translateY(-2px)'
-                    },
-                    transition: 'all 0.3s ease'
-                  }}>
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <GraduationCapIcon sx={{ color: maroonTheme.primary.main, fontSize: 20 }} />
-                          <Typography variant="h6" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Your Course Preferences</Typography>
-                        </Box>
-                      }
-                      subheader="Select up to 3 courses in order of preferences"
-                      sx={{ 
-                        pb: 2,
-                        background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
-                      }}
-                    />
-                    <CardContent>
-                      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        {[0, 1, 2].map((index) => {
-                          const preference = getCoursePreferenceByPriority(index)
-                          return (
-                            <Paper
-                              key={index}
-                              variant="outlined"
-                              sx={{
-                                p: 2,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 2,
-                                "&:hover": { bgcolor: "grey.50" },
-                                transition: "background-color 0.2s",
-                              }}
-                            >
-                              <Chip
-                                label={getPriorityLabel(index)}
+                    {/* Course Preferences */}
+                    <Card elevation={2} sx={{
+                      border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
+                      '&:hover': {
+                        boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
+                        transform: 'translateY(-2px)'
+                      },
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <CardHeader
+                        title={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <GraduationCapIcon sx={{ color: maroonTheme.primary.main, fontSize: 20 }} />
+                            <Typography variant="h6" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Your Course Preferences</Typography>
+                          </Box>
+                        }
+                        subheader="Select up to 3 courses in order of preferences"
+                        sx={{
+                          pb: 2,
+                          background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
+                        }}
+                      />
+                      <CardContent>
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          {[0, 1, 2].map((index) => {
+                            const preference = getCoursePreferenceByPriority(index)
+                            return (
+                              <Paper
+                                key={index}
                                 variant="outlined"
-                                size="small"
-                                sx={{ 
-                                  minWidth: 80,
-                                  backgroundColor: index % 2 === 0 ? maroonTheme.primary.main : maroonTheme.secondary.main,
-                                  color: 'white',
-                                  borderColor: index % 2 === 0 ? maroonTheme.primary.main : maroonTheme.secondary.main,
-                                  '&:hover': {
-                                    backgroundColor: index % 2 === 0 ? maroonTheme.primary.dark : maroonTheme.secondary.dark
-                                  }
-                                }}
-                              />
-                              <Box sx={{ flex: 1 }}>
-                                {preference ? (
-                                  <Box>
-                                    <Typography fontWeight="medium" color="text.primary">
-                                      {preference.course.courseName}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                      {(() => {
-                                        // Try to find the matching course in availableCourses to get the processed department
-                                        const matchingCourse = availableCourses.find(c => c.courseId === preference.course.courseId)
-                                        if (matchingCourse) {
-                                          return matchingCourse.department
-                                        }
-                                        // Fallback to original logic
-                                        return preference.course.department?.departmentName || 
-                                               preference.course.department || 
-                                               "Department"
-                                      })()}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      {preference.course.description || preference.course.courseCode}
-                                    </Typography>
-                                  </Box>
-                                ) : (
-                                  <Typography color="text.secondary" fontStyle="italic">
-                                    No course selected
-                                  </Typography>
-                                )}
-                              </Box>
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={() => openCourseDialog(index)}
                                 sx={{
-                                  borderColor: maroonTheme.primary.main,
-                                  color: maroonTheme.primary.main,
-                                  '&:hover': {
-                                    borderColor: maroonTheme.primary.dark,
-                                    backgroundColor: alpha(maroonTheme.primary.main, 0.1),
-                                    color: maroonTheme.primary.dark
-                                  }
+                                  p: 2,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 2,
+                                  "&:hover": { bgcolor: "grey.50" },
+                                  transition: "background-color 0.2s",
                                 }}
                               >
-                                {preference ? "Change" : "Select"}
-                              </Button>
-                            </Paper>
-                          )
-                        })}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Box>
-              </Grid>
-
-              {/* Right Section - Documents in Horizontal Row */}
-              <Grid item xs={12} lg={6}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                  {/* Three Document Cards in Horizontal Row */}
-                  <Grid container spacing={2}>
-                    {/* Document Upload Card */}
-                    <Grid item xs={12} md={4}>
-                      <Card elevation={2} sx={{ 
-                        height: 'fit-content',
-                        border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
-                        '&:hover': { 
-                          boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
-                          transform: 'translateY(-2px)'
-                        },
-                        transition: 'all 0.3s ease'
-                      }}>
-                        <CardHeader
-                          title={
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <UploadIcon sx={{ color: maroonTheme.primary.main, fontSize: 18 }} />
-                              <Typography variant="subtitle1" fontSize="0.95rem" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Upload Documents</Typography>
-                            </Box>
-                          }
-                          subheader="Upload required documents"
-                          sx={{ 
-                            pb: 1,
-                            background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
-                          }}
-                        />
-                        <CardContent sx={{ pt: 1 }}>
-                          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                            {documentTypes.slice(0, 2).map((docType) => (
-                              <Box key={docType.value} sx={{ position: "relative" }}>
-                                <input
-                                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                  style={{ display: "none" }}
-                                  id={docType.value}
-                                  type="file"
-                                  onChange={(e) => handleFileUpload(e, docType.value)}
+                                <Chip
+                                  label={getPriorityLabel(index)}
+                                  variant="outlined"
+                                  size="small"
+                                  sx={{
+                                    minWidth: 80,
+                                    backgroundColor: index % 2 === 0 ? maroonTheme.primary.main : maroonTheme.secondary.main,
+                                    color: 'white',
+                                    borderColor: index % 2 === 0 ? maroonTheme.primary.main : maroonTheme.secondary.main,
+                                    '&:hover': {
+                                      backgroundColor: index % 2 === 0 ? maroonTheme.primary.dark : maroonTheme.secondary.dark
+                                    }
+                                  }}
                                 />
-                                <label htmlFor={docType.value}>
-                                  <Paper
-                                    variant="outlined"
-                                    sx={{
-                                      p: 1.5,
-                                      border: "2px dashed",
-                                      borderColor: "grey.300",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      cursor: "pointer",
-                                      transition: "all 0.2s",
-                                      minHeight: 60,
-                                      "&:hover": {
-                                        borderColor: maroonTheme.primary.main,
-                                        backgroundColor: alpha(maroonTheme.secondary.light, 0.1),
-                                      },
-                                    }}
-                                  >
-                                    <Box sx={{ textAlign: "center" }}>
-                                      <PlusIcon sx={{ color: "grey.400", fontSize: 16, mb: 0.5 }} />
-                                      <Typography variant="caption" fontWeight="medium" color="text.primary" sx={{ display: 'block' }}>
-                                        {docType.label}
-                                        {docType.required && (
-                                          <Typography component="span" color="error" sx={{ ml: 0.5 }}>
-                                            *
-                                          </Typography>
-                                        )}
+                                <Box sx={{ flex: 1 }}>
+                                  {preference ? (
+                                    <Box>
+                                      <Typography fontWeight="medium" color="text.primary">
+                                        {preference.course.courseName}
+                                      </Typography>
+                                      <Typography variant="body2" color="text.secondary">
+                                        {(() => {
+                                          // Try to find the matching course in availableCourses to get the processed department
+                                          const matchingCourse = availableCourses.find(c => c.courseId === preference.course.courseId)
+                                          if (matchingCourse) {
+                                            return matchingCourse.department
+                                          }
+                                          // Fallback to original logic
+                                          return preference.course.department?.departmentName ||
+                                            preference.course.department ||
+                                            "Department"
+                                        })()}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        {preference.course.description || preference.course.courseCode}
                                       </Typography>
                                     </Box>
-                                  </Paper>
-                                </label>
-                              </Box>
-                            ))}
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={() => setDocumentsDialogOpen(true)}
-                              sx={{ 
-                                mt: 1, 
-                                fontSize: '0.7rem',
-                                borderColor: maroonTheme.secondary.main,
-                                color: maroonTheme.secondary.main,
-                                '&:hover': {
-                                  borderColor: maroonTheme.secondary.dark,
-                                  backgroundColor: alpha(maroonTheme.secondary.main, 0.1),
-                                  color: maroonTheme.secondary.dark
-                                }
-                              }}
-                            >
-                              View All Document Types
-                            </Button>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </Grid>
+                                  ) : (
+                                    <Typography color="text.secondary" fontStyle="italic">
+                                      No course selected
+                                    </Typography>
+                                  )}
+                                </Box>
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  onClick={() => openCourseDialog(index)}
+                                  sx={{
+                                    borderColor: maroonTheme.primary.main,
+                                    color: maroonTheme.primary.main,
+                                    '&:hover': {
+                                      borderColor: maroonTheme.primary.dark,
+                                      backgroundColor: alpha(maroonTheme.primary.main, 0.1),
+                                      color: maroonTheme.primary.dark
+                                    }
+                                  }}
+                                >
+                                  {preference ? "Change" : "Select"}
+                                </Button>
+                              </Paper>
+                            )
+                          })}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                </Grid>
 
-                    {/* Uploaded Files Card */}
-                    <Grid item xs={12} md={4}>
-                      <Card elevation={2} sx={{ 
-                        height: 'fit-content',
-                        border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
-                        '&:hover': { 
-                          boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
-                          transform: 'translateY(-2px)'
-                        },
-                        transition: 'all 0.3s ease'
-                      }}>
-                        <CardHeader
-                          title={
-                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <FileTextIcon sx={{ color: maroonTheme.primary.main, fontSize: 18 }} />
-                                <Typography variant="subtitle1" fontSize="0.95rem" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Uploaded Files</Typography>
-                              </Box>
-                              <Chip 
-                                label={files.length} 
-                                size="small" 
-                                sx={{
-                                  backgroundColor: maroonTheme.secondary.main,
-                                  color: 'white',
-                                  fontWeight: 600
-                                }}
-                              />
-                            </Box>
-                          }
-                          sx={{ 
-                            pb: 1,
-                            background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
+                {/* Right Section - Documents in Horizontal Row */}
+                <Grid item xs={12} lg={6} style={{  }}>
+                  <Card
+                    elevation={2}
+                    sx={{
+                      border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
+                        transform: "translateY(-2px)",
+                      },
+                    }}
+                  >
+                    {/* HEADER */}
+                    <CardHeader
+                      title={
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            fontWeight: 600,
+                            color: maroonTheme.primary.main,
                           }}
-                        />
-                        <CardContent sx={{ pt: 1 }}>
+                        >
+                          Documents & Requirements
+                        </Typography>
+                      }
+                      sx={{
+                        background: `linear-gradient(135deg,
+                        ${alpha(maroonTheme.secondary.light, 0.08)} 0%,
+                        ${alpha(maroonTheme.primary.main, 0.05)} 100%)`,
+                      }}
+                    />
+
+                    {/* CONTENT */}
+                    <CardContent>
+                      <Grid container spacing={3}>
+                        {/* ================= LEFT SIDE ================= */}
+                        <Grid item xs={12} md={7}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ mb: 1.5, fontWeight: 600, color: maroonTheme.primary.main }}
+                          >
+                            Upload Documents
+                          </Typography>
+
+                          {/* Uploaded Files */}
                           {files.length === 0 ? (
                             <Box sx={{ textAlign: "center", py: 2 }}>
                               <FileTextIcon sx={{ fontSize: 32, color: "grey.300", mb: 1 }} />
@@ -1040,406 +966,405 @@ export default function ApplicationForm() {
                               </Typography>
                             </Box>
                           ) : (
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxHeight: 200, overflow: 'auto' }}>
-                              {files.slice(0, 4).map((file) => (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 1,
+                                maxHeight: 220,
+                                overflow: "auto",
+                              }}
+                            >
+                              {files.map((file) => (
                                 <Paper
                                   key={file.id}
                                   variant="outlined"
-                                  sx={{ 
-                                    p: 1.5, 
-                                    background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.9)} 100%)`,
-                                    display: "flex", 
-                                    flexDirection: "column", 
+                                  sx={{
+                                    p: 1.5,
+                                    display: "flex",
+                                    flexDirection: "column",
                                     gap: 0.5,
-                                    border: `1px solid ${alpha(maroonTheme.secondary.main, 0.2)}`,
-                                    '&:hover': {
-                                      backgroundColor: alpha(maroonTheme.secondary.light, 0.1)
-                                    }
                                   }}
                                 >
                                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                    <FileTextIcon sx={{ color: maroonTheme.primary.main, fontSize: 14, flexShrink: 0 }} />
-                                    <Typography
-                                      variant="caption"
-                                      fontWeight="medium"
-                                      color="text.primary"
-                                      sx={{ wordBreak: "break-all", flex: 1 }}
-                                    >
-                                      {file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name}
+                                    <FileTextIcon sx={{ fontSize: 14 }} />
+                                    <Typography variant="caption" sx={{ flex: 1 }}>
+                                      {file.name}
                                     </Typography>
                                     <IconButton
                                       size="small"
-                                      sx={{ color: "error.main", p: 0.25 }}
                                       onClick={() => removeFile(file.id)}
+                                      sx={{ color: "error.main" }}
                                     >
-                                      <XIcon sx={{ fontSize: 10 }} />
+                                      <XIcon sx={{ fontSize: 12 }} />
                                     </IconButton>
                                   </Box>
-                                  <Box sx={{ ml: 2.5 }}>
-                                    <Typography variant="caption" color={maroonTheme.primary.main} sx={{ fontWeight: 'medium', display: 'block' }}>
-                                      {getDocumentTypeLabel(file.documentType)}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                                      {formatFileSize(file.size)} • {file.uploadDate ? new Date(file.uploadDate).toLocaleDateString() : 'Unknown date'}
-                                    </Typography>
-                                  </Box>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {getDocumentTypeLabel(file.documentType)} •{" "}
+                                    {formatFileSize(file.size)}
+                                  </Typography>
                                 </Paper>
                               ))}
-                              {files.length > 4 && (
-                                <Button
-                                  variant="text"
-                                  size="small"
-                                  sx={{ 
-                                    fontSize: '0.7rem', 
-                                    mt: 0.5,
-                                    color: maroonTheme.secondary.main,
-                                    '&:hover': {
-                                      backgroundColor: alpha(maroonTheme.secondary.main, 0.1),
-                                      color: maroonTheme.secondary.dark
-                                    }
-                                  }}
-                                  onClick={() => {
-                                    // You can add a "View All Files" dialog here if needed
-                                    console.log('View all files clicked')
-                                  }}
-                                >
-                                  View All {files.length} Files
-                                </Button>
-                              )}
                             </Box>
                           )}
-                        </CardContent>
-                      </Card>
-                    </Grid>
 
-                    {/* Requirements Card */}
-                    <Grid item xs={12} md={4}>
-                      <Card elevation={2} sx={{ 
-                        height: 'fit-content',
-                        border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
-                        '&:hover': { 
-                          boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
-                          transform: 'translateY(-2px)'
-                        },
-                        transition: 'all 0.3s ease'
-                      }}>
-                        <CardHeader
-                          title={
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <CheckCircleIcon sx={{ color: maroonTheme.secondary.main, fontSize: 18 }} />
-                              <Typography variant="subtitle1" fontSize="0.95rem" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Requirements</Typography>
-                            </Box>
-                          }
-                          sx={{ 
-                            pb: 1,
-                            background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
-                          }}
-                        />
-                        <CardContent sx={{ pt: 1 }}>
-                          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              {files.some((f) => f.documentType === "INFORMATIVE_COPY_OF_TOR") ? (
-                                <CheckCircleIcon sx={{ color: "success.main", fontSize: 14 }} />
-                              ) : (
-                                <AlertCircleIcon sx={{ color: "error.main", fontSize: 14 }} />
-                              )}
-                              <Typography variant="caption">Transcript of Records Required</Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              {files.some((f) => f.documentType === "CERTIFICATE_OF_EMPLOYMENT") ? (
-                                <CheckCircleIcon sx={{ color: "success.main", fontSize: 14 }} />
-                              ) : (
-                                <AlertCircleIcon sx={{ color: "error.main", fontSize: 14 }} />
-                              )}
-                              <Typography variant="caption">Certificate of Employment Required</Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              {files.length >= 3 ? (
-                                <CheckCircleIcon sx={{ color: "success.main", fontSize: 14 }} />
-                              ) : (
-                                <ClockIcon sx={{ color: "warning.main", fontSize: 14 }} />
-                              )}
-                              <Typography variant="caption">Minimum of 3 Documents</Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              {coursePreferences.length > 0 ? (
-                                <CheckCircleIcon sx={{ color: "success.main", fontSize: 14 }} />
-                              ) : (
-                                <ClockIcon sx={{ color: "warning.main", fontSize: 14 }} />
-                              )}
-                              <Typography variant="caption">Course Selected</Typography>
-                            </Box>
+                          {/* Upload Buttons */}
+                          <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+                            {documentTypes.slice(0, 2).map((docType) => (
+                              <Box key={docType.value}>
+                                <input
+                                  hidden
+                                  id={docType.value}
+                                  type="file"
+                                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                  onChange={(e) => handleFileUpload(e, docType.value)}
+                                />
+                                <label htmlFor={docType.value}>
+                                  <Paper
+                                    variant="outlined"
+                                    sx={{
+                                      p: 1.5,
+                                      border: "2px dashed",
+                                      textAlign: "center",
+                                      cursor: "pointer",
+                                      "&:hover": {
+                                        borderColor: maroonTheme.primary.main,
+                                        backgroundColor: alpha(
+                                          maroonTheme.secondary.light,
+                                          0.1
+                                        ),
+                                      },
+                                    }}
+                                  >
+                                    <PlusIcon sx={{ fontSize: 16, mb: 0.5 }} />
+                                    <Typography variant="caption">
+                                      {docType.label}
+                                      {docType.required && (
+                                        <Typography component="span" color="error">
+                                          *
+                                        </Typography>
+                                      )}
+                                    </Typography>
+                                  </Paper>
+                                </label>
+                              </Box>
+                            ))}
+
                           </Box>
-                        </CardContent>
-                      </Card>
+                        </Grid>
+
+                        {/* ================= RIGHT SIDE ================= */}
+                        <Grid item xs={12} md={5}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ mb: 1.5, fontWeight: 600, color: maroonTheme.primary.main }}
+                          >
+                            Requirements
+                          </Typography>
+
+                          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                            <RequirementRow
+                              ok={files.some(
+                                (f) => f.documentType === "INFORMATIVE_COPY_OF_TOR"
+                              )}
+                              label="Transcript of Records Required"
+                            />
+                            <RequirementRow
+                              ok={files.some(
+                                (f) => f.documentType === "CERTIFICATE_OF_EMPLOYMENT"
+                              )}
+                              label="Certificate of Employment Required"
+                            />
+                            <RequirementRow
+                              ok={files.length >= 3}
+                              label="Minimum of 3 Documents"
+                            />
+                            <RequirementRow
+                              ok={coursePreferences.length > 0}
+                              label="Course Selected"
+                            />
+                          </Box>
+                        </Grid>
+                      </Grid>
+
+                    </CardContent>
+                    <Grid item xs={12} style={{ display: "flex", justifyContent: "center", padding: "10px", marginBottom: "10px" }}>
+
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => setDocumentsDialogOpen(true)}
+                        sx={{ color: maroonTheme.primary.main, borderColor: maroonTheme.primary.main, fontSize: "14px", fontWeight: "bold",}}
+                      >
+                        View All Document Types
+                      </Button>
                     </Grid>
-                  </Grid>
-                </Box>
+                  </Card>
+                </Grid>
               </Grid>
-            </Grid>
 
-            {/* Submit Section */}
-            <Box sx={{ mt: 4 }}>
-              <Card elevation={3} sx={{ 
-                border: `2px solid ${alpha(maroonTheme.secondary.light, 0.3)}`,
-                background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.95)} 100%)`,
-                '&:hover': { 
-                  boxShadow: `0 12px 40px ${alpha(maroonTheme.primary.main, 0.15)}`,
-                  transform: 'translateY(-3px)'
-                },
-                transition: 'all 0.3s ease'
-              }}>
-                <CardContent sx={{ pt: 3 }}>
-                  <Box sx={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 2 }}>
-                    <Box>
-                      <Typography variant="h6" fontWeight="600" sx={{ color: maroonTheme.primary.main }}>
-                        Ready to Submit?
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                        Please review all information before submitting your application
-                      </Typography>
-                    </Box>
+              {/* Submit Section */}
+              <Box sx={{ mt: 4 }}>
+                <Card elevation={3} sx={{
+                  border: `2px solid ${alpha(maroonTheme.secondary.light, 0.3)}`,
+                  background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.95)} 100%)`,
+                  '&:hover': {
+                    boxShadow: `0 12px 40px ${alpha(maroonTheme.primary.main, 0.15)}`,
+                    transform: 'translateY(-3px)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}>
+                  <CardContent sx={{ pt: 3 }}>
+                    <Box sx={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 2 }}>
+                      <Box>
+                        <Typography variant="h6" fontWeight="600" sx={{ color: maroonTheme.primary.main }}>
+                          Ready to Submit?
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                          Please review all information before submitting your application
+                        </Typography>
+                      </Box>
 
-                    {!files.some((f) => f.documentType === "INFORMATIVE_COPY_OF_TOR") && (
-                      <Alert 
-                        severity="warning" 
-                        sx={{ 
-                          maxWidth: 400, 
-                          mx: "auto",
-                          backgroundColor: alpha('#FFD700', 0.1),
-                          color: maroonTheme.primary.dark,
-                          '& .MuiAlert-icon': {
-                            color: maroonTheme.secondary.main
-                          }
+                      {!files.some((f) => f.documentType === "INFORMATIVE_COPY_OF_TOR") && (
+                        <Alert
+                          severity="warning"
+                          sx={{
+                            maxWidth: 400,
+                            mx: "auto",
+                            backgroundColor: alpha('#FFD700', 0.1),
+                            color: maroonTheme.primary.dark,
+                            '& .MuiAlert-icon': {
+                              color: maroonTheme.secondary.main
+                            }
+                          }}
+                        >
+                          Please upload the required Informative Copy of TOR before submitting.
+                        </Alert>
+                      )}
+
+                      <Button
+                        onClick={handleSubmit}
+                        disabled={
+                          submitting ||
+                          !files.some((f) => f.documentType === "INFORMATIVE_COPY_OF_TOR") ||
+                          !files.some((f) => f.documentType === "CERTIFICATE_OF_EMPLOYMENT") ||
+                          files.length < 3 ||
+                          coursePreferences.length === 0
+                        }
+                        size="large"
+                        variant="contained"
+                        sx={{
+                          px: 4,
+                          py: 1.5,
+                          fontSize: "1rem",
+                          fontWeight: "medium",
+                          background: `linear-gradient(135deg, ${maroonTheme.primary.main} 0%, ${maroonTheme.secondary.main} 100%)`,
+                          color: 'white',
+                          boxShadow: `0 4px 20px ${alpha(maroonTheme.primary.main, 0.3)}`,
+                          '&:hover': {
+                            background: `linear-gradient(135deg, ${maroonTheme.primary.dark} 0%, ${maroonTheme.secondary.dark} 100%)`,
+                            boxShadow: `0 6px 25px ${alpha(maroonTheme.primary.main, 0.4)}`,
+                            transform: 'translateY(-2px)'
+                          },
+                          '&:disabled': {
+                            background: alpha(maroonTheme.primary.main, 0.3),
+                            color: alpha('#FFFFFF', 0.6)
+                          },
+                          transition: 'all 0.3s ease'
                         }}
                       >
-                        Please upload the required Informative Copy of TOR before submitting.
-                      </Alert>
-                    )}
-
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={
-                        submitting ||
-                        !files.some((f) => f.documentType === "INFORMATIVE_COPY_OF_TOR") ||
-                        !files.some((f) => f.documentType === "CERTIFICATE_OF_EMPLOYMENT") ||
-                        files.length < 3 ||
-                        coursePreferences.length === 0
-                      }
-                      size="large"
-                      variant="contained"
-                      sx={{ 
-                        px: 4, 
-                        py: 1.5, 
-                        fontSize: "1rem", 
-                        fontWeight: "medium",
-                        background: `linear-gradient(135deg, ${maroonTheme.primary.main} 0%, ${maroonTheme.secondary.main} 100%)`,
-                        color: 'white',
-                        boxShadow: `0 4px 20px ${alpha(maroonTheme.primary.main, 0.3)}`,
-                        '&:hover': {
-                          background: `linear-gradient(135deg, ${maroonTheme.primary.dark} 0%, ${maroonTheme.secondary.dark} 100%)`,
-                          boxShadow: `0 6px 25px ${alpha(maroonTheme.primary.main, 0.4)}`,
-                          transform: 'translateY(-2px)'
-                        },
-                        '&:disabled': {
-                          background: alpha(maroonTheme.primary.main, 0.3),
-                          color: alpha('#FFFFFF', 0.6)
-                        },
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      {submitting ? (
-                        <>
-                          <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
-                          Submitting Application...
-                        </>
-                      ) : (
-                        "Submit Application"
-                      )}
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
+                        {submitting ? (
+                          <>
+                            <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                            Submitting Application...
+                          </>
+                        ) : (
+                          "Submit Application"
+                        )}
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Box>
             </Box>
-          </Box>
-        </>
-      )}
+          </>
+        )}
 
-      {/* Course Selection Dialog */}
-      <Dialog open={courseDialogOpen} onClose={() => setCourseDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ 
-          background: `linear-gradient(135deg, ${maroonTheme.primary.main} 0%, ${maroonTheme.secondary.main} 100%)`,
-          color: 'white',
-          fontWeight: 600
-        }}>
-          Select Course for {currentPriorityIndex !== null ? getPriorityLabel(currentPriorityIndex) : ""}
-        </DialogTitle>
-        <DialogContent sx={{ background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.03)} 0%, ${alpha('#FFFFFF', 0.98)} 100%)` }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-            <Box sx={{ maxHeight: 400, overflow: "auto", display: "flex", flexDirection: "column", gap: 1.5 }}>
-              {availableCourses.map((course) => (
-                <Paper
-                  key={course.courseId}
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    border: selectedCourse?.courseId === course.courseId ? 2 : 1,
-                    borderColor:
-                      selectedCourse?.courseId === course.courseId ? maroonTheme.primary.main : alpha(maroonTheme.secondary.main, 0.3),
-                    bgcolor:
-                      selectedCourse?.courseId === course.courseId ? alpha(maroonTheme.secondary.light, 0.1) : "transparent",
-                    "&:hover": {
-                      borderColor: maroonTheme.primary.main,
-                      bgcolor: selectedCourse?.courseId === course.courseId ? alpha(maroonTheme.secondary.light, 0.15) : alpha(maroonTheme.secondary.light, 0.05),
-                    },
-                    opacity: checkCourseAlreadySelected(course.courseId) ? 0.5 : 1,
-                  }}
-                  onClick={() => !checkCourseAlreadySelected(course.courseId) && setSelectedCourse(course)}
-                >
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    <Typography variant="subtitle1" fontWeight="medium" color="text.primary">
-                      {course.courseName}
-                      {checkCourseAlreadySelected(course.courseId) && (
-                        <Chip 
-                          label="Already Selected" 
-                          size="small" 
-                          color="warning" 
-                          variant="outlined"
-                          sx={{ ml: 1 }}
-                        />
-                      )}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {course.department}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {course.description || course.courseCode}
-                    </Typography>
-                  </Box>
-                </Paper>
-              ))}
+        {/* Course Selection Dialog */}
+        <Dialog open={courseDialogOpen} onClose={() => setCourseDialogOpen(false)} maxWidth="md" fullWidth>
+          <DialogTitle sx={{
+            background: `linear-gradient(135deg, ${maroonTheme.primary.main} 0%, ${maroonTheme.secondary.main} 100%)`,
+            color: 'white',
+            fontWeight: 600
+          }}>
+            Select Course for {currentPriorityIndex !== null ? getPriorityLabel(currentPriorityIndex) : ""}
+          </DialogTitle>
+          <DialogContent sx={{ background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.03)} 0%, ${alpha('#FFFFFF', 0.98)} 100%)` }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+              <Box sx={{ maxHeight: 400, overflow: "auto", display: "flex", flexDirection: "column", gap: 1.5 }}>
+                {availableCourses.map((course) => (
+                  <Paper
+                    key={course.courseId}
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      border: selectedCourse?.courseId === course.courseId ? 2 : 1,
+                      borderColor:
+                        selectedCourse?.courseId === course.courseId ? maroonTheme.primary.main : alpha(maroonTheme.secondary.main, 0.3),
+                      bgcolor:
+                        selectedCourse?.courseId === course.courseId ? alpha(maroonTheme.secondary.light, 0.1) : "transparent",
+                      "&:hover": {
+                        borderColor: maroonTheme.primary.main,
+                        bgcolor: selectedCourse?.courseId === course.courseId ? alpha(maroonTheme.secondary.light, 0.15) : alpha(maroonTheme.secondary.light, 0.05),
+                      },
+                      opacity: checkCourseAlreadySelected(course.courseId) ? 0.5 : 1,
+                    }}
+                    onClick={() => !checkCourseAlreadySelected(course.courseId) && setSelectedCourse(course)}
+                  >
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                      <Typography variant="subtitle1" fontWeight="medium" color="text.primary">
+                        {course.courseName}
+                        {checkCourseAlreadySelected(course.courseId) && (
+                          <Chip
+                            label="Already Selected"
+                            size="small"
+                            color="warning"
+                            variant="outlined"
+                            sx={{ ml: 1 }}
+                          />
+                        )}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {course.department}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {course.description || course.courseCode}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                ))}
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5, pt: 2, borderTop: 1, borderColor: "grey.200" }}>
+                <Button variant="outlined" onClick={() => setCourseDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button variant="contained" onClick={handleCourseSelection} disabled={!selectedCourse} sx={{
+                  backgroundColor: maroonTheme.primary.main,
+                  '&:hover': { backgroundColor: maroonTheme.primary.dark }
+                }}>
+                  Select Course
+                </Button>
+              </Box>
             </Box>
-            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5, pt: 2, borderTop: 1, borderColor: "grey.200" }}>
-              <Button variant="outlined" onClick={() => setCourseDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="contained" onClick={handleCourseSelection} disabled={!selectedCourse} sx={{
+          </DialogContent>
+        </Dialog>
+
+        {/* Documents Upload Dialog */}
+        <Dialog open={documentsDialogOpen} onClose={() => setDocumentsDialogOpen(false)} maxWidth="md" fullWidth>
+          <DialogTitle>Upload Documents</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Upload required documents (Max 15MB each). Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {documentTypes.map((docType) => (
+                  <Box key={docType.value} sx={{ position: "relative" }}>
+                    <input
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      style={{ display: "none" }}
+                      id={`dialog-${docType.value}`}
+                      type="file"
+                      onChange={(e) => handleFileUpload(e, docType.value)}
+                    />
+                    <label htmlFor={`dialog-${docType.value}`}>
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 2,
+                          border: "2px dashed",
+                          borderColor: "grey.300",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          "&:hover": {
+                            borderColor: maroonTheme.primary.main,
+                            bgcolor: maroonTheme.primary.light,
+                            opacity: 0.1,
+                          },
+                        }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <FileTextIcon sx={{ color: "grey.400", fontSize: 16 }} />
+                          <Box>
+                            <Typography variant="body2" fontWeight="medium" color="text.primary">
+                              {docType.label}
+                              {docType.required && (
+                                <Typography component="span" color="error" sx={{ ml: 0.5 }}>
+                                  *
+                                </Typography>
+                              )}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <PlusIcon sx={{ color: "grey.400", fontSize: 16 }} />
+                      </Paper>
+                    </label>
+                  </Box>
+                ))}
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", pt: 2, borderTop: 1, borderColor: "grey.200" }}>
+                <Button variant="outlined" onClick={() => setDocumentsDialogOpen(false)}>
+                  Close
+                </Button>
+              </Box>
+            </Box>
+          </DialogContent>
+        </Dialog>
+
+        {/* Success Modal */}
+        <Dialog open={successModalOpen} onClose={() => setSuccessModalOpen(false)} maxWidth="sm">
+          <DialogContent>
+            <Box sx={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 2, py: 2 }}>
+              <Box
+                sx={{
+                  width: 64,
+                  height: 64,
+                  bgcolor: "success.light",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mx: "auto",
+                }}
+              >
+                <CheckCircleIcon sx={{ fontSize: 32, color: "success.main" }} />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight="600" color="text.primary">
+                  Application Already Submitted!
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  Your application has already been submitted. You can track your application status below.
+                </Typography>
+              </Box>
+              <Button onClick={handleTrackApplication} variant="contained" fullWidth sx={{
                 backgroundColor: maroonTheme.primary.main,
                 '&:hover': { backgroundColor: maroonTheme.primary.dark }
               }}>
-                Select Course
+                Track Application
               </Button>
             </Box>
-          </Box>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* Documents Upload Dialog */}
-      <Dialog open={documentsDialogOpen} onClose={() => setDocumentsDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Upload Documents</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Upload required documents (Max 15MB each). Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG
-            </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {documentTypes.map((docType) => (
-                <Box key={docType.value} sx={{ position: "relative" }}>
-                  <input
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    style={{ display: "none" }}
-                    id={`dialog-${docType.value}`}
-                    type="file"
-                    onChange={(e) => handleFileUpload(e, docType.value)}
-                  />
-                  <label htmlFor={`dialog-${docType.value}`}>
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 2,
-                        border: "2px dashed",
-                        borderColor: "grey.300",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                        "&:hover": {
-                          borderColor: maroonTheme.primary.main,
-                          bgcolor: maroonTheme.primary.light,
-                          opacity: 0.1,
-                        },
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                        <FileTextIcon sx={{ color: "grey.400", fontSize: 16 }} />
-                        <Box>
-                          <Typography variant="body2" fontWeight="medium" color="text.primary">
-                            {docType.label}
-                            {docType.required && (
-                              <Typography component="span" color="error" sx={{ ml: 0.5 }}>
-                                *
-                              </Typography>
-                            )}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <PlusIcon sx={{ color: "grey.400", fontSize: 16 }} />
-                    </Paper>
-                  </label>
-                </Box>
-              ))}
-            </Box>
-            <Box sx={{ display: "flex", justifyContent: "flex-end", pt: 2, borderTop: 1, borderColor: "grey.200" }}>
-              <Button variant="outlined" onClick={() => setDocumentsDialogOpen(false)}>
-                Close
-              </Button>
-            </Box>
-          </Box>
-        </DialogContent>
-      </Dialog>
-
-      {/* Success Modal */}
-      <Dialog open={successModalOpen} onClose={() => setSuccessModalOpen(false)} maxWidth="sm">
-        <DialogContent>
-          <Box sx={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 2, py: 2 }}>
-            <Box
-              sx={{
-                width: 64,
-                height: 64,
-                bgcolor: "success.light",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                mx: "auto",
-              }}
-            >
-              <CheckCircleIcon sx={{ fontSize: 32, color: "success.main" }} />
-            </Box>
-            <Box>
-              <Typography variant="h6" fontWeight="600" color="text.primary">
-                Application Already Submitted!
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Your application has already been submitted. You can track your application status below.
-              </Typography>
-            </Box>
-            <Button onClick={handleTrackApplication} variant="contained" fullWidth sx={{
-              backgroundColor: maroonTheme.primary.main,
-              '&:hover': { backgroundColor: maroonTheme.primary.dark }
-            }}>
-              Track Application
-            </Button>
-          </Box>
-        </DialogContent>
-      </Dialog>
-
-      {/* Snackbar for notifications */}
-      {snackbar}
-    </Box>
+        {/* Snackbar for notifications */}
+        {snackbar}
+      </Box>
     </>
   )
 }
