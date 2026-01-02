@@ -626,9 +626,7 @@ export default function ApplicationForm() {
 
   return (
     <>
-      <Box sx={{ position: 'absolute', top: 16, right: 32, zIndex: 10 }}>
-        <DashboardLink />
-      </Box>
+      {/* Removed duplicate DashboardLink above header */}
       <Box sx={{
         minHeight: "100vh",
         background: `linear-gradient(135deg, ${alpha('#B8860B', 0.05)} 0%, ${alpha('#FFD700', 0.03)} 100%)`,
@@ -661,7 +659,7 @@ export default function ApplicationForm() {
                   </Typography>
                 </Box>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, marginLeft: "auto" }}>
                 <Box sx={{ textAlign: "right" }}>
                   <Typography variant="body2" fontWeight="medium" color="white">
                     {userData.name || "Loading..."}
@@ -683,9 +681,9 @@ export default function ApplicationForm() {
                 >
                   <UserIcon sx={{ color: maroonTheme.primary.main, fontSize: 16 }} />
                 </Box>
-              </Box>
-              <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', height: '100%' }}>
-                <DashboardLink />
+                <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', height: '100%' }}>
+                  <DashboardLink />
+                </Box>
               </Box>
             </Box>
           </Box>
@@ -744,7 +742,7 @@ export default function ApplicationForm() {
         ) : (
           <>
             {/* Main Content */}
-            <Box sx={{ maxWidth: "1400px", mx: "auto", px: 3, py: 4 }}>
+            <Box sx={{ maxWidth: "1700px", mx: "auto", px: 3, py: 4 }}>
               <Grid container spacing={3}>
                 {/* Left Column - Personal Info & Course Preferences */}
                 <Grid item xs={12} lg={6}>
@@ -914,13 +912,16 @@ export default function ApplicationForm() {
                 </Grid>
 
                 {/* Right Section - Documents in Horizontal Row */}
-                <Grid item xs={12} lg={6} style={{  }}>
+                <Grid item xs={12} lg={6} style={{ width: "60%" }}>
                   <Card
                     elevation={2}
                     sx={{
                       border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
                       transition: "all 0.3s ease",
-                      "&:hover": {
+                      width: "100%",
+                      maxWidth: 750,
+                      minWidth: 520,
+                      '&:hover': {
                         boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
                         transform: "translateY(-2px)",
                       },
@@ -950,7 +951,7 @@ export default function ApplicationForm() {
                     <CardContent>
                       <Grid container spacing={3}>
                         {/* ================= LEFT SIDE ================= */}
-                        <Grid item xs={12} md={7}>
+                        <Grid item xs={12} md={7} width={450}>
                           <Typography
                             variant="subtitle2"
                             sx={{ mb: 1.5, fontWeight: 600, color: maroonTheme.primary.main }}
@@ -973,7 +974,9 @@ export default function ApplicationForm() {
                                 flexDirection: "column",
                                 gap: 1,
                                 maxHeight: 220,
+                                maxWidth: 500,
                                 overflow: "auto",
+                                width: '100%'
                               }}
                             >
                               {files.map((file) => (
@@ -1037,15 +1040,17 @@ export default function ApplicationForm() {
                                       },
                                     }}
                                   >
-                                    <PlusIcon sx={{ fontSize: 16, mb: 0.5 }} />
-                                    <Typography variant="caption">
-                                      {docType.label}
-                                      {docType.required && (
-                                        <Typography component="span" color="error">
-                                          *
-                                        </Typography>
-                                      )}
-                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, }}>
+                                      <PlusIcon sx={{ fontSize: 16 }} />
+                                      <Typography variant="caption">
+                                        {docType.label}
+                                        {docType.required && (
+                                          <Typography component="span" color="error">
+                                            *
+                                          </Typography>
+                                        )}
+                                      </Typography>
+                                    </Box>
                                   </Paper>
                                 </label>
                               </Box>
@@ -1089,16 +1094,18 @@ export default function ApplicationForm() {
                       </Grid>
 
                     </CardContent>
-                    <Grid item xs={12} style={{ display: "flex", justifyContent: "center", padding: "10px", marginBottom: "10px" }}>
+                    <Grid item xs={12} style={{ display: "flex", justifyContent: "center", padding: "10px", marginBottom: "10px", }}>
 
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => setDocumentsDialogOpen(true)}
-                        sx={{ color: maroonTheme.primary.main, borderColor: maroonTheme.primary.main, fontSize: "14px", fontWeight: "bold",}}
-                      >
-                        View All Document Types
-                      </Button>
+                      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%',  ml: -30 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => setDocumentsDialogOpen(true)}
+                          sx={{ color: maroonTheme.primary.main, borderColor: maroonTheme.primary.main, fontSize: "12px", fontWeight: "bold", minWidth: 120, padding: '4px 12px', }}
+                        >
+                          View All Document Types
+                        </Button>
+                      </Box>
                     </Grid>
                   </Card>
                 </Grid>
