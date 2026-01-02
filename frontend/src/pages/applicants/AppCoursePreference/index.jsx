@@ -616,14 +616,7 @@ export default function ApplicationForm() {
 
   return (
     <>
-      <Box sx={{ position: 'absolute', top: 16, right: 32, zIndex: 10 }}>
-        <DashboardLink />
-      </Box>
-      <Box sx={{ 
-        minHeight: "100vh", 
-        background: `linear-gradient(135deg, ${alpha('#B8860B', 0.05)} 0%, ${alpha('#FFD700', 0.03)} 100%)`,
-        bgcolor: "grey.50" 
-      }}>
+      <Box sx={{ minHeight: "100vh", background: `linear-gradient(135deg, ${alpha('#B8860B', 0.05)} 0%, ${alpha('#FFD700', 0.03)} 100%)`, bgcolor: "grey.50" }}>
       {/* Header */}
       <Paper elevation={1} sx={{ borderRadius: 0, bgcolor: maroonTheme.primary.main }}>
         <Box sx={{ maxWidth: "1200px", mx: "auto", px: 3, py: 2 }}>
@@ -651,7 +644,7 @@ export default function ApplicationForm() {
                 </Typography>
               </Box>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "flex-end", pr: { lg: 4 } }}>
               <Box sx={{ textAlign: "right" }}>
                 <Typography variant="body2" fontWeight="medium" color="white">
                   {userData.name || "Loading..."}
@@ -669,9 +662,13 @@ export default function ApplicationForm() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  ml: 2
                 }}
               >
                 <UserIcon sx={{ color: maroonTheme.primary.main, fontSize: 16 }} />
+              </Box>
+              <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', height: '100%' }}>
+                <DashboardLink />
               </Box>
             </Box>
           </Box>
@@ -731,11 +728,11 @@ export default function ApplicationForm() {
       ) : (
         <>
           {/* Main Content */}
-          <Box sx={{ maxWidth: "1400px", mx: "auto", px: 3, py: 4 }}>
-            <Grid container spacing={3}>
+          <Box sx={{ px: { xs: 2, md: 4, lg: 6 }, py: 4 }}>
+            <Grid container spacing={2} alignItems="stretch">
               {/* Left Column - Personal Info & Course Preferences */}
-              <Grid item xs={12} lg={6}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <Grid item xs={12} lg={7}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {/* Personal Information */}
                   <Card elevation={2} sx={{ 
                     border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
@@ -757,9 +754,9 @@ export default function ApplicationForm() {
                         background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
                       }}
                     />
-                    <CardContent>
+                    <CardContent sx={{ px: 3 }}>
                       <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
+                        <Grid item xs={12} md={12}>
                           <Box sx={{ mb: 1 }}>
                             <Typography variant="body2" fontWeight="medium" color="text.primary">
                               Full Name
@@ -775,7 +772,7 @@ export default function ApplicationForm() {
                             </Typography>
                           </Paper>
                         </Grid>
-                        <Grid item xs={12} md={6}>
+                        <Grid item xs={12} md={7}>
                           <Box sx={{ mb: 1 }}>
                             <Typography variant="body2" fontWeight="medium" color="text.primary">
                               Email Address
@@ -824,7 +821,7 @@ export default function ApplicationForm() {
                               key={index}
                               variant="outlined"
                               sx={{
-                                p: 2,
+                                p: 2.5,
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 2,
@@ -901,14 +898,17 @@ export default function ApplicationForm() {
               </Grid>
 
               {/* Right Section - Documents in Horizontal Row */}
-              <Grid item xs={12} lg={6}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <Grid item xs={12} lg={5}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {/* Three Document Cards in Horizontal Row */}
-                  <Grid container spacing={2}>
+                  <Grid container spacing={2} alignItems="stretch">
                     {/* Document Upload Card */}
                     <Grid item xs={12} md={4}>
                       <Card elevation={2} sx={{ 
-                        height: 'fit-content',
+                        height: '100%',
+                        width: '100%',
+                        minWidth: 300,
+                        maxWidth: '100%',
                         border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
                         '&:hover': { 
                           boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
@@ -998,9 +998,10 @@ export default function ApplicationForm() {
                     </Grid>
 
                     {/* Uploaded Files Card */}
-                    <Grid item xs={12} md={4}>
+                    <Grid item xs={12} md={5}>
                       <Card elevation={2} sx={{ 
-                        height: 'fit-content',
+                        height: '100%',
+                        minWidth: 270,
                         border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
                         '&:hover': { 
                           boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
@@ -1113,9 +1114,9 @@ export default function ApplicationForm() {
                     </Grid>
 
                     {/* Requirements Card */}
-                    <Grid item xs={12} md={4}>
+                    <Grid item xs={12} md={5}>
                       <Card elevation={2} sx={{ 
-                        height: 'fit-content',
+                        height: '100%',
                         border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
                         '&:hover': { 
                           boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
@@ -1179,7 +1180,7 @@ export default function ApplicationForm() {
             </Grid>
 
             {/* Submit Section */}
-            <Box sx={{ mt: 4 }}>
+            <Box sx={{ mt: 2 }}>
               <Card elevation={3} sx={{ 
                 border: `2px solid ${alpha(maroonTheme.secondary.light, 0.3)}`,
                 background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.05)} 0%, ${alpha('#FFFFFF', 0.95)} 100%)`,

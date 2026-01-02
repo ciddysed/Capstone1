@@ -30,7 +30,7 @@ import PendingIcon from '@mui/icons-material/Pending';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+// import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone'; // Removed unused import
 
 // Custom maroon and gold color palette (matching ProgramAdmin)
 const maroon = {
@@ -312,9 +312,7 @@ const ApplicantsListPage = () => {
   };
 
   // Handler for notification icon click
-  const handleNotificationClick = () => {
-    navigate("/evaluator/applicants/notifications");
-  };
+  // const handleNotificationClick = () => { /* Removed unused function */ };
 
   // Get initials from name (matching ProgramAdmin)
   const getInitials = (name) => {

@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom'; // Removed unused import
 import React, { useState, useEffect, useCallback } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -38,7 +38,7 @@ const EvaluatorNotificationCenter = ({ evaluatorId }) => {
   const [notifications, setNotifications] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingNotification, setPendingNotification] = useState(null);
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Removed unused variable
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [error, setError] = useState(null);
@@ -74,24 +74,7 @@ const EvaluatorNotificationCenter = ({ evaluatorId }) => {
     setAnchorEl(null);
   };
 
-  const handleMarkAsRead = (notificationId) => {
-    notificationService.markAsRead(notificationId)
-      .then(ok => {
-        if (!ok) throw new Error('API markAsRead failed');
-        setNotifications(notifications.map(notification => 
-          notification.id === notificationId 
-            ? { ...notification, read: true } 
-            : notification
-        ));
-      })
-      .catch(() => {
-        setNotifications(notifications.map(notification => 
-          notification.id === notificationId 
-            ? { ...notification, read: true } 
-            : notification
-        ));
-      });
-  };
+  // const handleMarkAsRead = (notificationId) => { ... } // Removed unused function
 
   const handleMarkAllAsRead = () => {
     notificationService.markAllAsRead('evaluator', evaluatorId)
