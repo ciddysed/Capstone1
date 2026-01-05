@@ -3,7 +3,7 @@ import {
   Box, Typography, Stack, Paper, Grid, Card, CardContent, 
   Button, Divider, Chip, CircularProgress, Avatar, alpha,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Accordion, AccordionSummary, AccordionDetails, LinearProgress, Badge
+  Accordion, AccordionSummary, AccordionDetails, LinearProgress,
 } from "@mui/material";
 import { 
   School as SchoolIcon, 
@@ -16,8 +16,7 @@ import {
   HourglassEmpty as PendingIcon,
   ExpandMore as ExpandMoreIcon,
   Warning as WarningIcon,
-  Notifications as NotificationsIcon,
-  Refresh as RefreshIcon
+
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { Link as RouterLink } from "react-router-dom";
@@ -28,7 +27,6 @@ import MainLayout from "../../../templates/MainLayout";
 import backgroundImage from "../../../assets/login-bg.png";
 import useResponseHandler from "../../../utils/useResponseHandler";
 import SubjectDetailModal from "./SubjectDetailModal";
-import useSubjectNotifications from "../../../hooks/useSubjectNotifications";
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -118,27 +116,6 @@ const AcceptedDashboard = () => {
       return [];
     }
   }, []);
-
-  // Get all subjects in a flat array for notification tracking
-  const allSubjectsFlat = Object.values(subjectRecords).flat();
-
-  // Initialize real-time notification system
-  const {
-    isTracking,
-    notificationCount,
-    summary: notificationSummary,
-    checkNow,
-    refreshSummary
-  } = useSubjectNotifications(
-    localStorage.getItem("applicantId"),
-    allSubjectsFlat,
-    fetchAllSubjects,
-    {
-      enablePolling: true,
-      showToast: true,
-      autoInitialize: true
-    }
-  );
 
   useEffect(() => {
     const applicantId = localStorage.getItem("applicantId");
@@ -378,332 +355,255 @@ const AcceptedDashboard = () => {
         </Grid>
       </Paper>
 
-      {/* Real-Time Notifications Status Bar */}
-      {isTracking && (
-        <Paper
-          elevation={1}
-          sx={{
-            p: 2,
-            mb: 3,
-            borderRadius: 2,
-            bgcolor: alpha('#2196f3', 0.05),
-            border: `1px solid ${alpha('#2196f3', 0.2)}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 2
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Badge 
-              badgeContent={notificationCount} 
-              color="error"
-              max={99}
-            >
-              <NotificationsIcon sx={{ color: '#2196f3', fontSize: 32 }} />
-            </Badge>
-            <Box>
-              <Typography variant="subtitle1" fontWeight={600} sx={{ color: '#2196f3' }}>
-                Real-Time Notifications Active
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                You'll be notified immediately when subject evaluations are completed
-              </Typography>
-            </Box>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {notificationSummary && (
-              <Box sx={{ display: 'flex', gap: 2, mr: 2 }}>
-                <Chip 
-                  size="small" 
-                  label={`${notificationSummary.approved} Approved`}
-                  sx={{ bgcolor: alpha('#4caf50', 0.1), color: '#4caf50', fontWeight: 600 }}
-                />
-                <Chip 
-                  size="small" 
-                  label={`${notificationSummary.pending} Pending`}
-                  sx={{ bgcolor: alpha('#ff9800', 0.1), color: '#ff9800', fontWeight: 600 }}
-                />
-                {/* Rejected status removed as per new requirements */}
-              </Box>
-            )}
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<RefreshIcon />}
-              onClick={async () => {
-                await checkNow();
-                refreshSummary();
-              }}
-              sx={{ 
-                borderColor: '#2196f3',
-                color: '#2196f3',
-                '&:hover': {
-                  borderColor: '#1976d2',
-                  bgcolor: alpha('#2196f3', 0.05)
-                }
-              }}
-            >
-              Check Now
-            </Button>
-          </Box>
-        </Paper>
-      )}
 
       <Grid container spacing={3}>
-        {/* Left column - Subject Records */}
-        <Grid item xs={12} md={8}>
-          <Stack spacing={3}>
-            {/* Curriculum Progress Summary */}
-            <InfoCard 
-              title="Curriculum Progress Summary" 
-              icon={<AssignmentIcon />}
-              accentColor={maroon.main}
-            >
-              {curriculumSummary ? (
-                <Grid container spacing={2}>
-                  <Grid item xs={6} md={3}>
-                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#4caf50', 0.1), borderRadius: 2 }}>
-                      <Typography variant="h4" fontWeight={700} color="#4caf50">
-                        {curriculumSummary.approvedCount || 0}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">Approved</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={6} md={3}>
-                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#ff9800', 0.1), borderRadius: 2 }}>
-                      <Typography variant="h4" fontWeight={700} color="#ff9800">
-                        {curriculumSummary.pendingCount || 0}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">Pending</Typography>
-                    </Box>
-                  </Grid>
-                  {/* Rejected status removed from summary cards */}
-                  <Grid item xs={6} md={3}>
-                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha(maroon.main, 0.1), borderRadius: 2 }}>
-                      <Typography variant="h4" fontWeight={700} color={maroon.main}>
-                        {curriculumSummary.totalSubjects || 0}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">Total Subjects</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Progress: {curriculumSummary.approvedCount || 0} / {curriculumSummary.totalSubjects || 0}
-                      </Typography>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={curriculumSummary.totalSubjects > 0 
-                          ? (curriculumSummary.approvedCount / curriculumSummary.totalSubjects) * 100 
-                          : 0
-                        }
-                        sx={{
-                          height: 10,
-                          borderRadius: 5,
-                          bgcolor: alpha(maroon.light, 0.2),
-                          '& .MuiLinearProgress-bar': {
-                            bgcolor: '#4caf50',
-                            borderRadius: 5
+        <Grid item xs={12} md={10}>
+          <Stack direction="row" spacing={3} alignItems="flex-start">
+            <Box sx={{ flex: 1 }}>
+              {/* Curriculum Progress Summary */}
+              <InfoCard 
+                title="Curriculum Progress Summary" 
+                icon={<AssignmentIcon />}
+                accentColor={maroon.main}
+              >
+                {curriculumSummary ? (
+                  <Grid container spacing={2}>
+                    <Grid item xs={6} md={3}>
+                      <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#4caf50', 0.1), borderRadius: 2 }}>
+                        <Typography variant="h4" fontWeight={700} color="#4caf50">
+                          {curriculumSummary.approvedCount || 0}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">Approved</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6} md={3}>
+                      <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#ff9800', 0.1), borderRadius: 2 }}>
+                        <Typography variant="h4" fontWeight={700} color="#ff9800">
+                          {curriculumSummary.pendingCount || 0}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">Pending</Typography>
+                      </Box>
+                    </Grid>
+                    {/* Rejected status removed from summary cards */}
+                    <Grid item xs={6} md={3}>
+                      <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha(maroon.main, 0.1), borderRadius: 2 }}>
+                        <Typography variant="h4" fontWeight={700} color={maroon.main}>
+                          {curriculumSummary.totalSubjects || 0}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">Total Subjects</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Box sx={{ mt: 1 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Progress: {curriculumSummary.approvedCount || 0} / {curriculumSummary.totalSubjects || 0}
+                        </Typography>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={curriculumSummary.totalSubjects > 0 
+                            ? (curriculumSummary.approvedCount / curriculumSummary.totalSubjects) * 100 
+                            : 0
                           }
+                          sx={{
+                            height: 10,
+                            borderRadius: 5,
+                            bgcolor: alpha(maroon.light, 0.2),
+                            '& .MuiLinearProgress-bar': {
+                              bgcolor: '#4caf50',
+                              borderRadius: 5
+                            }
+                          }}
+                        />
+                      </Box>
+                    </Grid>
+                  </Grid>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No curriculum data available yet.
+                  </Typography>
+                )}
+              </InfoCard>
+
+              {/* Subject Records by Semester */}
+              <InfoCard 
+                title="Subject Records by Semester" 
+                icon={<SchoolIcon />}
+                accentColor={gold.dark}
+              >
+                {Object.keys(subjectRecords).length > 0 ? (
+                  <Box>
+                    {Object.entries(subjectRecords).map(([semesterLabel, records]) => (
+                      <Accordion 
+                        key={semesterLabel}
+                        expanded={expandedSemester === semesterLabel}
+                        onChange={handleAccordionChange(semesterLabel)}
+                        sx={{ 
+                          mb: 1,
+                          boxShadow: 'none',
+                          '&:before': { display: 'none' },
+                          border: `1px solid ${alpha(maroon.main, 0.2)}`,
+                          borderRadius: '8px !important',
+                          overflow: 'hidden'
                         }}
+                      >
+                        <AccordionSummary
+                          expandIcon={<ExpandMoreIcon />}
+                          sx={{ bgcolor: alpha(maroon.light, 0.05) }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 2 }}>
+                            <Typography variant="subtitle1" fontWeight={600}>
+                              {semesterLabel}
+                            </Typography>
+                            <Chip 
+                              label={`${records.length} subject${records.length !== 1 ? 's' : ''}`}
+                              size="small"
+                              sx={{ bgcolor: alpha(gold.main, 0.2), color: gold.dark }}
+                            />
+                          </Box>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <TableContainer>
+                            <Table size="small">
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell><strong>Subject Code</strong></TableCell>
+                                  <TableCell><strong>Description</strong></TableCell>
+                                  <TableCell align="center"><strong>Grade</strong></TableCell>
+                                  <TableCell align="center"><strong>Status</strong></TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {records.map((record) => (
+                                  <TableRow 
+                                    key={record.id} 
+                                    hover
+                                    onClick={() => handleSubjectClick(record)}
+                                    sx={{ 
+                                      cursor: 'pointer',
+                                      '&:hover': {
+                                        bgcolor: alpha(maroon.light, 0.08),
+                                        transition: 'background-color 0.2s'
+                                      }
+                                    }}
+                                  >
+                                    <TableCell>{record.subject?.subjectCode || 'N/A'}</TableCell>
+                                    <TableCell>{record.subject?.descriptiveTitle || 'N/A'}</TableCell>
+                                    <TableCell align="center">
+                                      <Chip 
+                                        label={record.grade || 'N/A'}
+                                        size="small"
+                                        variant="outlined"
+                                      />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                        {getStatusIcon(record.status)}
+                                        <Typography variant="caption" sx={{ color: getStatusColor(record.status), fontWeight: 600 }}>
+                                          {record.status}
+                                        </Typography>
+                                      </Box>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        </AccordionDetails>
+                      </Accordion>
+                    ))}
+                  </Box>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 3 }}>
+                    <WarningIcon sx={{ fontSize: 48, color: '#ff9800', mb: 1 }} />
+                    <Typography variant="body1" color="text.secondary">
+                      No subject records available yet.
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Your curriculum evaluation is still in progress.
+                    </Typography>
+                  </Box>
+                )}
+              </InfoCard>
+            </Box>
+            <Box sx={{ minWidth: 320, maxWidth: 340, ml: 2 }}>
+              {/* Acceptance Details - Improved UI, no course code */}
+              <InfoCard 
+                title={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AccountBalanceIcon sx={{ color: '#2e7d32', fontSize: 28 }} />
+                    <span>Acceptance Details</span>
+                  </Box>
+                }
+                accentColor="#2e7d32"
+              >
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    background: 'linear-gradient(120deg, #e8f5e9 0%, #f1f8e9 100%)',
+                    boxShadow: '0 2px 8px rgba(46,125,50,0.07)',
+                    mb: 1,
+                  }}
+                >
+                  <Stack spacing={2}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip 
+                        label={acceptanceData?.status || "ACCEPTED"} 
+                        color="success" 
+                        variant="filled" 
+                        sx={{ fontWeight: 700, fontSize: 16, px: 2, py: 1, letterSpacing: 1, textTransform: 'capitalize' }}
                       />
                     </Box>
-                  </Grid>
-                </Grid>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No curriculum data available yet.
-                </Typography>
-              )}
-            </InfoCard>
-
-            {/* Subject Records by Semester */}
-            <InfoCard 
-              title="Subject Records by Semester" 
-              icon={<SchoolIcon />}
-              accentColor={gold.dark}
-            >
-              {Object.keys(subjectRecords).length > 0 ? (
-                <Box>
-                  {Object.entries(subjectRecords).map(([semesterLabel, records]) => (
-                    <Accordion 
-                      key={semesterLabel}
-                      expanded={expandedSemester === semesterLabel}
-                      onChange={handleAccordionChange(semesterLabel)}
-                      sx={{ 
-                        mb: 1,
-                        boxShadow: 'none',
-                        '&:before': { display: 'none' },
-                        border: `1px solid ${alpha(maroon.main, 0.2)}`,
-                        borderRadius: '8px !important',
-                        overflow: 'hidden'
-                      }}
-                    >
-                      <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        sx={{ bgcolor: alpha(maroon.light, 0.05) }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 2 }}>
-                          <Typography variant="subtitle1" fontWeight={600}>
-                            {semesterLabel}
-                          </Typography>
-                          <Chip 
-                            label={`${records.length} subject${records.length !== 1 ? 's' : ''}`}
-                            size="small"
-                            sx={{ bgcolor: alpha(gold.main, 0.2), color: gold.dark }}
-                          />
-                        </Box>
-                      </AccordionSummary>
-                      <AccordionDetails>
-                        <TableContainer>
-                          <Table size="small">
-                            <TableHead>
-                              <TableRow>
-                                <TableCell><strong>Subject Code</strong></TableCell>
-                                <TableCell><strong>Description</strong></TableCell>
-                                <TableCell align="center"><strong>Grade</strong></TableCell>
-                                <TableCell align="center"><strong>Status</strong></TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {records.map((record) => (
-                                <TableRow 
-                                  key={record.id} 
-                                  hover
-                                  onClick={() => handleSubjectClick(record)}
-                                  sx={{ 
-                                    cursor: 'pointer',
-                                    '&:hover': {
-                                      bgcolor: alpha(maroon.light, 0.08),
-                                      transition: 'background-color 0.2s'
-                                    }
-                                  }}
-                                >
-                                  <TableCell>{record.subject?.subjectCode || 'N/A'}</TableCell>
-                                  <TableCell>{record.subject?.descriptiveTitle || 'N/A'}</TableCell>
-                                  <TableCell align="center">
-                                    <Chip 
-                                      label={record.grade || 'N/A'}
-                                      size="small"
-                                      variant="outlined"
-                                    />
-                                  </TableCell>
-                                  <TableCell align="center">
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                                      {getStatusIcon(record.status)}
-                                      <Typography variant="caption" sx={{ color: getStatusColor(record.status), fontWeight: 600 }}>
-                                        {record.status}
-                                      </Typography>
-                                    </Box>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      </AccordionDetails>
-                    </Accordion>
-                  ))}
-                </Box>
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 3 }}>
-                  <WarningIcon sx={{ fontSize: 48, color: '#ff9800', mb: 1 }} />
-                  <Typography variant="body1" color="text.secondary">
-                    No subject records available yet.
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Your curriculum evaluation is still in progress.
-                  </Typography>
-                </Box>
-              )}
-            </InfoCard>
-          </Stack>
-        </Grid>
-        
-        {/* Right column - Acceptance Details */}
-        <Grid item xs={12} md={4}>
-          <Stack spacing={3}>
-            {/* Acceptance Details - Improved UI, no course code */}
-            <InfoCard 
-              title={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <AccountBalanceIcon sx={{ color: '#2e7d32', fontSize: 28 }} />
-                  <span>Acceptance Details</span>
-                </Box>
-              }
-              accentColor="#2e7d32"
-            >
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  background: 'linear-gradient(120deg, #e8f5e9 0%, #f1f8e9 100%)',
-                  boxShadow: '0 2px 8px rgba(46,125,50,0.07)',
-                  mb: 1
-                }}
-              >
-                <Stack spacing={2}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Chip 
-                      label={acceptanceData?.status || "ACCEPTED"} 
-                      color="success" 
-                      variant="filled" 
-                      sx={{ fontWeight: 700, fontSize: 16, px: 2, py: 1, letterSpacing: 1, textTransform: 'capitalize' }}
-                    />
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">Acceptance Date</Typography>
-                    <Typography variant="body1" fontWeight={600} color="#2e7d32">
-                      {formatDate(acceptanceData?.acceptanceDate)}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">Program</Typography>
-                    <Typography variant="h6" fontWeight={700} color="#388e3c" sx={{ letterSpacing: 0.5 }}>
-                      {acceptanceData?.finalCourse?.courseName || 'N/A'}
-                    </Typography>
-                  </Box>
-                  {acceptanceData?.remarks && (
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="subtitle2" color="text.secondary">Remarks</Typography>
-                      <Paper elevation={0} sx={{ mt: 0.5, p: 2, bgcolor: alpha('#c8e6c9', 0.5), borderLeft: '4px solid #2e7d32', borderRadius: 2 }}>
-                        <Typography variant="body2" color="#2e7d32">
-                          {acceptanceData.remarks}
-                        </Typography>
-                      </Paper>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">Acceptance Date</Typography>
+                      <Typography variant="body1" fontWeight={600} color="#2e7d32">
+                        {formatDate(acceptanceData?.acceptanceDate)}
+                      </Typography>
                     </Box>
-                  )}
-                </Stack>
-              </Paper>
-            </InfoCard>
-
-            {/* Pending Subjects Alert */}
-            {curriculumSummary && curriculumSummary.pendingCount > 0 && (
-              <InfoCard 
-                title="Action Required" 
-                icon={<WarningIcon />}
-                accentColor="#ff9800"
-              >
-                <Box sx={{ 
-                  p: 2, 
-                  borderRadius: 1, 
-                  bgcolor: alpha('#ff9800', 0.1), 
-                  border: `1px solid ${alpha('#ff9800', 0.3)}`
-                }}>
-                  <Typography variant="body2" fontWeight={600} color="#ff9800" gutterBottom>
-                    You have {curriculumSummary.pendingCount} subject{curriculumSummary.pendingCount !== 1 ? 's' : ''} pending evaluation
-                  </Typography>
-                  <Typography variant="caption" display="block" color="text.secondary">
-                    Please wait for the evaluators to review your subject credentials. You will be notified once the evaluation is complete.
-                  </Typography>
-                </Box>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">Program</Typography>
+                      <Typography variant="h6" fontWeight={700} color="#388e3c" sx={{ letterSpacing: 0.5 }}>
+                        {acceptanceData?.finalCourse?.courseName || 'N/A'}
+                      </Typography>
+                    </Box>
+                    {acceptanceData?.remarks && (
+                      <Box sx={{ mt: 1 }}>
+                        <Typography variant="subtitle2" color="text.secondary">Remarks</Typography>
+                        <Paper elevation={0} sx={{ mt: 0.5, p: 2, bgcolor: alpha('#c8e6c9', 0.5), borderLeft: '4px solid #2e7d32', borderRadius: 2 }}>
+                          <Typography variant="body2" color="#2e7d32">
+                            {acceptanceData.remarks}
+                          </Typography>
+                        </Paper>
+                      </Box>
+                    )}
+                  </Stack>
+                </Paper>
               </InfoCard>
-            )}
 
-            {/* Rejected Subjects Alert removed as per new requirements */}
+              {/* Pending Subjects Alert */}
+              {curriculumSummary && curriculumSummary.pendingCount > 0 && (
+                <InfoCard 
+                  title="Action Required" 
+                  icon={<WarningIcon />}
+                  accentColor="#ff9800"
+                >
+                  <Box sx={{ 
+                    p: 2, 
+                    borderRadius: 1, 
+                    bgcolor: alpha('#ff9800', 0.1), 
+                    border: `1px solid ${alpha('#ff9800', 0.3)}`
+                  }}>
+                    <Typography variant="body2" fontWeight={600} color="#ff9800" gutterBottom>
+                      You have {curriculumSummary.pendingCount} subject{curriculumSummary.pendingCount !== 1 ? 's' : ''} pending evaluation
+                    </Typography>
+                    <Typography variant="caption" display="block" color="text.secondary">
+                      Please wait for the evaluators to review your subject credentials. You will be notified once the evaluation is complete.
+                    </Typography>
+                  </Box>
+                </InfoCard>
+              )}
+            </Box>
           </Stack>
         </Grid>
       </Grid>
