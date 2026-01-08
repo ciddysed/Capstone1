@@ -80,6 +80,36 @@ InfoCard.propTypes = {
 };
 
 const AcceptedDashboard = () => {
+    // Polling for real-time acceptance status and remarks
+    useEffect(() => {
+      const applicantId = localStorage.getItem("applicantId");
+      if (!applicantId) return;
+      let isMounted = true;
+      const pollAcceptance = async () => {
+        try {
+          const acceptedResponse = await axios.get(
+            `https://eteeap-foth.onrender.com/api/accepted-applicants/applicant/${applicantId}`
+          );
+          if (isMounted && acceptedResponse.data) {
+            setAcceptanceData(acceptedResponse.data);
+            // Debug log
+            console.log('[AcceptedDashboard] acceptanceData updated:', acceptedResponse.data);
+          }
+        } catch (err) {
+          // Prevent uncaught errors from crashing the app
+          console.error('[AcceptedDashboard] Polling error:', err);
+        }
+      };
+      const intervalId = setInterval(() => {
+        pollAcceptance();
+      }, 10000); // Poll every 10 seconds
+      // Initial fetch
+      pollAcceptance();
+      return () => {
+        isMounted = false;
+        clearInterval(intervalId);
+      };
+    }, []);
   const navigate = useNavigate();
   const { handleSuccess, handleError, snackbar } = useResponseHandler();
   const [loading, setLoading] = useState(true);

@@ -37,6 +37,8 @@ import CoursePreferences from "./CoursePreferences";
 import NotificationCenter from '../../../components/Notifications/NotificationCenter';
 import DashboardLink from '../../../components/DashboardLink';
 import useSubjectNotifications from '../../../hooks/useSubjectNotifications';
+import ApplicationStatusPoller from '../../../components/ApplicationStatusPoller';
+import CoursePreferencesPoller from '../../../components/CoursePreferencesPoller';
 
 import {
   StatusChip,
@@ -66,6 +68,7 @@ const REQUIRED_DOCUMENTS = [
 
 // Main component
 const ApplicationTracking = () => {
+
   const { handleSuccess, handleError, snackbar } = useResponseHandler();
   const navigate = useNavigate();
   const [applicantId, setApplicantId] = useState(null);
@@ -78,6 +81,10 @@ const ApplicationTracking = () => {
   const [applicationStatus, setApplicationStatus] = useState(
     APPLICATION_STATUS.PENDING
   );
+  // Debug: Track applicationStatus changes
+  useEffect(() => {
+    console.log('[ApplicationTrack] applicationStatus updated:', applicationStatus);
+  }, [applicationStatus]);
   const [coursePreferences, setCoursePreferences] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [subjectsList, setSubjectsList] = useState([]);
@@ -199,8 +206,24 @@ const ApplicationTracking = () => {
         );
 
         if (applicationsResponse.data && applicationsResponse.data.length > 0) {
-          // Store application status but don't set unused applicationId
+          // Store application status and applicationId
           setApplicationStatus(applicationsResponse.data[0].status);
+          console.log('[ApplicationTrack] setApplicationStatus called with:', applicationsResponse.data[0].status);
+          setApplicationId(applicationsResponse.data[0].applicationId || applicationsResponse.data[0].id);
+
+          // Fetch application remarks in real time
+          setNotesLoading(true);
+          setNotesError("");
+          try {
+            const remarksRes = await api.get(`/applications/${applicationsResponse.data[0].applicationId || applicationsResponse.data[0].id}`);
+            setApplicationNotes(remarksRes.data.applicationNotes || "");
+            console.log('[ApplicationTrack] applicationNotes updated:', remarksRes.data.applicationNotes);
+          } catch (err) {
+            setNotesError("Failed to load application remarks.");
+            setApplicationNotes("");
+          } finally {
+            setNotesLoading(false);
+          }
         } else {
           handleError("No application found");
         }
@@ -613,40 +636,7 @@ const ApplicationTracking = () => {
     }, 0);
   };
 
-  // Fetch application notes when applicationId is set
-  useEffect(() => {
-    const fetchNotes = async () => {
-      if (!applicationId) return;
-      setNotesLoading(true);
-      setNotesError("");
-      try {
-        const res = await axios.get(`https://eteeap-foth.onrender.com/api/applications/${applicationId}`);
-        setApplicationNotes(res.data.applicationNotes || "");
-      } catch (err) {
-        setNotesError("Failed to load application remarks.");
-        setApplicationNotes("");
-      } finally {
-        setNotesLoading(false);
-      }
-    };
-    fetchNotes();
-  }, [applicationId]);
-
-  // Update applicationId when fetched from backend
-  useEffect(() => {
-    const fetchAndSetApplicationId = async () => {
-      if (!applicantId) return;
-      try {
-        const applicationsResponse = await api.get(`/applications/applicant/${applicantId}`);
-        if (applicationsResponse.data && applicationsResponse.data.length > 0) {
-          setApplicationId(applicationsResponse.data[0].applicationId || applicationsResponse.data[0].id);
-        }
-      } catch {
-        setApplicationId(null);
-      }
-    };
-    fetchAndSetApplicationId();
-  }, [applicantId, api]);
+  // Application remarks are now fetched in real time via fetchApplicantData polling
 
   return (
     <ThemeProvider theme={customTheme}>
@@ -798,35 +788,9 @@ const ApplicationTracking = () => {
           </MenuItem>
         </Popover>
 
-        {/* Loading State - matching AppCoursePreference style */}
-        {isLoading ? (
-          <Box sx={{ 
-            display: "flex", 
-            flexDirection: 'column',
-            justifyContent: "center", 
-            alignItems: "center",
-            my: 6,
-            backgroundColor: alpha('#FFFFFF', 0.9),
-            p: 4,
-            borderRadius: 4,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            width: '100%',
-            maxWidth: 400,
-            mx: "auto"
-          }}>
-            <CircularProgress size={60} sx={{ color: maroon.main, mb: 3 }} />
-            <Typography variant="h6" sx={{ color: maroon.main, fontWeight: 600 }}>
-              Loading Application Data
-            </Typography>
-            <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-              Please wait while we prepare your application...
-            </Typography>
-          </Box>
-        ) : (
-          <>
-            {/* Main Content - matching AppCoursePreference layout */}
-            <Box sx={{ maxWidth: "1400px", mx: "auto", px: 3, py: 4 }}>
-              <Grid container spacing={3}>
+        {/* Main Content - always render, update sections as data loads */}
+        <Box sx={{ maxWidth: "1400px", mx: "auto", px: 3, py: 4 }}>
+          <Grid container spacing={3}>
                 {/* Left Column - Personal Info & Course Preferences */}
                 <Grid item xs={12} lg={6}>
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -1104,10 +1068,9 @@ const ApplicationTracking = () => {
                 </Box>
               )}
             </Box>
-          </>
-        )}
-
         {snackbar}
+        <ApplicationStatusPoller applicantId={applicantId} fetchApplicantData={fetchApplicantData} />
+        <CoursePreferencesPoller applicantId={applicantId} fetchCoursePreferences={fetchCoursePreferences} />
       </Box>
     </ThemeProvider>
   );
