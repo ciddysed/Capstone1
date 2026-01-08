@@ -1,4 +1,4 @@
-// import { useNavigate } from 'react-router-dom'; // Removed unused import
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -38,7 +38,7 @@ const EvaluatorNotificationCenter = ({ evaluatorId }) => {
   const [notifications, setNotifications] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingNotification, setPendingNotification] = useState(null);
-  // const navigate = useNavigate(); // Removed unused variable
+
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [error, setError] = useState(null);
@@ -62,7 +62,7 @@ const EvaluatorNotificationCenter = ({ evaluatorId }) => {
 
   useEffect(() => {
     fetchNotifications();
-    const intervalId = setInterval(fetchNotifications, 60000);
+    const intervalId = setInterval(fetchNotifications, 10000); // Poll every 10 seconds
     return () => clearInterval(intervalId);
   }, [fetchNotifications]);
 

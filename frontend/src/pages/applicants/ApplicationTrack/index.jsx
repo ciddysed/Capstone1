@@ -3,7 +3,6 @@ import {
   Typography,
   Box,
   Grid,
-  CircularProgress,
   ThemeProvider,
   alpha,
   Card,
@@ -601,7 +600,6 @@ const ApplicationTracking = () => {
   // Document preview/download are handled in DocumentHandler/DocumentList components
 
   // Display loading states
-  const isLoading = loading.profile || loading.courses || loading.preferences || loading.documents;
 
   // Calculate completion progress
   const calculateProgress = () => {

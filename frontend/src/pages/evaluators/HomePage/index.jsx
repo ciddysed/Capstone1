@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Paper,
   Stack,
@@ -13,6 +14,19 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import EvaluatorNavigation from "../../../components/Navigation/EvaluatorNavigation";
 import { useNavigate } from "react-router-dom";
 
+// Reusable polling hook
+function usePolling(fetchFunction, intervalMs = 10000) {
+  const intervalRef = useRef();
+  const startPolling = useCallback(() => {
+    fetchFunction();
+    intervalRef.current = setInterval(fetchFunction, intervalMs);
+  }, [fetchFunction, intervalMs]);
+  useEffect(() => {
+    startPolling();
+    return () => clearInterval(intervalRef.current);
+  }, [startPolling]);
+}
+
 const EvaluatorHomePage = () => {
   const navigate = useNavigate();
   const evaluatorId = localStorage.getItem("evaluatorId");
@@ -21,15 +35,12 @@ const EvaluatorHomePage = () => {
   const [evaluatorStatus, setEvaluatorStatus] = useState("PENDING");
 
   // Function to check registration status
-  const checkStatus = () => {
+  const checkStatus = useCallback(() => {
     setLoading(true);
-
-    // Check evaluator status
     fetch(`https://eteeap-foth.onrender.com/api/evaluators/${evaluatorId}/status`)
       .then((res) => res.json())
       .then((data) => {
         setEvaluatorStatus(data.status || "PENDING");
-
         // If approved, navigate directly to assigned evaluations
         if (data.status === "APPROVED") {
           navigate("/evaluator/applicants");
@@ -42,13 +53,10 @@ const EvaluatorHomePage = () => {
         setLoading(false);
         setLastChecked(new Date());
       });
-  };
+  }, [evaluatorId, navigate]);
 
-  useEffect(() => {
-    // Initial check on component mount
-    checkStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Poll evaluator status every 10 seconds
+  usePolling(checkStatus, 10000);
 
   if (evaluatorStatus !== "APPROVED") {
     return (

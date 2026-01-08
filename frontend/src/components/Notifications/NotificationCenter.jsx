@@ -15,6 +15,7 @@ import { styled } from '@mui/material/styles';
 import * as localNotificationService from '../../services/localNotificationService';
 import notificationService from '../../services/notificationService';
 
+
 // Custom maroon and gold color palette
 const maroon = {
   light: '#8D323C',
@@ -77,7 +78,7 @@ const NotificationCenter = ({ userType, userId }) => {
     fetchNotifications();
 
     // Set up polling for new notifications (every minute in development)
-    const intervalId = setInterval(fetchNotifications, 60000);
+    const intervalId = setInterval(fetchNotifications, 10000); // Poll every 10 seconds
 
     // Listen for notification updates dispatched elsewhere (optimistic create reconciliation)
     const handler = (e) => {
@@ -91,13 +92,7 @@ const NotificationCenter = ({ userType, userId }) => {
       fetchNotifications();
     };
 
-    const getGlobal = () => {
-      if (window !== undefined && typeof window.addEventListener === 'function') return window;
-      if (typeof global !== 'undefined' && typeof global.addEventListener === 'function') return global;
-      return null;
-    };
-
-    const eventTarget = getGlobal();
+    const eventTarget = window;
 
     if (eventTarget && typeof eventTarget.addEventListener === 'function') {
       eventTarget.addEventListener('notifications:updated', handler);
@@ -354,7 +349,7 @@ const NotificationCenter = ({ userType, userId }) => {
           <Typography sx={{ mb: 2 }}>
             {pendingNotification?.notification?.message}
           </Typography>
-          {pendingNotification?.action && pendingNotification.action.label && pendingNotification.action.target && (
+          {pendingNotification?.action?.label && pendingNotification?.action?.target && (
             <Button
               variant="contained"
               color="primary"
