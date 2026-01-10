@@ -103,7 +103,6 @@ const ApplicationTracking = () => {
   const [applicationNotes, setApplicationNotes] = useState("");
   const [notesLoading, setNotesLoading] = useState(false);
   const [notesError, setNotesError] = useState("");
-  const [applicationId, setApplicationId] = useState(null);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -208,7 +207,6 @@ const ApplicationTracking = () => {
           // Store application status and applicationId
           setApplicationStatus(applicationsResponse.data[0].status);
           console.log('[ApplicationTrack] setApplicationStatus called with:', applicationsResponse.data[0].status);
-          setApplicationId(applicationsResponse.data[0].applicationId || applicationsResponse.data[0].id);
 
           // Fetch application remarks in real time
           setNotesLoading(true);
