@@ -272,12 +272,37 @@ const NotificationCenter = ({ userType, userId }) => {
                     } catch {
                       actionObj = null;
                     }
+                    
+                    // Check if this is a chat notification
+                    const isChatNotification = actionObj?.type === 'OPEN_CHAT' || 
+                                               notification.type === 'chat' ||
+                                               notification.title?.includes('message') ||
+                                               notification.title?.includes('Message');
+                    
                     return (
                       <NotificationItem 
                         key={notification.id} 
                         onClick={() => {
-                          setPendingNotification({ notification, action: actionObj });
-                          setModalOpen(true);
+                          if (isChatNotification && actionObj?.chatData) {
+                            // Handle chat notification directly
+                            handleMarkAsRead(notification.id);
+                            handleCloseMenu();
+                            
+                            // Dispatch custom event to open conversation
+                            const event = new CustomEvent('applicant:openConversation', {
+                              detail: actionObj.chatData
+                            });
+                            window.dispatchEvent(event);
+                            
+                            // Also try to call the function directly if available
+                            if (window.applicantOpenConversation) {
+                              window.applicantOpenConversation(actionObj.chatData);
+                            }
+                          } else {
+                            // For non-chat notifications, use the modal
+                            setPendingNotification({ notification, action: actionObj });
+                            setModalOpen(true);
+                          }
                         }}
                         read={notification.read}
                         sx={{ cursor: 'pointer' }}

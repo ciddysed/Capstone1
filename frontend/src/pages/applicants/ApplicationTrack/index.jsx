@@ -12,14 +12,7 @@ import {
   VerifiedUser as VerifiedIcon,
   AutorenewRounded as ProcessingIcon,
   InfoOutlined as InfoIcon,
-  Inbox as InboxIcon,
   Mail as MailIcon,
-  Circle as UnreadIcon,
-  Close as CloseIcon,
-  ArrowBack as ArrowBackIcon,
-  Send as SendIcon,
-  SupervisorAccount as EvaluatorIcon,
-  AdminPanelSettings as AdminIcon,
 } from "@mui/icons-material"
 import {
   Typography,
@@ -34,17 +27,15 @@ import {
   LinearProgress,
   Chip,
   createTheme,
-  Avatar,
   Tooltip,
-  CircularProgress,
   IconButton,
   Badge,
-  Drawer,
-  TextField,
+  Avatar,
+  CircularProgress,
 } from "@mui/material"
 import axios from "axios"
-import { API_BASE } from "../../../config"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { API_BASE, BACKEND_URL } from "../../../config"
+import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import useResponseHandler from "../../../utils/useResponseHandler"
 import toast from "../../../utils/toast"
@@ -56,6 +47,7 @@ import DashboardLink from "../../../components/DashboardLink"
 import useSubjectNotifications from "../../../hooks/useSubjectNotifications"
 import ApplicationStatusPoller from "../../../components/ApplicationStatusPoller"
 import CoursePreferencesPoller from "../../../components/CoursePreferencesPoller"
+import ChatDrawer from "./components/ChatDrawer"
 
 import { APPLICATION_STATUS, DOCUMENT_TYPES, PRIORITY_ORDER } from "./utils"
 
@@ -387,6 +379,7 @@ const ApplicationTracking = () => {
   const [conversationLoading, setConversationLoading] = useState(false)
   const [newMessage, setNewMessage] = useState("")
   const [sendingMessage, setSendingMessage] = useState(false)
+  const messagesEndRef = useRef(null)
 
   const handleClick = (event) => setAnchorEl(event.currentTarget)
   const handleClosePopover = () => setAnchorEl(null)
@@ -545,7 +538,14 @@ const ApplicationTracking = () => {
       if (!id) return
       try {
         setInboxLoading(true)
-        const response = await api.get(`http://localhost:8080/api/messages/inbox/applicant/chat-list?applicantId=${id}`)
+        const response = await api.get(`${BACKEND_URL}/api/messages/inbox/applicant/chat-list?applicantId=${id}`)
+        console.log("Chat list response:", response.data)
+        
+        // Log each chat item to see its structure
+        if (response.data && response.data.length > 0) {
+          console.log("First chat item structure:", response.data[0])
+        }
+        
         setChatList(response.data || [])
       } catch (error) {
         console.error("Error fetching chat list:", error)
@@ -559,20 +559,29 @@ const ApplicationTracking = () => {
 
   const fetchConversation = useCallback(
     async (participantId, participantRole) => {
-      if (!applicantId || !participantId) return
+      console.log("fetchConversation called with:", { applicantId, participantId, participantRole })
+      
+      if (!applicantId || !participantId) {
+        console.log("Missing required IDs:", { applicantId, participantId })
+        return
+      }
+      
       try {
         setConversationLoading(true)
         let endpoint = ""
         if (participantRole === "EVALUATOR") {
-          endpoint = `http://localhost:8080/api/messages/conversation/applicant-evaluator?applicantId=${applicantId}&evaluatorId=${participantId}`
+          endpoint = `${BACKEND_URL}/api/messages/conversation/applicant-evaluator?applicantId=${applicantId}&evaluatorId=${participantId}`
         } else if (participantRole === "PROGRAM_ADMIN") {
-          endpoint = `http://localhost:8080/api/messages/conversation/applicant-admin?applicantId=${applicantId}&adminId=${participantId}`
+          endpoint = `${BACKEND_URL}/api/messages/conversation/applicant-admin?applicantId=${applicantId}&adminId=${participantId}`
         } else {
+          console.error("Unknown participant role:", participantRole)
           setConversationMessages([])
           setConversationLoading(false)
           return
         }
+        console.log("Fetching conversation from:", endpoint)
         const response = await api.get(endpoint)
+        console.log("Conversation response:", response.data)
         setConversationMessages(response.data || [])
       } catch (error) {
         console.error("Error fetching conversation:", error)
@@ -599,11 +608,14 @@ const ApplicationTracking = () => {
       // Add correct recipient based on role
       if (selectedConversation.participantRole === "EVALUATOR") {
         messagePayload.recipientEvaluator = { evaluatorId: selectedConversation.participantId }
+        messagePayload.recipientType = "EVALUATOR"
       } else if (selectedConversation.participantRole === "PROGRAM_ADMIN") {
         messagePayload.recipientAdmin = { adminId: selectedConversation.participantId }
+        messagePayload.recipientType = "PROGRAM_ADMIN"
       }
 
-      await api.post("http://localhost:8080/api/messages/send", messagePayload)
+      console.log("Sending message payload:", messagePayload)
+      await api.post(`${BACKEND_URL}/api/messages/send`, messagePayload)
       setNewMessage("")
       // Refresh conversation after sending
       await fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
@@ -616,53 +628,139 @@ const ApplicationTracking = () => {
   }, [api, applicantId, selectedConversation, newMessage, fetchConversation, handleError])
 
   const openConversation = useCallback(
-    (chat) => {
-      // Extract participant ID from the chat item
-      const participantId = chat.participantId || chat.evaluatorId || chat.adminId
-      if (participantId && chat.participantRole) {
-        setSelectedConversation({
-          participantId,
-          participantName: chat.participantName,
-          participantRole: chat.participantRole,
-        })
-        // fetchConversation will be triggered by useEffect below
+    async (chat) => {
+      console.log("=== Opening conversation ===")
+      console.log("Chat data received:", chat)
+      console.log("Current applicantId:", applicantId)
+      
+      if (!applicantId) {
+        console.error("No applicantId available")
+        return
       }
+      
+      // Open the inbox drawer first
+      setInboxOpen(true)
+      console.log("Drawer opened")
+      
+      // Extract what we have from the notification
+      let participantId = chat.participantId || 
+                         chat.evaluatorId || 
+                         chat.adminId ||
+                         chat.programAdminId
+      
+      const participantRole = chat.participantRole
+      const participantName = chat.participantName
+      
+      console.log("Initial extraction:", { participantId, participantRole, participantName })
+      
+      // If we don't have participantId, we need to fetch the chat list and find it
+      if (!participantId && participantName && participantRole) {
+        console.log("No participantId found, fetching chat list to find it...")
+        
+        // TEMPORARY WORKAROUND: Hardcoded ID mapping
+        // TODO: Remove this once backend includes participantId in chat-list API
+        const knownParticipants = {
+          'ETEEAP Coordinator_PROGRAM_ADMIN': 1,
+          'Rea V San_EVALUATOR': 5,
+          // Add more as needed
+        }
+        
+        const lookupKey = `${participantName}_${participantRole}`
+        if (knownParticipants[lookupKey]) {
+          participantId = knownParticipants[lookupKey]
+          console.log(`Using hardcoded ID for ${lookupKey}:`, participantId)
+        }
+        
+        // If still no ID, try to fetch and find it
+        if (!participantId) {
+          try {
+            // Fetch the chat list
+            const response = await api.get(`${BACKEND_URL}/api/messages/inbox/applicant/chat-list?applicantId=${applicantId}`)
+            const chatListData = response.data || []
+            console.log("Fetched chat list:", chatListData)
+            
+            // Find the matching chat by name and role
+            const matchingChat = chatListData.find(c => 
+              c.participantName === participantName && 
+              c.participantRole === participantRole
+            )
+            
+            console.log("Matching chat found:", matchingChat)
+            
+            if (matchingChat) {
+              // Extract the ID from the matching chat
+              participantId = matchingChat.participantId || 
+                             matchingChat.evaluatorId || 
+                             matchingChat.adminId ||
+                             matchingChat.programAdminId
+              
+              console.log("Extracted participantId from chat list:", participantId)
+              
+              // Update the chat list state
+              setChatList(chatListData)
+            } else {
+              console.error("Could not find matching chat in list")
+            }
+          } catch (error) {
+            console.error("Error fetching chat list:", error)
+          }
+        }
+      }
+      
+      // Final validation
+      if (!participantId) {
+        console.error("Still no participantId after all attempts. Chat object:", chat)
+        alert("Cannot open conversation: Missing participant ID. Please try clicking the conversation from the Messages list.")
+        return
+      }
+      
+      if (!participantRole) {
+        console.error("No participantRole found")
+        return
+      }
+      
+      // Set the selected conversation
+      console.log("Setting selectedConversation with:", {
+        participantId,
+        participantName,
+        participantRole,
+      })
+      
+      setSelectedConversation({
+        participantId,
+        participantName,
+        participantRole,
+      })
+      
+      console.log("=== Conversation setup complete ===")
     },
-    [],
+    [applicantId, api],
   )
 
   useEffect(() => {
+    console.log("selectedConversation changed:", selectedConversation)
     if (
       selectedConversation &&
       selectedConversation.participantId &&
       selectedConversation.participantRole
     ) {
+      console.log("Fetching conversation for:", selectedConversation.participantId, selectedConversation.participantRole)
       fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
+    } else {
+      console.log("Not fetching conversation - missing data:", {
+        hasSelectedConversation: !!selectedConversation,
+        hasParticipantId: selectedConversation?.participantId,
+        hasParticipantRole: selectedConversation?.participantRole
+      })
     }
   }, [selectedConversation, fetchConversation])
 
-  // Helper functions for role icons and display names
-  const getRoleIcon = (role) => {
-    switch (role) {
-      case "EVALUATOR":
-        return EvaluatorIcon
-      case "PROGRAM_ADMIN":
-        return AdminIcon
-      default:
-        return UserIcon // Default icon if role is unknown
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current && conversationMessages.length > 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
     }
-  }
-
-  const getRoleDisplayName = (role) => {
-    switch (role) {
-      case "EVALUATOR":
-        return "Evaluator"
-      case "PROGRAM_ADMIN":
-        return "Program Administrator"
-      default:
-        return "User"
-    }
-  }
+  }, [conversationMessages])
 
   useSubjectNotifications(localStorage.getItem("applicantId"), subjectsList, fetchAllSubjects, {
     enablePolling: true,
@@ -753,6 +851,27 @@ const ApplicationTracking = () => {
     const intervalId = setInterval(() => checkAcceptedApplicant(applicantId), 30000)
     return () => clearInterval(intervalId)
   }, [applicantId, isAccepted, checkAcceptedApplicant])
+
+  // Expose openConversation for external use (like notifications)
+  useEffect(() => {
+    // Store the function in window so notifications can call it
+    window.applicantOpenConversation = openConversation
+    
+    // Listen for custom event to open conversation
+    const handleOpenConversationEvent = (event) => {
+      const chatData = event.detail
+      if (chatData) {
+        openConversation(chatData)
+      }
+    }
+    
+    window.addEventListener('applicant:openConversation', handleOpenConversationEvent)
+    
+    return () => {
+      delete window.applicantOpenConversation
+      window.removeEventListener('applicant:openConversation', handleOpenConversationEvent)
+    }
+  }, [openConversation])
 
   const handleFileUpload = async (event) => {
     const fileList = Array.from(event.target.files)
@@ -899,22 +1018,6 @@ const ApplicationTracking = () => {
     return chatList.filter((msg) => msg.unread).length
   }, [chatList])
 
-  const formatMessageDate = useCallback((dateString) => {
-    if (!dateString) return ""
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now - date
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-
-    if (diffMins < 1) return "Just now"
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString()
-  }, [])
-
   // Helper to format time for chat messages
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return ""
@@ -941,6 +1044,19 @@ const ApplicationTracking = () => {
     setConversationMessages([])
     setNewMessage("")
   }, [])
+
+  const handleInboxOpen = useCallback(() => {
+    console.log("Opening inbox, applicantId:", applicantId)
+    setInboxOpen(true)
+    if (applicantId) {
+      fetchChatList(applicantId)
+    }
+  }, [applicantId, fetchChatList])
+
+  const handleInboxClose = useCallback(() => {
+    setInboxOpen(false)
+    closeConversation()
+  }, [closeConversation])
 
   return (
     <ThemeProvider theme={customTheme}>
@@ -1025,10 +1141,7 @@ const ApplicationTracking = () => {
               {/* Inbox Button */}
               <Tooltip title="Messages">
                 <IconButton
-                  onClick={() => {
-                    setInboxOpen(true)
-                    fetchChatList(applicantId) // Call fetchChatList to populate drawer
-                  }}
+                  onClick={handleInboxOpen}
                   sx={{
                     color: "white",
                     opacity: 0.9,
@@ -1182,354 +1295,25 @@ const ApplicationTracking = () => {
           </MenuItem>
         </Popover>
 
-        <Drawer
-          anchor="right"
+        {/* Chat Drawer */}
+        <ChatDrawer
           open={inboxOpen}
-          onClose={() => {
-            setInboxOpen(false)
-            closeConversation()
-          }}
-          PaperProps={{
-            sx: {
-              width: { xs: "100%", sm: 400 },
-              bgcolor: colors.neutral[50],
-            },
-          }}
-        >
-          <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            {/* Drawer Header */}
-            <Box
-              sx={{
-                p: 2,
-                borderBottom: `1px solid ${colors.neutral[200]}`,
-                bgcolor: "white",
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
-                flexShrink: 0,
-              }}
-            >
-              {selectedConversation ? (
-                <>
-                  <IconButton size="small" onClick={closeConversation} sx={{ color: colors.neutral[600] }}>
-                    <ArrowBackIcon sx={{ fontSize: 20 }} />
-                  </IconButton>
-                  {(() => {
-                    const RoleIcon = getRoleIcon(selectedConversation.participantRole)
-                    return (
-                      <Avatar
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          bgcolor:
-                            selectedConversation.participantRole === "EVALUATOR"
-                              ? alpha(colors.primary.main, 0.1)
-                              : alpha(colors.accent.info, 0.1),
-                          color:
-                            selectedConversation.participantRole === "EVALUATOR"
-                              ? colors.primary.main
-                              : colors.accent.info,
-                        }}
-                      >
-                        <RoleIcon sx={{ fontSize: 20 }} />
-                      </Avatar>
-                    )
-                  })()}
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2" fontWeight={700} color={colors.neutral[800]}>
-                      {selectedConversation.participantName}
-                    </Typography>
-                    <Typography variant="caption" color={colors.neutral[500]} sx={{ fontSize: 11 }}>
-                      {getRoleDisplayName(selectedConversation.participantRole)}
-                    </Typography>
-                  </Box>
-                </>
-              ) : (
-                <>
-                  <InboxIcon sx={{ color: colors.primary.main }} />
-                  <Typography variant="subtitle1" fontWeight={700} color={colors.neutral[800]}>
-                    Messages
-                  </Typography>
-                  <Box sx={{ flex: 1 }} />
-                </>
-              )}
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setInboxOpen(false)
-                  closeConversation()
-                }}
-                sx={{ color: colors.neutral[500] }}
-              >
-                <CloseIcon sx={{ fontSize: 20 }} />
-              </IconButton>
-            </Box>
-
-            {selectedConversation ? (
-              <>
-                {/* Conversation Messages */}
-                <Box
-                  sx={{
-                    flex: 1,
-                    overflow: "auto",
-                    p: 2,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 1.5,
-                  }}
-                >
-                  {conversationLoading ? (
-                    <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                      <CircularProgress size={32} sx={{ color: colors.primary.main }} />
-                    </Box>
-                  ) : conversationMessages.length === 0 ? (
-                    <Box sx={{ textAlign: "center", py: 4 }}>
-                      <Typography variant="body2" color={colors.neutral[500]}>
-                        No messages yet. Start the conversation!
-                      </Typography>
-                    </Box>
-                  ) : (
-                    conversationMessages.map((msg, idx) => {
-                      const isFromApplicant = msg.senderType === "APPLICANT"
-                      return (
-                        <Box
-                          key={msg.messageId || idx}
-                          sx={{
-                            display: "flex",
-                            justifyContent: isFromApplicant ? "flex-end" : "flex-start",
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              maxWidth: "80%",
-                              p: 1.5,
-                              borderRadius: 2,
-                              bgcolor: isFromApplicant ? colors.primary.main : "white",
-                              color: isFromApplicant ? "white" : colors.neutral[800],
-                              border: isFromApplicant ? "none" : `1px solid ${colors.neutral[200]}`,
-                              boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                            }}
-                          >
-                            <Typography variant="body2" sx={{ fontSize: 13, lineHeight: 1.5 }}>
-                              {msg.content}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                display: "block",
-                                mt: 0.75,
-                                fontSize: 10,
-                                opacity: isFromApplicant ? 0.8 : 0.6,
-                                textAlign: "right",
-                              }}
-                            >
-                              {formatMessageTime(msg.sentAt || msg.createdAt)}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      )
-                    })
-                  )}
-                </Box>
-
-                {/* Message Input */}
-                <Box
-                  sx={{
-                    p: 2,
-                    borderTop: `1px solid ${colors.neutral[200]}`,
-                    bgcolor: "white",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Box sx={{ display: "flex", gap: 1, alignItems: "flex-end" }}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      maxRows={4}
-                      placeholder="Type your message..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault()
-                          sendMessage()
-                        }
-                      }}
-                      disabled={sendingMessage}
-                      size="small"
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
-                          bgcolor: colors.neutral[50],
-                          fontSize: 14,
-                          "& fieldset": {
-                            borderColor: colors.neutral[200],
-                          },
-                          "&:hover fieldset": {
-                            borderColor: colors.neutral[300],
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor: colors.primary.main,
-                          },
-                        },
-                      }}
-                    />
-                    <IconButton
-                      onClick={sendMessage}
-                      disabled={!newMessage.trim() || sendingMessage}
-                      sx={{
-                        bgcolor: colors.primary.main,
-                        color: "white",
-                        width: 40,
-                        height: 40,
-                        "&:hover": {
-                          bgcolor: colors.primary.dark,
-                        },
-                        "&.Mui-disabled": {
-                          bgcolor: colors.neutral[200],
-                          color: colors.neutral[400],
-                        },
-                      }}
-                    >
-                      {sendingMessage ? (
-                        <CircularProgress size={18} sx={{ color: "inherit" }} />
-                      ) : (
-                        <SendIcon sx={{ fontSize: 18 }} />
-                      )}
-                    </IconButton>
-                  </Box>
-                </Box>
-              </>
-            ) : (
-              <Box sx={{ flex: 1, overflow: "auto" }}>
-                {inboxLoading ? (
-                  <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                    <CircularProgress size={32} sx={{ color: colors.primary.main }} />
-                  </Box>
-                ) : chatList.length === 0 ? (
-                  <Box sx={{ textAlign: "center", py: 6 }}>
-                    <MailIcon sx={{ fontSize: 48, color: colors.neutral[300], mb: 2 }} />
-                    <Typography variant="body2" color={colors.neutral[500]}>
-                      No conversations yet
-                    </Typography>
-                  </Box>
-                ) : (
-                  chatList.map((chat, idx) => {
-                    const RoleIcon = getRoleIcon(chat.participantRole)
-                    const isUnread = chat.unread
-
-                    return (
-                      <Box
-                        key={`${chat.participantRole}-${chat.participantId || idx}`}
-                        onClick={() => openConversation(chat)}
-                        sx={{
-                          p: 2,
-                          borderBottom: `1px solid ${colors.neutral[200]}`,
-                          cursor: "pointer",
-                          bgcolor: isUnread ? alpha(colors.secondary.light, 0.08) : "transparent",
-                          transition: "background-color 0.15s ease",
-                          "&:hover": {
-                            bgcolor: isUnread ? alpha(colors.secondary.light, 0.12) : colors.neutral[100],
-                          },
-                        }}
-                      >
-                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
-                          {/* Avatar with role icon */}
-                          <Avatar
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              bgcolor:
-                                chat.participantRole === "EVALUATOR"
-                                  ? alpha(colors.primary.main, 0.1)
-                                  : alpha(colors.accent.info, 0.1),
-                              color: chat.participantRole === "EVALUATOR" ? colors.primary.main : colors.accent.info,
-                              flexShrink: 0,
-                            }}
-                          >
-                            <RoleIcon sx={{ fontSize: 20 }} />
-                          </Avatar>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                mb: 0.25,
-                              }}
-                            >
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <Typography
-                                  variant="subtitle2"
-                                  fontWeight={isUnread ? 700 : 600}
-                                  color={colors.neutral[800]}
-                                  noWrap
-                                >
-                                  {chat.participantName || "Unknown"}
-                                </Typography>
-                                {isUnread && (
-                                  <UnreadIcon
-                                    sx={{
-                                      fontSize: 8,
-                                      color: colors.primary.main,
-                                      flexShrink: 0,
-                                    }}
-                                  />
-                                )}
-                              </Box>
-                              <Typography
-                                variant="caption"
-                                color={colors.neutral[400]}
-                                sx={{ flexShrink: 0, fontSize: 11 }}
-                              >
-                                {formatMessageTime(chat.lastMessageTimestamp)}
-                              </Typography>
-                            </Box>
-                            {/* Role badge */}
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                display: "inline-block",
-                                px: 1,
-                                py: 0.25,
-                                mb: 0.5,
-                                borderRadius: 1,
-                                fontSize: 10,
-                                fontWeight: 600,
-                                bgcolor:
-                                  chat.participantRole === "EVALUATOR"
-                                    ? alpha(colors.primary.main, 0.08)
-                                    : alpha(colors.accent.info, 0.08),
-                                color: chat.participantRole === "EVALUATOR" ? colors.primary.main : colors.accent.info,
-                              }}
-                            >
-                              {getRoleDisplayName(chat.participantRole)}
-                            </Typography>
-                            {/* Last message preview */}
-                            <Typography
-                              variant="body2"
-                              color={colors.neutral[600]}
-                              sx={{
-                                fontSize: 13,
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                                fontWeight: isUnread ? 500 : 400,
-                              }}
-                            >
-                              {chat.lastMessageContent}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                    )
-                  })
-                )}
-              </Box>
-            )}
-          </Box>
-        </Drawer>
+          onClose={handleInboxClose}
+          chatList={chatList}
+          loading={inboxLoading}
+          selectedConversation={selectedConversation}
+          onSelectConversation={openConversation}
+          onCloseConversation={closeConversation}
+          conversationMessages={conversationMessages}
+          conversationLoading={conversationLoading}
+          newMessage={newMessage}
+          onMessageChange={setNewMessage}
+          onSendMessage={sendMessage}
+          sendingMessage={sendingMessage}
+          messagesEndRef={messagesEndRef}
+          formatMessageTime={formatMessageTime}
+          colors={colors}
+        />
 
         {/* Main Content Grid */}
         <Box
