@@ -41,8 +41,15 @@ const ChatListItem = ({
             bgcolor:
               chat.participantRole === "EVALUATOR"
                 ? alpha(colors.primary.main, 0.1)
+                : chat.participantRole === "PROGRAM_ADMIN"
+                ? alpha(colors.secondary.main, 0.1)
                 : alpha(colors.accent.info, 0.1),
-            color: chat.participantRole === "EVALUATOR" ? colors.primary.main : colors.accent.info,
+            color:
+              chat.participantRole === "EVALUATOR"
+                ? colors.primary.main
+                : chat.participantRole === "PROGRAM_ADMIN"
+                ? colors.secondary.main
+                : colors.accent.info,
             flexShrink: 0,
           }}
         >
@@ -98,8 +105,15 @@ const ChatListItem = ({
               bgcolor:
                 chat.participantRole === "EVALUATOR"
                   ? alpha(colors.primary.main, 0.08)
+                  : chat.participantRole === "PROGRAM_ADMIN"
+                  ? alpha(colors.secondary.main, 0.08)
                   : alpha(colors.accent.info, 0.08),
-              color: chat.participantRole === "EVALUATOR" ? colors.primary.main : colors.accent.info,
+              color:
+                chat.participantRole === "EVALUATOR"
+                  ? colors.primary.main
+                  : chat.participantRole === "PROGRAM_ADMIN"
+                  ? colors.secondary.main
+                  : colors.accent.info,
             }}
           >
             {getRoleDisplayName(chat.participantRole)}
