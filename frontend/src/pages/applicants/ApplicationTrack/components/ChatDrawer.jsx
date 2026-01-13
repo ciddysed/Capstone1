@@ -36,6 +36,7 @@ const ChatDrawer = ({
   messagesEndRef,
   formatMessageTime,
   colors,
+  currentUserType = "APPLICANT", // Default to APPLICANT for backward compatibility
 }) => {
   const getRoleIcon = (role) => {
     switch (role) {
@@ -43,6 +44,8 @@ const ChatDrawer = ({
         return EvaluatorIcon
       case "PROGRAM_ADMIN":
         return AdminIcon
+      case "APPLICANT":
+        return MailIcon
       default:
         return MailIcon
     }
@@ -54,6 +57,8 @@ const ChatDrawer = ({
         return "Evaluator"
       case "PROGRAM_ADMIN":
         return "Program Admin"
+      case "APPLICANT":
+        return "Applicant"
       default:
         return "Unknown"
     }
@@ -156,6 +161,7 @@ const ChatDrawer = ({
             messagesEndRef={messagesEndRef}
             formatMessageTime={formatMessageTime}
             colors={colors}
+            currentUserType={currentUserType}
           />
         ) : (
           <Box sx={{ flex: 1, overflow: "auto" }}>

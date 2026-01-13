@@ -22,6 +22,7 @@ import Accreditations from "../../../pages/evaluators/Accreditations/Accreditati
 import AccreditedAccounts from "../../../pages/evaluators/Accreditations/AccreditedAccounts";
 import { handleLogout } from "../../../utils/logoutUtils";
 import EvaluatorNotificationCenter from '../../Notifications/EvaluatorNotificationCenter';
+import EvaluatorChat from './EvaluatorChat';
 
 const EvaluatorNavigation = ({ children }) => {
   const sections = [
@@ -258,7 +259,10 @@ const EvaluatorNavigation = ({ children }) => {
               <Typography variant="h6" fontWeight="600" fontSize={18}>
                 {getPageTitle()}
               </Typography>
-              <EvaluatorNotificationCenter evaluatorId={evaluatorId} />
+              <Box display="flex" alignItems="center" gap={1}>
+                <EvaluatorNotificationCenter evaluatorId={evaluatorId} />
+                <EvaluatorChat evaluatorId={evaluatorId} />
+              </Box>
             </Toolbar>
           </AppBar>
         </Box>

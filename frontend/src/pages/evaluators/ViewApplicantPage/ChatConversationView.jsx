@@ -12,7 +12,7 @@ import {
   DoneAll as DoneAllIcon,
 } from "@mui/icons-material"
 
-const ConversationView = ({
+const ChatConversationView = ({
   conversationMessages,
   conversationLoading,
   newMessage,
@@ -22,12 +22,12 @@ const ConversationView = ({
   messagesEndRef,
   formatMessageTime,
   colors,
-  currentUserType = "APPLICANT", // Default to APPLICANT for backward compatibility
+  currentUserType = "EVALUATOR",
 }) => {
   // Deduplicate messages at render time to prevent React key warnings
   const uniqueMessages = useMemo(() => {
     const seen = new Map();
-    return conversationMessages.filter(msg => {
+    return (conversationMessages || []).filter(msg => {
       if (seen.has(msg.messageId)) {
         return false;
       }
@@ -43,6 +43,13 @@ const ConversationView = ({
     }
   }
 
+  const formatTime = (timestamp) => {
+    if (formatMessageTime) return formatMessageTime(timestamp);
+    if (!timestamp) return "";
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
   const getStatusIcon = (message) => {
     const isFromCurrentUser = message.senderType === currentUserType
     if (!isFromCurrentUser) return null
@@ -50,7 +57,7 @@ const ConversationView = ({
     const status = message.status || "SENT"
     
     if (status === "SEEN") {
-      return <DoneAllIcon sx={{ fontSize: 12, ml: 0.5, color: colors.secondary.main }} />
+      return <DoneAllIcon sx={{ fontSize: 12, ml: 0.5, color: colors.secondary?.main || '#FFC72C' }} />
     } else if (status === "DELIVERED") {
       return <DoneAllIcon sx={{ fontSize: 12, ml: 0.5 }} />
     } else {
@@ -59,7 +66,14 @@ const ConversationView = ({
   }
 
   return (
-    <>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: 400, 
+      border: `1px solid ${colors.neutral?.[200] || '#eee'}`,
+      borderRadius: 2,
+      overflow: 'hidden',
+    }}>
       {/* Conversation Messages */}
       <Box
         sx={{
@@ -69,15 +83,16 @@ const ConversationView = ({
           display: "flex",
           flexDirection: "column",
           gap: 1.5,
+          bgcolor: colors.neutral?.[50] || '#f9f9f9',
         }}
       >
         {conversationLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress size={32} sx={{ color: colors.primary.main }} />
+            <CircularProgress size={32} sx={{ color: colors.primary?.main || '#6A0000' }} />
           </Box>
-        ) : conversationMessages.length === 0 ? (
+        ) : (conversationMessages || []).length === 0 ? (
           <Box sx={{ textAlign: "center", py: 4 }}>
-            <Typography variant="body2" color={colors.neutral[500]}>
+            <Typography variant="body2" color={colors.neutral?.[500] || '#888'}>
               No messages yet. Start the conversation!
             </Typography>
           </Box>
@@ -98,9 +113,9 @@ const ConversationView = ({
                       maxWidth: "80%",
                       p: 1.5,
                       borderRadius: 2,
-                      bgcolor: isFromCurrentUser ? colors.primary.main : "white",
-                      color: isFromCurrentUser ? "white" : colors.neutral[800],
-                      border: isFromCurrentUser ? "none" : `1px solid ${colors.neutral[200]}`,
+                      bgcolor: isFromCurrentUser ? (colors.primary?.main || '#6A0000') : "white",
+                      color: isFromCurrentUser ? "white" : (colors.neutral?.[800] || '#222'),
+                      border: isFromCurrentUser ? "none" : `1px solid ${colors.neutral?.[200] || '#eee'}`,
                       boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
                     }}
                   >
@@ -115,7 +130,7 @@ const ConversationView = ({
                           opacity: isFromCurrentUser ? 0.8 : 0.6,
                         }}
                       >
-                        {formatMessageTime(msg.sentAt || msg.createdAt)}
+                        {formatTime(msg.sentAt || msg.createdAt)}
                       </Typography>
                       {getStatusIcon(msg)}
                     </Box>
@@ -133,7 +148,7 @@ const ConversationView = ({
       <Box
         sx={{
           p: 2,
-          borderTop: `1px solid ${colors.neutral[200]}`,
+          borderTop: `1px solid ${colors.neutral?.[200] || '#eee'}`,
           bgcolor: "white",
           flexShrink: 0,
         }}
@@ -145,41 +160,41 @@ const ConversationView = ({
             maxRows={4}
             placeholder="Type your message..."
             value={newMessage}
-            onChange={(e) => onMessageChange(e.target.value)}
+            onChange={(e) => onMessageChange(e)}
             onKeyDown={handleKeyDown}
             disabled={sendingMessage}
             size="small"
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2,
-                bgcolor: colors.neutral[50],
+                bgcolor: colors.neutral?.[50] || '#f9f9f9',
                 fontSize: 14,
                 "& fieldset": {
-                  borderColor: colors.neutral[200],
+                  borderColor: colors.neutral?.[200] || '#eee',
                 },
                 "&:hover fieldset": {
-                  borderColor: colors.neutral[300],
+                  borderColor: colors.neutral?.[300] || '#ddd',
                 },
                 "&.Mui-focused fieldset": {
-                  borderColor: colors.primary.main,
+                  borderColor: colors.primary?.main || '#6A0000',
                 },
               },
             }}
           />
           <IconButton
             onClick={onSendMessage}
-            disabled={!newMessage.trim() || sendingMessage}
+            disabled={!newMessage?.trim() || sendingMessage}
             sx={{
-              bgcolor: colors.primary.main,
+              bgcolor: colors.primary?.main || '#6A0000',
               color: "white",
               width: 40,
               height: 40,
               "&:hover": {
-                bgcolor: colors.primary.dark,
+                bgcolor: colors.primary?.dark || '#450000',
               },
               "&.Mui-disabled": {
-                bgcolor: colors.neutral[200],
-                color: colors.neutral[400],
+                bgcolor: colors.neutral?.[200] || '#eee',
+                color: colors.neutral?.[400] || '#aaa',
               },
             }}
           >
@@ -191,8 +206,8 @@ const ConversationView = ({
           </IconButton>
         </Box>
       </Box>
-    </>
+    </Box>
   )
 }
 
-export default ConversationView
+export default ChatConversationView

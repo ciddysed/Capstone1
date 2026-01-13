@@ -8,13 +8,13 @@ import { BACKEND_URL } from "../../../config";
 import { useWebSocket } from "../../../hooks/useWebSocket";
 
 const defaultColors = {
-  primary: { main: "#6A0000" },
+  primary: { main: "#6A0000", dark: "#450000" },
   secondary: { main: "#FFC72C", light: "#FFD54F", dark: "#FFA000" },
   accent: { info: "#0288d1" },
   neutral: { 50: "#fafafa", 100: "#f5f3f0", 200: "#e8e4df", 300: "#d0d0d0", 400: "#999", 500: "#888", 600: "#666", 800: "#222" },
 }
 
-const ProgramAdminChat = ({ programAdminId, colors }) => {
+const EvaluatorChat = ({ evaluatorId, colors }) => {
   const [inboxOpen, setInboxOpen] = useState(false)
   const [chatList, setChatList] = useState([])
   const [selectedConversation, setSelectedConversation] = useState(null)
@@ -27,56 +27,167 @@ const ProgramAdminChat = ({ programAdminId, colors }) => {
 
   const c = colors || defaultColors
 
-  // Fetch chat list for program admin (defined first)
+  // Fetch chat list for evaluator (conversations with applicants and admins)
   const fetchChatList = useCallback(async () => {
-    if (!programAdminId) return
+    if (!evaluatorId) {
+      console.log("No evaluatorId provided, skipping chat list fetch")
+      return
+    }
     setInboxLoading(true)
+    console.log("Fetching evaluator chat list for evaluatorId:", evaluatorId)
+    
     try {
-      const response = await axios.get(`${BACKEND_URL}/api/messages/inbox/admin/chat-list`, {
-        params: { adminId: programAdminId },
+      // 1. Fetch existing message conversations
+      let existingChats = []
+      try {
+        const chatResponse = await axios.get(`${BACKEND_URL}/api/messages/inbox/evaluator/chat-list`, {
+          params: { evaluatorId: evaluatorId },
+        })
+        existingChats = chatResponse.data || []
+        console.log("Existing chat conversations:", existingChats)
+      } catch (error) {
+        console.log("No existing chats or error fetching:", error.message)
+      }
+      
+      // Track which participants we already have
+      const existingParticipants = new Set(
+        existingChats.map(chat => `${chat.participantRole}_${chat.participantId}`)
+      )
+      
+      // 2. Fetch assigned applicants from evaluations
+      let assignedApplicants = []
+      try {
+        const evalResponse = await axios.get(`${BACKEND_URL}/api/evaluations/evaluator/${evaluatorId}`)
+        const evaluations = evalResponse.data || []
+        console.log("Evaluations for evaluator:", evaluations)
+        
+        // Extract unique applicants from evaluations
+        const seenApplicants = new Set()
+        for (const evaluation of evaluations) {
+          const applicant = evaluation.applicant
+          if (applicant && !seenApplicants.has(applicant.applicantId)) {
+            seenApplicants.add(applicant.applicantId)
+            const key = `APPLICANT_${applicant.applicantId}`
+            if (!existingParticipants.has(key)) {
+              assignedApplicants.push({
+                participantId: applicant.applicantId,
+                participantName: `${applicant.firstName || ''} ${applicant.lastName || ''}`.trim() || 'Unknown Applicant',
+                participantRole: 'APPLICANT',
+                lastMessageContent: 'No messages yet - Assigned for evaluation',
+                lastMessageTimestamp: null,
+                unread: false,
+              })
+              existingParticipants.add(key)
+            }
+          }
+        }
+        console.log("Assigned applicants (no messages yet):", assignedApplicants)
+      } catch (error) {
+        console.log("Could not fetch evaluations:", error.message)
+      }
+      
+      // 3. Fetch all program admins - try API first, fallback to hardcoded
+      let programAdmins = []
+      try {
+        const adminResponse = await axios.get(`${BACKEND_URL}/api/program-admins`)
+        const admins = adminResponse.data || []
+        console.log("Program admins from API:", admins)
+        
+        // Handle both array response and single admin response
+        const adminList = Array.isArray(admins) ? admins : (admins.adminId ? [admins] : [])
+        
+        for (const admin of adminList) {
+          const adminId = admin.adminId || admin.id
+          const key = `PROGRAM_ADMIN_${adminId}`
+          if (adminId && !existingParticipants.has(key)) {
+            programAdmins.push({
+              participantId: adminId,
+              participantName: admin.name || admin.firstName || 'Program Admin',
+              participantRole: 'PROGRAM_ADMIN',
+              lastMessageContent: 'No messages yet',
+              lastMessageTimestamp: null,
+              unread: false,
+            })
+            existingParticipants.add(key)
+          }
+        }
+      } catch (error) {
+        console.log("Could not fetch admins from API:", error.message)
+      }
+      
+      // Fallback: Add hardcoded ETEEAP Coordinator if no admins found
+      if (programAdmins.length === 0) {
+        const key = `PROGRAM_ADMIN_1`
+        if (!existingParticipants.has(key)) {
+          programAdmins.push({
+            participantId: 1,
+            participantName: 'ETEEAP Coordinator',
+            participantRole: 'PROGRAM_ADMIN',
+            lastMessageContent: 'No messages yet',
+            lastMessageTimestamp: null,
+            unread: false,
+          })
+          existingParticipants.add(key)
+          console.log("Added fallback ETEEAP Coordinator")
+        }
+      }
+      console.log("Program admins (final):", programAdmins)
+      
+      // 4. Combine all and sort
+      const allChats = [...existingChats, ...assignedApplicants, ...programAdmins]
+      
+      // Sort: conversations with messages first (by timestamp desc), then no-message entries alphabetically
+      allChats.sort((a, b) => {
+        const t1 = a.lastMessageTimestamp
+        const t2 = b.lastMessageTimestamp
+        if (t1 && t2) return new Date(t2) - new Date(t1)
+        if (t1) return -1
+        if (t2) return 1
+        return (a.participantName || '').localeCompare(b.participantName || '')
       })
-      setChatList(response.data || [])
+      
+      console.log("Final combined chat list:", allChats)
+      setChatList(allChats)
     } catch (error) {
       setChatList([])
-      console.error("Failed to fetch chat list:", error)
+      console.error("Failed to fetch evaluator chat list:", error)
     } finally {
       setInboxLoading(false)
     }
-  }, [programAdminId])
+  }, [evaluatorId])
 
-  // WebSocket handlers (defined after fetchChatList)
+  // WebSocket handlers
   const handleMessageReceived = useCallback((message) => {
-    console.log('Program Admin: New message received via WebSocket:', message);
+    console.log('Evaluator: New message received via WebSocket:', message);
     
     // Check if the message is for the currently open conversation
     if (selectedConversation) {
       // Message is for current conversation if:
-      // 1. It's FROM the other participant (applicant/evaluator) TO the admin
-      // 2. It's FROM the admin TO the other participant (echo)
+      // 1. It's FROM the other participant (applicant/admin) TO the evaluator
+      // 2. It's FROM the evaluator TO the other participant (echo)
       const isFromParticipant = 
         (message.senderType === selectedConversation.participantRole && 
          ((message.senderApplicant?.applicantId === selectedConversation.participantId) ||
-          (message.senderEvaluator?.evaluatorId === selectedConversation.participantId)));
+          (message.senderAdmin?.adminId === selectedConversation.participantId)));
       
       const isToParticipant = 
-        (message.senderType === 'PROGRAM_ADMIN' && 
+        (message.senderType === 'EVALUATOR' && 
          selectedConversation.participantRole === 'APPLICANT' &&
          message.recipientApplicant?.applicantId === selectedConversation.participantId) ||
-        (message.senderType === 'PROGRAM_ADMIN' && 
-         selectedConversation.participantRole === 'EVALUATOR' &&
-         message.recipientEvaluator?.evaluatorId === selectedConversation.participantId);
+        (message.senderType === 'EVALUATOR' && 
+         selectedConversation.participantRole === 'PROGRAM_ADMIN' &&
+         message.recipientAdmin?.adminId === selectedConversation.participantId);
       
       const isForCurrentConversation = isFromParticipant || isToParticipant;
       
       if (isForCurrentConversation) {
         // Add the new message ONLY if it doesn't already exist (prevent duplicates)
         setConversationMessages(prev => {
-          // Use Map to ensure unique messageIds
           const messageMap = new Map(prev.map(msg => [msg.messageId, msg]));
           
           if (messageMap.has(message.messageId)) {
-            console.log('Program Admin: Message already exists, skipping duplicate:', message.messageId);
-            return prev; // Return exact same array reference to prevent re-render
+            console.log('Evaluator: Message already exists, skipping duplicate:', message.messageId);
+            return prev;
           }
           
           messageMap.set(message.messageId, message);
@@ -92,9 +203,8 @@ const ProgramAdminChat = ({ programAdminId, colors }) => {
   }, [selectedConversation, fetchChatList]);
 
   const handleStatusUpdate = useCallback((statusUpdate) => {
-    console.log('Program Admin: Message status update received:', statusUpdate);
+    console.log('Evaluator: Message status update received:', statusUpdate);
     
-    // Update the message status in conversation
     setConversationMessages(prev => 
       prev.map(msg => 
         msg.messageId === statusUpdate.messageId 
@@ -105,23 +215,23 @@ const ProgramAdminChat = ({ programAdminId, colors }) => {
   }, []);
 
   // Initialize WebSocket connection
-  useWebSocket(programAdminId, 'PROGRAM_ADMIN', handleMessageReceived, handleStatusUpdate);
+  useWebSocket(evaluatorId, 'EVALUATOR', handleMessageReceived, handleStatusUpdate);
 
   // Fetch conversation
   const fetchConversation = useCallback(
     async (participantId, participantRole) => {
-      if (!programAdminId || !participantId) return
+      if (!evaluatorId || !participantId) return
       setConversationLoading(true)
       try {
         let endpoint = ""
         let params = {}
 
         if (participantRole === "APPLICANT") {
-          endpoint = `${BACKEND_URL}/api/messages/conversation/applicant-admin`
-          params = { applicantId: participantId, adminId: programAdminId }
-        } else if (participantRole === "EVALUATOR") {
+          endpoint = `${BACKEND_URL}/api/messages/conversation/applicant-evaluator`
+          params = { applicantId: participantId, evaluatorId: evaluatorId }
+        } else if (participantRole === "PROGRAM_ADMIN") {
           endpoint = `${BACKEND_URL}/api/messages/conversation/evaluator-admin`
-          params = { evaluatorId: participantId, adminId: programAdminId }
+          params = { evaluatorId: evaluatorId, adminId: participantId }
         } else {
           console.error("Unknown participantRole:", participantRole)
           setConversationMessages([])
@@ -134,15 +244,10 @@ const ProgramAdminChat = ({ programAdminId, colors }) => {
         // Merge fetched messages with existing ones, removing duplicates
         const fetchedMessages = response.data || [];
         setConversationMessages(prev => {
-          // Create a map of existing messages by messageId
           const existingMap = new Map(prev.map(msg => [msg.messageId, msg]));
-          
-          // Add or update messages from fetched data
           fetchedMessages.forEach(msg => {
             existingMap.set(msg.messageId, msg);
           });
-          
-          // Convert back to array and sort by timestamp
           return Array.from(existingMap.values()).sort((a, b) => 
             new Date(a.sentAt) - new Date(b.sentAt)
           );
@@ -151,8 +256,8 @@ const ProgramAdminChat = ({ programAdminId, colors }) => {
         // Mark messages as seen
         try {
           await axios.post(`${BACKEND_URL}/api/messages/mark-seen`, {
-            userId: Number(programAdminId),
-            userType: "PROGRAM_ADMIN",
+            userId: Number(evaluatorId),
+            userType: "EVALUATOR",
             participantId: Number(participantId),
             participantType: participantRole,
           })
@@ -166,12 +271,12 @@ const ProgramAdminChat = ({ programAdminId, colors }) => {
         setConversationLoading(false)
       }
     },
-    [programAdminId],
+    [evaluatorId],
   )
 
   // Send message
   const sendMessage = useCallback(async () => {
-    if (!newMessage.trim() || !selectedConversation || !programAdminId) return
+    if (!newMessage.trim() || !selectedConversation || !evaluatorId) return
 
     const participantIdNum = Number(selectedConversation.participantId)
     if (Number.isNaN(participantIdNum)) {
@@ -182,29 +287,29 @@ const ProgramAdminChat = ({ programAdminId, colors }) => {
     setSendingMessage(true)
     try {
       const payload = {
-        senderType: "PROGRAM_ADMIN",
-        senderAdmin: { adminId: Number(programAdminId) },
+        senderType: "EVALUATOR",
+        senderEvaluator: { evaluatorId: Number(evaluatorId) },
         content: newMessage.trim(),
       }
 
       if (selectedConversation.participantRole === "APPLICANT") {
         payload.recipientType = "APPLICANT"
         payload.recipientApplicant = { applicantId: participantIdNum }
-      } else if (selectedConversation.participantRole === "EVALUATOR") {
-        payload.recipientType = "EVALUATOR"
-        payload.recipientEvaluator = { evaluatorId: participantIdNum }
+      } else if (selectedConversation.participantRole === "PROGRAM_ADMIN") {
+        payload.recipientType = "PROGRAM_ADMIN"
+        payload.recipientAdmin = { adminId: participantIdNum }
       }
 
       await axios.post(`${BACKEND_URL}/api/messages/send`, payload)
       setNewMessage("")
       await fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
-      await fetchChatList() // Refresh chat list to update order
+      await fetchChatList()
     } catch (error) {
       console.error("Failed to send message:", error)
     } finally {
       setSendingMessage(false)
     }
-  }, [newMessage, selectedConversation, programAdminId, fetchConversation, fetchChatList])
+  }, [newMessage, selectedConversation, evaluatorId, fetchConversation, fetchChatList])
 
   // Open conversation
   const openConversation = useCallback((chat) => {
@@ -220,7 +325,7 @@ const ProgramAdminChat = ({ programAdminId, colors }) => {
   const closeConversation = useCallback(() => {
     setSelectedConversation(null)
     setConversationMessages([])
-    fetchChatList() // Refresh chat list when closing conversation to show latest messages
+    fetchChatList()
   }, [fetchChatList])
 
   // Fetch chat list when inbox opens
@@ -276,15 +381,15 @@ const ProgramAdminChat = ({ programAdminId, colors }) => {
         messagesEndRef={messagesEndRef}
         formatMessageTime={formatMessageTime}
         colors={c}
-        currentUserType="PROGRAM_ADMIN"
+        currentUserType="EVALUATOR"
       />
     </>
   )
 }
 
-ProgramAdminChat.propTypes = {
-  programAdminId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+EvaluatorChat.propTypes = {
+  evaluatorId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   colors: PropTypes.object,
 }
 
-export default ProgramAdminChat
+export default EvaluatorChat

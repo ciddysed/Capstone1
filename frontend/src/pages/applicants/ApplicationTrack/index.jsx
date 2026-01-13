@@ -48,6 +48,7 @@ import useSubjectNotifications from "../../../hooks/useSubjectNotifications"
 import ApplicationStatusPoller from "../../../components/ApplicationStatusPoller"
 import CoursePreferencesPoller from "../../../components/CoursePreferencesPoller"
 import ChatDrawer from "./components/ChatDrawer"
+import { useWebSocket } from "../../../hooks/useWebSocket"
 
 import { APPLICATION_STATUS, DOCUMENT_TYPES, PRIORITY_ORDER } from "./utils"
 
@@ -557,6 +558,72 @@ const ApplicationTracking = () => {
     [api],
   )
 
+  // WebSocket handlers (defined after fetchChatList)
+  const handleMessageReceived = useCallback((message) => {
+    console.log('New message received via WebSocket:', message);
+    
+    // Check if the message is for the currently open conversation
+    if (selectedConversation) {
+      // Message is for current conversation if:
+      // 1. It's FROM the other participant TO the current user
+      // 2. It's FROM the current user TO the other participant (echo)
+      const isFromParticipant = 
+        (message.senderType === selectedConversation.participantRole && 
+         ((message.senderApplicant?.applicantId === selectedConversation.participantId) ||
+          (message.senderAdmin?.adminId === selectedConversation.participantId) ||
+          (message.senderEvaluator?.evaluatorId === selectedConversation.participantId)));
+      
+      const isToParticipant = 
+        (message.senderType === 'APPLICANT' && 
+         selectedConversation.participantRole === 'PROGRAM_ADMIN' &&
+         message.recipientAdmin?.adminId === selectedConversation.participantId) ||
+        (message.senderType === 'APPLICANT' && 
+         selectedConversation.participantRole === 'EVALUATOR' &&
+         message.recipientEvaluator?.evaluatorId === selectedConversation.participantId);
+      
+      const isForCurrentConversation = isFromParticipant || isToParticipant;
+      
+      if (isForCurrentConversation) {
+        // Add the new message ONLY if it doesn't already exist (prevent duplicates)
+        setConversationMessages(prev => {
+          // Use Map to ensure unique messageIds
+          const messageMap = new Map(prev.map(msg => [msg.messageId, msg]));
+          
+          if (messageMap.has(message.messageId)) {
+            console.log('Message already exists, skipping duplicate:', message.messageId);
+            return prev; // Return exact same array reference to prevent re-render
+          }
+          
+          messageMap.set(message.messageId, message);
+          return Array.from(messageMap.values()).sort((a, b) => 
+            new Date(a.sentAt) - new Date(b.sentAt)
+          );
+        });
+      }
+    }
+    
+    // Refresh chat list to show new message preview
+    if (applicantId) {
+      fetchChatList(applicantId);
+    }
+  }, [selectedConversation, applicantId, fetchChatList]);
+
+  const handleStatusUpdate = useCallback((statusUpdate) => {
+    console.log('Message status update received:', statusUpdate);
+    
+    // Update the message status in conversation
+    setConversationMessages(prev => 
+      prev.map(msg => 
+        msg.messageId === statusUpdate.messageId 
+          ? { ...msg, status: statusUpdate.status, seenAt: statusUpdate.seenAt }
+          : msg
+      )
+    );
+  }, []);
+
+  // Initialize WebSocket connection
+  useWebSocket(applicantId, 'APPLICANT', handleMessageReceived, handleStatusUpdate);
+
   const fetchConversation = useCallback(
     async (participantId, participantRole) => {
       console.log("fetchConversation called with:", { applicantId, participantId, participantRole })
@@ -582,7 +649,35 @@ const ApplicationTracking = () => {
         console.log("Fetching conversation from:", endpoint)
         const response = await api.get(endpoint)
         console.log("Conversation response:", response.data)
-        setConversationMessages(response.data || [])
+        
+        // Merge fetched messages with existing ones, removing duplicates
+        const fetchedMessages = response.data || [];
+        setConversationMessages(prev => {
+          // Create a map of existing messages by messageId
+          const existingMap = new Map(prev.map(msg => [msg.messageId, msg]));
+          
+          // Add or update messages from fetched data
+          fetchedMessages.forEach(msg => {
+            existingMap.set(msg.messageId, msg);
+          });
+          
+          // Convert back to array and sort by timestamp
+          return Array.from(existingMap.values()).sort((a, b) => 
+            new Date(a.sentAt) - new Date(b.sentAt)
+          );
+        });
+        
+        // Mark messages as seen
+        try {
+          await api.post(`${BACKEND_URL}/api/messages/mark-seen`, {
+            userId: Number.parseInt(applicantId),
+            userType: "APPLICANT",
+            participantId: participantId,
+            participantType: participantRole,
+          })
+        } catch (error) {
+          console.error("Error marking messages as seen:", error)
+        }
       } catch (error) {
         console.error("Error fetching conversation:", error)
         setConversationMessages([])
@@ -619,13 +714,15 @@ const ApplicationTracking = () => {
       setNewMessage("")
       // Refresh conversation after sending
       await fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
+      // Refresh chat list to update latest message preview
+      await fetchChatList(applicantId)
     } catch (error) {
       console.error("Error sending message:", error)
       handleError("Failed to send message")
     } finally {
       setSendingMessage(false)
     }
-  }, [api, applicantId, selectedConversation, newMessage, fetchConversation, handleError])
+  }, [api, applicantId, selectedConversation, newMessage, fetchConversation, fetchChatList, handleError])
 
   const openConversation = useCallback(
     async (chat) => {
@@ -1043,7 +1140,11 @@ const ApplicationTracking = () => {
     setSelectedConversation(null)
     setConversationMessages([])
     setNewMessage("")
-  }, [])
+    // Refresh chat list when closing conversation to update latest message
+    if (applicantId) {
+      fetchChatList(applicantId)
+    }
+  }, [applicantId, fetchChatList])
 
   const handleInboxOpen = useCallback(() => {
     console.log("Opening inbox, applicantId:", applicantId)

@@ -47,6 +47,8 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import { useNavigate, useLocation } from "react-router-dom";
 import ListLayout from "../../../templates/ListLayout";
 import { styled } from "@mui/material/styles";
+import ChatConversationView from './ChatConversationView';
+import useEvaluatorChat from './useEvaluatorChat';
 
 // Custom maroon and gold color palette (matching ProgramAdmin)
 const maroon = {
@@ -169,6 +171,17 @@ const ViewApplicantPage = () => {
   const evaluationId = getPersistedState('evaluationId');
   const specificCourseId = getPersistedState('courseId');
   const evaluatorId = localStorage.getItem("evaluatorId");
+
+  // Chat state - use the hook which handles everything
+  const { 
+    messages, 
+    chatLoading, 
+    newMessage, 
+    setNewMessage, 
+    sendingMessage, 
+    handleSendMessage, 
+    messagesEndRef
+  } = useEvaluatorChat(evaluatorId, applicantId);
 
   // Redirect if no applicantId
   useEffect(() => {
@@ -1110,6 +1123,24 @@ const ViewApplicantPage = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Chat Section */}
+        <Box mt={4}>
+          <Typography variant="h6" color="primary.main" gutterBottom>
+            Chat with Applicant
+          </Typography>
+          <ChatConversationView
+            conversationMessages={messages}
+            conversationLoading={chatLoading}
+            newMessage={newMessage}
+            onMessageChange={e => setNewMessage(e.target.value)}
+            onSendMessage={handleSendMessage}
+            sendingMessage={sendingMessage}
+            messagesEndRef={messagesEndRef}
+            currentUserType="EVALUATOR"
+            colors={{ primary: maroon, secondary: gold, neutral: { 50: '#f9f9f9', 200: '#eee', 300: '#ddd', 400: '#aaa', 500: '#888', 800: '#222' } }}
+          />
+        </Box>
       </ListLayout>
     </ThemeProvider>
   );
