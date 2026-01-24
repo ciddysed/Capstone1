@@ -29,7 +29,6 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import DownloadIcon from '@mui/icons-material/Download';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 // --- Design Tokens & Transitions ---
 
@@ -231,11 +230,6 @@ const InfoRow = ({ icon, label, value }) => (
 );
 
 // --- Constants & Helpers ---
-
-const DOCUMENT_TYPE_LABELS = [
-  "INFORMATIVE_COPY_OF_TOR",
-  "CERTIFICATE_OF_EMPLOYMENT",
-];
 
 const formatDocumentType = (type) => {
   const formats = {
