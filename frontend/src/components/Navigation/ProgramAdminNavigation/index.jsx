@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -35,6 +35,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import ChatIcon from "@mui/icons-material/Chat";
 import PersonIcon from '@mui/icons-material/Person';
 import logo from "../../../assets/logo.png";
 import backgroundImage from "../../../assets/login-bg.png";
@@ -143,6 +144,7 @@ const ProgramAdminNavigation = ({ children }) => {
   const [activeButton, setActiveButton] = useState("Applications");
   const navItems = ["Applications", "Accepted Students", "Logout"];
   const navigate = useNavigate();
+  const chatRef = useRef(null);
 
   // Application management state
   const [applications, setApplications] = useState([]);
@@ -241,6 +243,16 @@ const ProgramAdminNavigation = ({ children }) => {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  // Handle initiate chat with applicant
+  const handleInitiateChat = (application) => {
+    if (chatRef.current && application.applicant?.applicantId) {
+      chatRef.current.initiateChat(
+        application.applicant.applicantId,
+        application.applicantName
+      );
+    }
   };
 
   useEffect(() => {
@@ -363,6 +375,21 @@ const ProgramAdminNavigation = ({ children }) => {
                                   }}
                                 >
                                   <VisibilityIcon />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Chat with Applicant">
+                                <IconButton 
+                                  color="secondary"
+                                  onClick={() => handleInitiateChat(application)}
+                                  sx={{ 
+                                    ml: 1,
+                                    backgroundColor: alpha(gold.main, 0.1),
+                                    '&:hover': {
+                                      backgroundColor: alpha(gold.main, 0.2),
+                                    }
+                                  }}
+                                >
+                                  <ChatIcon />
                                 </IconButton>
                               </Tooltip>
                             </StyledTableCell>
@@ -534,7 +561,7 @@ const ProgramAdminNavigation = ({ children }) => {
                 
                 {/* Program Admin Notification Center */}
                 <ProgramAdminNotificationCenter programAdminId={programAdminId} />
-                <ProgramAdminChat programAdminId={programAdminId} colors={{ primary: maroon, secondary: gold, accent: { info: "#0288d1" }, neutral: { 200: "#e8e4df", 100: "#f5f3f0" } }} />
+                <ProgramAdminChat ref={chatRef} programAdminId={programAdminId} colors={{ primary: maroon, secondary: gold, accent: { info: "#0288d1" }, neutral: { 200: "#e8e4df", 100: "#f5f3f0" } }} />
                 
               </Box>
             </Toolbar>

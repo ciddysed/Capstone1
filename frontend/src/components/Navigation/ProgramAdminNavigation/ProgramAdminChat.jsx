@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import PropTypes from "prop-types";
 import { IconButton, Tooltip, Badge } from "@mui/material";
 import MailIcon from "@mui/icons-material/Mail";
@@ -14,7 +14,7 @@ const defaultColors = {
   neutral: { 50: "#fafafa", 100: "#f5f3f0", 200: "#e8e4df", 300: "#d0d0d0", 400: "#999", 500: "#888", 600: "#666", 800: "#222" },
 }
 
-const ProgramAdminChat = ({ programAdminId, colors }) => {
+const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
   const [inboxOpen, setInboxOpen] = useState(false)
   const [chatList, setChatList] = useState([])
   const [selectedConversation, setSelectedConversation] = useState(null)
@@ -250,6 +250,18 @@ const ProgramAdminChat = ({ programAdminId, colors }) => {
     return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   }
 
+  // Expose methods to parent component via ref
+  useImperativeHandle(ref, () => ({
+    initiateChat: (applicantId, applicantName) => {
+      setInboxOpen(true)
+      setSelectedConversation({
+        participantId: applicantId,
+        participantName: applicantName,
+        participantRole: 'APPLICANT',
+      })
+    }
+  }), [])
+
   return (
     <>
       <Tooltip title="Messages">
@@ -280,7 +292,9 @@ const ProgramAdminChat = ({ programAdminId, colors }) => {
       />
     </>
   )
-}
+})
+
+ProgramAdminChat.displayName = 'ProgramAdminChat'
 
 ProgramAdminChat.propTypes = {
   programAdminId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
