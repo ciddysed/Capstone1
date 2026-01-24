@@ -741,11 +741,11 @@ export default function ApplicationForm() {
         ) : (
           <>
             {/* Main Content */}
-            <Box sx={{ maxWidth: "1700px", mx: "auto", px: 3, py: 4 }}>
-              <Grid container spacing={3}>
+            <Box sx={{ maxWidth: "1700px", mx: "auto", px: 3, py: 3 }}>
+              <Grid container spacing={3} alignItems="stretch">
                 {/* Left Column - Personal Info & Course Preferences */}
-                <Grid item xs={12} lg={6}>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <Grid item xs={12} lg={6} size={6} sx={{display: "flex"}}>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 3, flex: 1}}>
                     {/* Personal Information */}
                     <Card elevation={2} sx={{
                       border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
@@ -763,7 +763,8 @@ export default function ApplicationForm() {
                           </Box>
                         }
                         sx={{
-                          pb: 2,
+                          py: 1,
+                          px: 1,
                           background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
                         }}
                       />
@@ -806,11 +807,14 @@ export default function ApplicationForm() {
                     {/* Course Preferences */}
                     <Card elevation={2} sx={{
                       border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
+                      maxHeight: files.length === 0 ? 176 : 317,
+                      overflowY: 'auto',
                       '&:hover': {
                         boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
                         transform: 'translateY(-2px)'
                       },
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.3s ease',
+
                     }}>
                       <CardHeader
                         title={
@@ -821,7 +825,8 @@ export default function ApplicationForm() {
                         }
                         subheader="Select up to 3 courses in order of preferences"
                         sx={{
-                          pb: 2,
+                          py: 1,
+                          px: 1,
                           background: `linear-gradient(135deg, ${alpha(maroonTheme.secondary.light, 0.08)} 0%, ${alpha(maroonTheme.primary.main, 0.05)} 100%)`
                         }}
                       />
@@ -911,14 +916,14 @@ export default function ApplicationForm() {
                 </Grid>
 
                 {/* Right Section - Documents in Horizontal Row */}
-                <Grid item xs={12} lg={6} style={{ width: "60%" }}>
+                <Grid item xs={12} lg={6} size={6} >
                   <Card
                     elevation={2}
                     sx={{
                       border: `2px solid ${alpha(maroonTheme.secondary.light, 0.2)}`,
                       transition: "all 0.3s ease",
                       width: "100%",
-                      maxWidth: 750,
+                      maxHeight: 520,
                       minWidth: 520,
                       '&:hover': {
                         boxShadow: `0 8px 32px ${alpha(maroonTheme.primary.main, 0.12)}`,
@@ -929,17 +934,14 @@ export default function ApplicationForm() {
                     {/* HEADER */}
                     <CardHeader
                       title={
-                        <Typography
-                          variant="subtitle1"
-                          sx={{
-                            fontWeight: 600,
-                            color: maroonTheme.primary.main,
-                          }}
-                        >
-                          Documents & Requirements
-                        </Typography>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <FileTextIcon sx={{ color: maroonTheme.primary.main, fontSize: 20 }} />
+                            <Typography variant="h6" sx={{ color: maroonTheme.primary.main, fontWeight: 600 }}>Documents & Requirements</Typography>
+                          </Box>
                       }
                       sx={{
+                        px: 1,
+                        py: 1,
                         background: `linear-gradient(135deg,
                         ${alpha(maroonTheme.secondary.light, 0.08)} 0%,
                         ${alpha(maroonTheme.primary.main, 0.05)} 100%)`,
@@ -1136,7 +1138,6 @@ export default function ApplicationForm() {
                         <Alert
                           severity="warning"
                           sx={{
-                            maxWidth: 400,
                             mx: "auto",
                             backgroundColor: alpha('#FFD700', 0.1),
                             color: maroonTheme.primary.dark,
