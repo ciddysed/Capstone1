@@ -5,7 +5,6 @@ import MailIcon from "@mui/icons-material/Mail";
 import ChatDrawer from "../../../pages/applicants/ApplicationTrack/components/ChatDrawer";
 import axios from "axios";
 import { BACKEND_URL } from "../../../config";
-import { useWebSocket } from "../../../hooks/useWebSocket";
 
 const defaultColors = {
   primary: { main: "#6A0000", dark: "#450000" },
@@ -155,67 +154,6 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
       setInboxLoading(false)
     }
   }, [evaluatorId])
-
-  // WebSocket handlers
-  const handleMessageReceived = useCallback((message) => {
-    console.log('Evaluator: New message received via WebSocket:', message);
-    
-    // Check if the message is for the currently open conversation
-    if (selectedConversation) {
-      // Message is for current conversation if:
-      // 1. It's FROM the other participant (applicant/admin) TO the evaluator
-      // 2. It's FROM the evaluator TO the other participant (echo)
-      const isFromParticipant = 
-        (message.senderType === selectedConversation.participantRole && 
-         ((message.senderApplicant?.applicantId === selectedConversation.participantId) ||
-          (message.senderAdmin?.adminId === selectedConversation.participantId)));
-      
-      const isToParticipant = 
-        (message.senderType === 'EVALUATOR' && 
-         selectedConversation.participantRole === 'APPLICANT' &&
-         message.recipientApplicant?.applicantId === selectedConversation.participantId) ||
-        (message.senderType === 'EVALUATOR' && 
-         selectedConversation.participantRole === 'PROGRAM_ADMIN' &&
-         message.recipientAdmin?.adminId === selectedConversation.participantId);
-      
-      const isForCurrentConversation = isFromParticipant || isToParticipant;
-      
-      if (isForCurrentConversation) {
-        // Add the new message ONLY if it doesn't already exist (prevent duplicates)
-        setConversationMessages(prev => {
-          const messageMap = new Map(prev.map(msg => [msg.messageId, msg]));
-          
-          if (messageMap.has(message.messageId)) {
-            console.log('Evaluator: Message already exists, skipping duplicate:', message.messageId);
-            return prev;
-          }
-          
-          messageMap.set(message.messageId, message);
-          return Array.from(messageMap.values()).sort((a, b) => 
-            new Date(a.sentAt) - new Date(b.sentAt)
-          );
-        });
-      }
-    }
-    
-    // Refresh chat list to show new message preview
-    fetchChatList();
-  }, [selectedConversation, fetchChatList]);
-
-  const handleStatusUpdate = useCallback((statusUpdate) => {
-    console.log('Evaluator: Message status update received:', statusUpdate);
-    
-    setConversationMessages(prev => 
-      prev.map(msg => 
-        msg.messageId === statusUpdate.messageId 
-          ? { ...msg, status: statusUpdate.status, seenAt: statusUpdate.seenAt }
-          : msg
-      )
-    );
-  }, []);
-
-  // Initialize WebSocket connection
-  useWebSocket(evaluatorId, 'EVALUATOR', handleMessageReceived, handleStatusUpdate);
 
   // Fetch conversation
   const fetchConversation = useCallback(
@@ -382,6 +320,7 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
         formatMessageTime={formatMessageTime}
         colors={c}
         currentUserType="EVALUATOR"
+        onRefreshChatList={fetchChatList}
       />
     </>
   )

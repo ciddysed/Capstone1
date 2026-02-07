@@ -15,6 +15,7 @@ import {
   Mail as MailIcon,
   SupervisorAccount as EvaluatorIcon,
   AdminPanelSettings as AdminIcon,
+  Refresh as RefreshIcon,
 } from "@mui/icons-material"
 import ConversationView from "./ConversationView"
 import ChatListItem from "./ChatListItem"
@@ -37,6 +38,7 @@ const ChatDrawer = ({
   formatMessageTime,
   colors,
   currentUserType = "APPLICANT", // Default to APPLICANT for backward compatibility
+  onRefreshChatList, // New prop for manual refresh
 }) => {
   const getRoleIcon = (role) => {
     switch (role) {
@@ -138,6 +140,20 @@ const ChatDrawer = ({
                 Messages
               </Typography>
               <Box sx={{ flex: 1 }} />
+              {onRefreshChatList && (
+                <IconButton
+                  size="small"
+                  onClick={onRefreshChatList}
+                  disabled={loading}
+                  sx={{ 
+                    color: colors.neutral[600],
+                    '&:hover': { color: colors.primary.main }
+                  }}
+                  title="Refresh messages"
+                >
+                  <RefreshIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+              )}
             </>
           )}
           <IconButton

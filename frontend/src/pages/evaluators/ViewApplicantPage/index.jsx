@@ -180,7 +180,8 @@ const ViewApplicantPage = () => {
     setNewMessage, 
     sendingMessage, 
     handleSendMessage, 
-    messagesEndRef
+    messagesEndRef,
+    fetchConversation, // Add manual refresh function
   } = useEvaluatorChat(evaluatorId, applicantId);
 
   // Redirect if no applicantId
@@ -1139,6 +1140,7 @@ const ViewApplicantPage = () => {
             messagesEndRef={messagesEndRef}
             currentUserType="EVALUATOR"
             colors={{ primary: maroon, secondary: gold, neutral: { 50: '#f9f9f9', 200: '#eee', 300: '#ddd', 400: '#aaa', 500: '#888', 800: '#222' } }}
+            onRefresh={fetchConversation}
           />
         </Box>
       </ListLayout>

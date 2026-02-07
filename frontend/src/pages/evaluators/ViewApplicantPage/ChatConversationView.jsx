@@ -10,6 +10,7 @@ import {
   Send as SendIcon,
   Done as DoneIcon,
   DoneAll as DoneAllIcon,
+  Refresh as RefreshIcon,
 } from "@mui/icons-material"
 
 const ChatConversationView = ({
@@ -23,6 +24,7 @@ const ChatConversationView = ({
   formatMessageTime,
   colors,
   currentUserType = "EVALUATOR",
+  onRefresh, // New prop for manual refresh
 }) => {
   // Deduplicate messages at render time to prevent React key warnings
   const uniqueMessages = useMemo(() => {
@@ -74,6 +76,30 @@ const ChatConversationView = ({
       borderRadius: 2,
       overflow: 'hidden',
     }}>
+      {/* Header with refresh button */}
+      {onRefresh && (
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          p: 1,
+          borderBottom: `1px solid ${colors.neutral?.[200] || '#eee'}`,
+          bgcolor: 'white',
+        }}>
+          <IconButton
+            size="small"
+            onClick={onRefresh}
+            disabled={conversationLoading}
+            sx={{ 
+              color: colors.neutral?.[600] || '#666',
+              '&:hover': { color: colors.primary?.main || '#6A0000' }
+            }}
+            title="Refresh messages"
+          >
+            <RefreshIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </Box>
+      )}
+      
       {/* Conversation Messages */}
       <Box
         sx={{

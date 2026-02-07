@@ -5,7 +5,6 @@ import MailIcon from "@mui/icons-material/Mail";
 import ChatDrawer from "../../../pages/applicants/ApplicationTrack/components/ChatDrawer";
 import axios from "axios";
 import { BACKEND_URL } from "../../../config";
-import { useWebSocket } from "../../../hooks/useWebSocket";
 
 const defaultColors = {
   primary: { main: "#6A0000" },
@@ -43,69 +42,6 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
       setInboxLoading(false)
     }
   }, [programAdminId])
-
-  // WebSocket handlers (defined after fetchChatList)
-  const handleMessageReceived = useCallback((message) => {
-    console.log('Program Admin: New message received via WebSocket:', message);
-    
-    // Check if the message is for the currently open conversation
-    if (selectedConversation) {
-      // Message is for current conversation if:
-      // 1. It's FROM the other participant (applicant/evaluator) TO the admin
-      // 2. It's FROM the admin TO the other participant (echo)
-      const isFromParticipant = 
-        (message.senderType === selectedConversation.participantRole && 
-         ((message.senderApplicant?.applicantId === selectedConversation.participantId) ||
-          (message.senderEvaluator?.evaluatorId === selectedConversation.participantId)));
-      
-      const isToParticipant = 
-        (message.senderType === 'PROGRAM_ADMIN' && 
-         selectedConversation.participantRole === 'APPLICANT' &&
-         message.recipientApplicant?.applicantId === selectedConversation.participantId) ||
-        (message.senderType === 'PROGRAM_ADMIN' && 
-         selectedConversation.participantRole === 'EVALUATOR' &&
-         message.recipientEvaluator?.evaluatorId === selectedConversation.participantId);
-      
-      const isForCurrentConversation = isFromParticipant || isToParticipant;
-      
-      if (isForCurrentConversation) {
-        // Add the new message ONLY if it doesn't already exist (prevent duplicates)
-        setConversationMessages(prev => {
-          // Use Map to ensure unique messageIds
-          const messageMap = new Map(prev.map(msg => [msg.messageId, msg]));
-          
-          if (messageMap.has(message.messageId)) {
-            console.log('Program Admin: Message already exists, skipping duplicate:', message.messageId);
-            return prev; // Return exact same array reference to prevent re-render
-          }
-          
-          messageMap.set(message.messageId, message);
-          return Array.from(messageMap.values()).sort((a, b) => 
-            new Date(a.sentAt) - new Date(b.sentAt)
-          );
-        });
-      }
-    }
-    
-    // Refresh chat list to show new message preview
-    fetchChatList();
-  }, [selectedConversation, fetchChatList]);
-
-  const handleStatusUpdate = useCallback((statusUpdate) => {
-    console.log('Program Admin: Message status update received:', statusUpdate);
-    
-    // Update the message status in conversation
-    setConversationMessages(prev => 
-      prev.map(msg => 
-        msg.messageId === statusUpdate.messageId 
-          ? { ...msg, status: statusUpdate.status, seenAt: statusUpdate.seenAt }
-          : msg
-      )
-    );
-  }, []);
-
-  // Initialize WebSocket connection
-  useWebSocket(programAdminId, 'PROGRAM_ADMIN', handleMessageReceived, handleStatusUpdate);
 
   // Fetch conversation
   const fetchConversation = useCallback(
@@ -289,6 +225,7 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
         formatMessageTime={formatMessageTime}
         colors={c}
         currentUserType="PROGRAM_ADMIN"
+        onRefreshChatList={fetchChatList}
       />
     </>
   )

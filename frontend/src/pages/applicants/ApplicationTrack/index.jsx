@@ -47,8 +47,9 @@ import DashboardLink from "../../../components/DashboardLink"
 import useSubjectNotifications from "../../../hooks/useSubjectNotifications"
 import ApplicationStatusPoller from "../../../components/ApplicationStatusPoller"
 import CoursePreferencesPoller from "../../../components/CoursePreferencesPoller"
+import EvaluationStatusPoller from "../../../components/EvaluationStatusPoller"
 import ChatDrawer from "./components/ChatDrawer"
-import { useWebSocket } from "../../../hooks/useWebSocket"
+
 
 import { APPLICATION_STATUS, DOCUMENT_TYPES, PRIORITY_ORDER } from "./utils"
 
@@ -557,72 +558,6 @@ const ApplicationTracking = () => {
     },
     [api],
   )
-
-  // WebSocket handlers (defined after fetchChatList)
-  const handleMessageReceived = useCallback((message) => {
-    console.log('New message received via WebSocket:', message);
-    
-    // Check if the message is for the currently open conversation
-    if (selectedConversation) {
-      // Message is for current conversation if:
-      // 1. It's FROM the other participant TO the current user
-      // 2. It's FROM the current user TO the other participant (echo)
-      const isFromParticipant = 
-        (message.senderType === selectedConversation.participantRole && 
-         ((message.senderApplicant?.applicantId === selectedConversation.participantId) ||
-          (message.senderAdmin?.adminId === selectedConversation.participantId) ||
-          (message.senderEvaluator?.evaluatorId === selectedConversation.participantId)));
-      
-      const isToParticipant = 
-        (message.senderType === 'APPLICANT' && 
-         selectedConversation.participantRole === 'PROGRAM_ADMIN' &&
-         message.recipientAdmin?.adminId === selectedConversation.participantId) ||
-        (message.senderType === 'APPLICANT' && 
-         selectedConversation.participantRole === 'EVALUATOR' &&
-         message.recipientEvaluator?.evaluatorId === selectedConversation.participantId);
-      
-      const isForCurrentConversation = isFromParticipant || isToParticipant;
-      
-      if (isForCurrentConversation) {
-        // Add the new message ONLY if it doesn't already exist (prevent duplicates)
-        setConversationMessages(prev => {
-          // Use Map to ensure unique messageIds
-          const messageMap = new Map(prev.map(msg => [msg.messageId, msg]));
-          
-          if (messageMap.has(message.messageId)) {
-            console.log('Message already exists, skipping duplicate:', message.messageId);
-            return prev; // Return exact same array reference to prevent re-render
-          }
-          
-          messageMap.set(message.messageId, message);
-          return Array.from(messageMap.values()).sort((a, b) => 
-            new Date(a.sentAt) - new Date(b.sentAt)
-          );
-        });
-      }
-    }
-    
-    // Refresh chat list to show new message preview
-    if (applicantId) {
-      fetchChatList(applicantId);
-    }
-  }, [selectedConversation, applicantId, fetchChatList]);
-
-  const handleStatusUpdate = useCallback((statusUpdate) => {
-    console.log('Message status update received:', statusUpdate);
-    
-    // Update the message status in conversation
-    setConversationMessages(prev => 
-      prev.map(msg => 
-        msg.messageId === statusUpdate.messageId 
-          ? { ...msg, status: statusUpdate.status, seenAt: statusUpdate.seenAt }
-          : msg
-      )
-    );
-  }, []);
-
-  // Initialize WebSocket connection
-  useWebSocket(applicantId, 'APPLICANT', handleMessageReceived, handleStatusUpdate);
 
   const fetchConversation = useCallback(
     async (participantId, participantRole) => {
@@ -1237,7 +1172,7 @@ const ApplicationTracking = () => {
             {/* User Actions */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <DashboardLink sx={{ color: "white", opacity: 0.9, "&:hover": { opacity: 1 } }} />
-              <NotificationCenter maroon={colors.primary} gold={colors.secondary} />
+              <NotificationCenter userId={applicantId} userType="applicant" maroon={colors.primary} gold={colors.secondary} />
 
               {/* Inbox Button */}
               <Tooltip title="Messages">
@@ -1414,6 +1349,7 @@ const ApplicationTracking = () => {
           messagesEndRef={messagesEndRef}
           formatMessageTime={formatMessageTime}
           colors={colors}
+          onRefreshChatList={() => fetchChatList(applicantId)}
         />
 
         {/* Main Content Grid */}
@@ -1620,6 +1556,10 @@ const ApplicationTracking = () => {
           onPreferencesChange={(newPrefs) => {
             setCoursePreferences(newPrefs)
           }}
+        />
+        <EvaluationStatusPoller
+          applicantId={applicantId}
+          fetchEvaluations={fetchCoursePreferences}
         />
 
         {snackbar}
