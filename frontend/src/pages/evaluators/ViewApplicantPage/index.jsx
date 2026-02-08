@@ -47,8 +47,9 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import { useNavigate, useLocation } from "react-router-dom";
 import ListLayout from "../../../templates/ListLayout";
 import { styled } from "@mui/material/styles";
-import ChatConversationView from './ChatConversationView';
-import useEvaluatorChat from './useEvaluatorChat';
+import { addNotification } from '../../../utils/notificationManager';
+import axios from 'axios';
+import { BACKEND_URL } from '../../../config';
 
 // Custom maroon and gold color palette (matching ProgramAdmin)
 const maroon = {
@@ -171,18 +172,6 @@ const ViewApplicantPage = () => {
   const evaluationId = getPersistedState('evaluationId');
   const specificCourseId = getPersistedState('courseId');
   const evaluatorId = localStorage.getItem("evaluatorId");
-
-  // Chat state - use the hook which handles everything
-  const { 
-    messages, 
-    chatLoading, 
-    newMessage, 
-    setNewMessage, 
-    sendingMessage, 
-    handleSendMessage, 
-    messagesEndRef,
-    fetchConversation, // Add manual refresh function
-  } = useEvaluatorChat(evaluatorId, applicantId);
 
   // Redirect if no applicantId
   useEffect(() => {
@@ -529,6 +518,76 @@ const ViewApplicantPage = () => {
           comments: remarks, // pass remarks as comments
         });
         // ---------------------------------------------------
+
+        // Notify program admin(s) about evaluation update
+        try {
+          const applicantName = applicant?.firstName && applicant?.lastName 
+            ? `${applicant.firstName} ${applicant.lastName}` 
+            : 'Applicant';
+          const courseName = selectedCourse?.courseName || 'Course';
+          const action = (existingEvaluation || currentEvaluation) ? 'updated' : 'submitted';
+          const notificationType = evaluationStatus === 'APPROVED' ? 'success' : 
+                                  evaluationStatus === 'REJECTED' ? 'warning' : 'info';
+          
+          // Fetch all program admins from API
+          console.log('[Notification Debug] Fetching program admins from:', `${BACKEND_URL}/api/program-admins`);
+          const adminResponse = await axios.get(`${BACKEND_URL}/api/program-admins`);
+          const admins = adminResponse.data || [];
+          console.log('[Notification Debug] Program admins received:', admins);
+          
+          // Handle both array response and single admin response
+          const adminList = Array.isArray(admins) ? admins : (admins.adminId ? [admins] : []);
+          console.log('[Notification Debug] Admin list processed:', adminList);
+          
+          // Send notification to all program admins
+          for (const admin of adminList) {
+            const adminId = admin.adminId || admin.id;
+            console.log('[Notification Debug] Processing admin:', { adminId, admin });
+            if (adminId) {
+              console.log('[Notification Debug] Sending notification to program-admin', String(adminId));
+              addNotification(
+                'program-admin',
+                String(adminId),
+                'Evaluation Update',
+                `Evaluator has ${action} an evaluation for ${applicantName} - ${courseName} (Status: ${evaluationStatus})`,
+                notificationType
+              );
+              console.log('[Notification Debug] Notification sent for admin ID:', adminId);
+            }
+          }
+          
+          // Fallback: If no admins found, send to default admin ID 1
+          if (adminList.length === 0) {
+            console.log('[Notification Debug] No admins found, using fallback ID 1');
+            addNotification(
+              'program-admin',
+              '1',
+              'Evaluation Update',
+              `Evaluator has ${action} an evaluation for ${applicantName} - ${courseName} (Status: ${evaluationStatus})`,
+              notificationType
+            );
+          }
+        } catch (notifError) {
+          console.error('[Notification Debug] Error sending notification:', notifError);
+          // Fallback: Try sending to default admin ID 1
+          try {
+            const applicantName = applicant?.firstName && applicant?.lastName 
+              ? `${applicant.firstName} ${applicant.lastName}` 
+              : 'Applicant';
+            const courseName = selectedCourse?.courseName || 'Course';
+            const action = (existingEvaluation || currentEvaluation) ? 'updated' : 'submitted';
+            console.log('[Notification Debug] Fallback: sending to admin ID 1');
+            addNotification(
+              'program-admin',
+              '1',
+              'Evaluation Update',
+              `Evaluator has ${action} an evaluation for ${applicantName} - ${courseName} (Status: ${evaluationStatus})`,
+              evaluationStatus === 'APPROVED' ? 'success' : evaluationStatus === 'REJECTED' ? 'warning' : 'info'
+            );
+          } catch (fallbackError) {
+            console.error('[Notification Debug] Fallback notification also failed:', fallbackError);
+          }
+        }
 
         setSubmissionMessage({ 
           type: "success", 
@@ -971,6 +1030,48 @@ const ViewApplicantPage = () => {
                               { method: "PUT" }
                             );
                             setEvaluationStatus(newStatus);
+                            
+                            // Notify program admin(s) about status change
+                            try {
+                              const applicantName = applicant?.firstName && applicant?.lastName 
+                                ? `${applicant.firstName} ${applicant.lastName}` 
+                                : 'Applicant';
+                              const courseName = selectedCourse?.courseName || 'Course';
+                              const notificationType = newStatus === 'APPROVED' ? 'success' : 
+                                                      newStatus === 'REJECTED' ? 'warning' : 'info';
+                              
+                              // Fetch all program admins from API
+                              const adminResponse = await axios.get(`${BACKEND_URL}/api/program-admins`);
+                              const admins = adminResponse.data || [];
+                              const adminList = Array.isArray(admins) ? admins : (admins.adminId ? [admins] : []);
+                              
+                              // Send notification to all program admins
+                              for (const admin of adminList) {
+                                const adminId = admin.adminId || admin.id;
+                                if (adminId) {
+                                  addNotification(
+                                    'program-admin',
+                                    String(adminId),
+                                    'Evaluation Status Changed',
+                                    `Evaluator has changed the evaluation status for ${applicantName} - ${courseName} to ${newStatus}`,
+                                    notificationType
+                                  );
+                                }
+                              }
+                              
+                              // Fallback if no admins found
+                              if (adminList.length === 0) {
+                                addNotification(
+                                  'program-admin',
+                                  '1',
+                                  'Evaluation Status Changed',
+                                  `Evaluator has changed the evaluation status for ${applicantName} - ${courseName} to ${newStatus}`,
+                                  notificationType
+                                );
+                              }
+                            } catch (notifError) {
+                              console.log('Could not send notification to program admin:', notifError);
+                            }
                           } catch (err) {
                             // Optionally show error to user
                             console.error("Failed to update status", err);
@@ -1124,25 +1225,6 @@ const ViewApplicantPage = () => {
             </Button>
           </DialogActions>
         </Dialog>
-
-        {/* Chat Section */}
-        <Box mt={4}>
-          <Typography variant="h6" color="primary.main" gutterBottom>
-            Chat with Applicant
-          </Typography>
-          <ChatConversationView
-            conversationMessages={messages}
-            conversationLoading={chatLoading}
-            newMessage={newMessage}
-            onMessageChange={e => setNewMessage(e.target.value)}
-            onSendMessage={handleSendMessage}
-            sendingMessage={sendingMessage}
-            messagesEndRef={messagesEndRef}
-            currentUserType="EVALUATOR"
-            colors={{ primary: maroon, secondary: gold, neutral: { 50: '#f9f9f9', 200: '#eee', 300: '#ddd', 400: '#aaa', 500: '#888', 800: '#222' } }}
-            onRefresh={fetchConversation}
-          />
-        </Box>
       </ListLayout>
     </ThemeProvider>
   );

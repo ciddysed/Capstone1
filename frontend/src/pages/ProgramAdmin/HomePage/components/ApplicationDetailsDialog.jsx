@@ -46,7 +46,7 @@ import axios from "axios";
 import { styled } from "@mui/material/styles";
 import DialogContentText from "@mui/material/DialogContentText";
 import toast from "../../../../utils/toast";
-import { notifyApplicantAcceptedWithRemarks } from "../../../../utils/notificationManager";
+import { notifyApplicantAcceptedWithRemarks, addNotification } from "../../../../utils/notificationManager";
 
 const API_URL = 'https://eteeap-foth.onrender.com/api/program-admins';
 const EVALUATIONS_API_URL = 'https://eteeap-foth.onrender.com/api/evaluations';
@@ -405,6 +405,19 @@ const ApplicationDetailsDialog = ({
       
       if (response.status === 200 || response.status === 201) {
         const forwardedCount = coursesToForward.length;
+        
+        // Notify the applicant that their courses have been forwarded for evaluation
+        if (applicantId) {
+          const applicantName = selectedApplication.applicant?.firstName || 'Student';
+          addNotification(
+            'applicant',
+            applicantId.toString(),
+            'Application Status Update',
+            `Hi ${applicantName}, your application to the ETEEAP Program has been approved by Chair. This application will now be forwarded to the department of the courses you've chosen.`,
+            'info'
+          );
+        }
+        
         toast.success(`Successfully forwarded ${forwardedCount} course preference${forwardedCount > 1 ? 's' : ''} for evaluation`);
         await onRefreshApplications();
         // Refresh evaluation statuses

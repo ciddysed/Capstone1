@@ -1,17 +1,17 @@
 {
   "files": {
     "main.css": "/static/css/main.1d7a3b0b.css",
-    "main.js": "/static/js/main.dfe832d9.js",
+    "main.js": "/static/js/main.ef472702.js",
     "static/media/login2-bg.png": "/static/media/login2-bg.adf7b97a6f3dcd281c24.png",
     "static/media/login-bg.png": "/static/media/login-bg.ce57f32187b38cb08455.png",
     "static/media/eteeaplogo-removebg-preview.png": "/static/media/eteeaplogo-removebg-preview.3b29f30572b1e565ecf9.png",
     "static/media/logo.png": "/static/media/logo.92329aacb1abe925d017.png",
     "index.html": "/index.html",
     "main.1d7a3b0b.css.map": "/static/css/main.1d7a3b0b.css.map",
-    "main.dfe832d9.js.map": "/static/js/main.dfe832d9.js.map"
+    "main.ef472702.js.map": "/static/js/main.ef472702.js.map"
   },
   "entrypoints": [
     "static/css/main.1d7a3b0b.css",
-    "static/js/main.dfe832d9.js"
+    "static/js/main.ef472702.js"
   ]
 }

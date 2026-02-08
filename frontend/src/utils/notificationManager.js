@@ -11,6 +11,8 @@ import notificationService from '../services/notificationService';
  * @returns {Object|null} The created notification or null if creation failed
  */
 export const addNotification = (userType, userId, title, message, type = 'info') => {
+  console.log('[addNotification] Called with:', { userType, userId, title, message, type });
+  
   // Create the notification locally (optimistic/fallback) with a clientTempId
   const clientTempId = `temp_${Date.now()}`;
   const local = localNotificationService.createNotification(userType, userId, {
@@ -19,47 +21,65 @@ export const addNotification = (userType, userId, title, message, type = 'info')
     type,
     clientTempId
   });
+  
+  console.log('[addNotification] Local notification created:', local);
+
+  // IMMEDIATELY dispatch event so NotificationCenter updates from localStorage
+  try {
+    console.log('[addNotification] Dispatching notifications:updated event for:', { userType, userId });
+    window.dispatchEvent(new CustomEvent('notifications:updated', {
+      detail: { userType, userId, notification: local }
+    }));
+    console.log('[addNotification] Event dispatched successfully');
+  } catch (evtErr) {
+    console.warn('Failed to dispatch notifications:updated event', evtErr);
+  }
 
   // Attempt to persist the notification to the backend in the background.
-  // Payload shape expected by backend: { applicant: { applicantId: <id> }, title, message, type }
-  try {
-    const applicantId = Number(userId);
-    const payload = {
-      applicant: { applicantId: applicantId },
-      title,
-      message,
-      // Backend expects enum values like SUCCESS, INFO, WARNING, ERROR
-      type: (type || 'info').toString().toUpperCase(),
-      // Attach temp id so we can reconcile when server responds; ignored by server if unknown
-      clientTempId
-    };
+  // Note: Backend may only support applicant notifications currently
+  if (userType === 'applicant') {
+    try {
+      const applicantId = Number(userId);
+      const payload = {
+        applicant: { applicantId: applicantId },
+        title,
+        message,
+        // Backend expects enum values like SUCCESS, INFO, WARNING, ERROR
+        type: (type || 'info').toString().toUpperCase(),
+        // Attach temp id so we can reconcile when server responds; ignored by server if unknown
+        clientTempId
+      };
 
-    // fire-and-forget, but reconcile local copy when server returns
-    notificationService.createNotification(payload)
-      .then(serverCreated => {
-        try {
-          // Replace local optimistic notification with server-provided representation
-          localNotificationService.replaceLocalNotification(clientTempId, userType, userId, serverCreated);
-          // Notify any listeners (e.g., NotificationCenter) that notifications have been updated
+      // fire-and-forget, but reconcile local copy when server returns
+      notificationService.createNotification(payload)
+        .then(serverCreated => {
           try {
-            window.dispatchEvent(new CustomEvent('notifications:updated', {
-              detail: { userType, userId, notification: serverCreated }
-            }));
-          } catch (evtErr) {
-            // Ignore dispatch errors
-            console.warn('Failed to dispatch notifications:updated event', evtErr);
+            // Replace local optimistic notification with server-provided representation
+            localNotificationService.replaceLocalNotification(clientTempId, userType, userId, serverCreated);
+            // Notify any listeners again with server version
+            try {
+              window.dispatchEvent(new CustomEvent('notifications:updated', {
+                detail: { userType, userId, notification: serverCreated }
+              }));
+            } catch (evtErr) {
+              // Ignore dispatch errors
+              console.warn('Failed to dispatch notifications:updated event', evtErr);
+            }
+          } catch (e) {
+            console.warn('Failed to reconcile server notification with local copy:', e);
           }
-        } catch (e) {
-          console.warn('Failed to reconcile server notification with local copy:', e);
-        }
-      })
-      .catch(err => {
-        // If backend create fails, keep local notification as-is. Log for diagnostics.
-        console.warn('Failed to persist notification to backend, using local storage only.', err);
-      });
-  } catch (err) {
-    // Parsing or unexpected errors should not block the UI; local notification is already created.
-    console.warn('Notification persistence background task failed to start.', err);
+        })
+        .catch(err => {
+          // If backend create fails, keep local notification as-is. Log for diagnostics.
+          console.warn('Failed to persist notification to backend, using local storage only.', err);
+        });
+    } catch (err) {
+      // Parsing or unexpected errors should not block the UI; local notification is already created.
+      console.warn('Notification persistence background task failed to start.', err);
+    }
+  } else {
+    // For non-applicant user types, only use localStorage (backend may not support these yet)
+    console.log(`Notification created for ${userType} ${userId} (localStorage only)`);
   }
 
   return local;

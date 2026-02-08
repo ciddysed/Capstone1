@@ -25,6 +25,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
 import ListLayoutWithFilters from "../../../templates/ListLayoutWithFilters";
+import EvaluatorAssignedEvaluationsPoller from "../../../components/EvaluatorAssignedEvaluationsPoller";
  
 import PendingIcon from '@mui/icons-material/Pending';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -331,10 +332,6 @@ const ApplicantsListPage = () => {
   useEffect(() => {
     fetchEvaluations();
     fetchEvaluatorDepartment();
-    
-    // Optional: set auto-refresh interval
-    const interval = setInterval(fetchEvaluations, 300000); // 5 minutes
-    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -534,6 +531,11 @@ const ApplicantsListPage = () => {
             
           </AnimatedPaper>
         </Grow>
+        {/* Poller for automatic updates */}
+        <EvaluatorAssignedEvaluationsPoller
+          evaluatorId={evaluatorId}
+          fetchEvaluations={fetchEvaluations}
+        />
       </ListLayoutWithFilters>
     </ThemeProvider>
   );

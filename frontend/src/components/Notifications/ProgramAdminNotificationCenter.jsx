@@ -94,11 +94,21 @@ const ProgramAdminNotificationCenter = ({ programAdminId }) => {
     // Listen for notification updates dispatched elsewhere (optimistic create reconciliation)
     const handler = (e) => {
       const detail = e?.detail || {};
+      console.log('[ProgramAdminNotificationCenter] Event received:', detail);
+      console.log('[ProgramAdminNotificationCenter] Current programAdminId:', programAdminId);
       // If detail contains userType/userId, only refresh for that user
       if (detail.userType && detail.userId) {
+        console.log('[ProgramAdminNotificationCenter] Checking match:', {
+          detailUserType: detail.userType,
+          detailUserId: String(detail.userId),
+          programAdminUserType: 'program-admin',
+          programAdminId: String(programAdminId)
+        });
         if (String(detail.userType) !== 'program-admin' || String(detail.userId) !== String(programAdminId)) {
+          console.log('[ProgramAdminNotificationCenter] Event not for this admin, ignoring');
           return;
         }
+        console.log('[ProgramAdminNotificationCenter] Event matched! Fetching notifications...');
       }
       fetchNotifications();
     };
