@@ -43,7 +43,6 @@ import toast from "../../../utils/toast"
 import DocumentHandler from "./DocumentHandler"
 import CoursePreferences from "./CoursePreferences"
 import NotificationCenter from "../../../components/Notifications/NotificationCenter"
-import DashboardLink from "../../../components/DashboardLink"
 import useSubjectNotifications from "../../../hooks/useSubjectNotifications"
 import ApplicationStatusPoller from "../../../components/ApplicationStatusPoller"
 import CoursePreferencesPoller from "../../../components/CoursePreferencesPoller"
@@ -347,6 +346,8 @@ const ApplicationTracking = () => {
   const navigate = useNavigate()
   const [applicantId, setApplicantId] = useState(null)
   const [isAccepted, setIsAccepted] = useState(false)
+  const [accepted, setAccepted] = useState(false)
+  const [checked, setChecked] = useState(false)
   const [userData, setUserData] = useState({
     name: "",
     email: "",
@@ -745,6 +746,30 @@ const ApplicationTracking = () => {
     [api],
   )
 
+  // Polling logic for acceptance status
+  const fetchAcceptanceStatus = useCallback(async (id) => {
+    if (!id) {
+      setAccepted(false)
+      setChecked(true)
+      return
+    }
+    try {
+      const res = await fetch(`https://eteeap-foth.onrender.com/api/accepted-applicants/applicant/${id}`)
+      const data = res.ok ? await res.json() : null
+      if (data && (data._id || data.status === "ACCEPTED")) {
+        setAccepted(true)
+        localStorage.setItem("isAccepted", "true")
+      } else {
+        setAccepted(false)
+        localStorage.setItem("isAccepted", "false")
+      }
+      setChecked(true)
+    } catch (err) {
+      setAccepted(false)
+      setChecked(true)
+    }
+  }, [])
+
   useEffect(() => {
     const storedApplicantId = localStorage.getItem("applicantId")
     if (!storedApplicantId) {
@@ -797,6 +822,19 @@ const ApplicationTracking = () => {
     checkAcceptedApplicant,
     fetchChatList,
   ])
+
+  useEffect(() => {
+    if (applicantId) {
+      fetchAcceptanceStatus(applicantId)
+    }
+  }, [applicantId, fetchAcceptanceStatus])
+
+  // Navigate to accepted dashboard when accepted
+  useEffect(() => {
+    if (accepted && checked) {
+      navigate("/accepted-dashboard")
+    }
+  }, [accepted, checked, navigate])
 
   useEffect(() => {
     if (!applicantId || isAccepted) return
@@ -1082,7 +1120,6 @@ const ApplicationTracking = () => {
 
             {/* User Actions */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <DashboardLink sx={{ color: "white", opacity: 0.9, "&:hover": { opacity: 1 } }} />
               <NotificationCenter userId={applicantId} userType="applicant" maroon={colors.primary} gold={colors.secondary} />
 
               {/* Inbox Button */}

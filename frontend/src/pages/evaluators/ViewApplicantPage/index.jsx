@@ -1026,7 +1026,7 @@ const ViewApplicantPage = () => {
                         if (existingEvaluation?.evaluationId) {
                           try {
                             await fetch(
-                              `https://eteeap-foth.onrender.com/api/evaluations/${existingEvaluation.evaluationId}/update-status?status=${newStatus}`,
+                              `http://localhost:8080/api/evaluations/${existingEvaluation.evaluationId}/update-status?status=${newStatus}`,
                               { method: "PUT" }
                             );
                             setEvaluationStatus(newStatus);

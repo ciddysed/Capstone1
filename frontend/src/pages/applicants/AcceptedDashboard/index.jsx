@@ -315,30 +315,7 @@ const AcceptedDashboard = () => {
     >
       {/* Seamless Applicant Navigation Bar */}
       <Paper elevation={2} sx={{ mb: 3, p: 1.5, borderRadius: 2, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'center', background: `linear-gradient(90deg, #fffbe6 0%, #fff 100%)`, border: '1px solid #ffe082' }}>
-        <Button
-          component={RouterLink}
-          to="/homepage"
-          startIcon={<HomeIcon />}
-          sx={{ fontWeight: 600 }}
-        >
-          Home
-        </Button>
-        <Button
-          component={RouterLink}
-          to="/ApplicationTrack"
-          startIcon={<TrackIcon />}
-          sx={{ fontWeight: 600 }}
-        >
-          Application Track
-        </Button>
-        <Button
-          component={RouterLink}
-          to="/AppCoursePreference"
-          startIcon={<CourseIcon />}
-          sx={{ fontWeight: 600 }}
-        >
-          Course Preference
-        </Button>
+       
         <Button
           component={RouterLink}
           to="/accepted-dashboard"
