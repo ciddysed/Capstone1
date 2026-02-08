@@ -554,7 +554,7 @@ const ApplicationTracking = () => {
   )
 
   const fetchConversation = useCallback(
-    async (participantId, participantRole) => {
+    async (participantId, participantRole, signal) => {
       if (!applicantId || !participantId) return
       
       try {
@@ -569,18 +569,15 @@ const ApplicationTracking = () => {
           setConversationLoading(false)
           return
         }
-        const response = await api.get(endpoint)
+        const response = await api.get(endpoint, { signal })
         
+        // Replace messages with fetched conversation (don't merge with previous conversation)
         const fetchedMessages = response.data || [];
-        setConversationMessages(prev => {
-          const existingMap = new Map(prev.map(msg => [msg.messageId, msg]));
-          fetchedMessages.forEach(msg => {
-            existingMap.set(msg.messageId, msg);
-          });
-          return Array.from(existingMap.values()).sort((a, b) => 
+        setConversationMessages(
+          fetchedMessages.sort((a, b) => 
             new Date(a.sentAt) - new Date(b.sentAt)
-          );
-        });
+          )
+        );
         
         try {
           await api.post(`${BACKEND_URL}/api/messages/mark-seen`, {
@@ -593,6 +590,10 @@ const ApplicationTracking = () => {
           console.error("Error marking messages as seen:", error)
         }
       } catch (error) {
+        if (error.name === 'CanceledError' || error.name === 'AbortError') {
+          console.log('Fetch conversation cancelled')
+          return
+        }
         console.error("Error fetching conversation:", error)
         setConversationMessages([])
       } finally {
@@ -622,7 +623,7 @@ const ApplicationTracking = () => {
 
       await api.post(`${BACKEND_URL}/api/messages/send`, messagePayload)
       setNewMessage("")
-      await fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
+      await fetchConversation(selectedConversation.participantId, selectedConversation.participantRole, undefined)
       await fetchChatList(applicantId)
     } catch (error) {
       console.error("Error sending message:", error)
@@ -636,6 +637,7 @@ const ApplicationTracking = () => {
     async (chat) => {
       if (!applicantId) return
       
+      setConversationMessages([]) // Clear previous messages
       setInboxOpen(true)
       
       let participantId = chat.participantId || 
@@ -705,7 +707,9 @@ const ApplicationTracking = () => {
       selectedConversation.participantId &&
       selectedConversation.participantRole
     ) {
-      fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
+      const abortController = new AbortController()
+      fetchConversation(selectedConversation.participantId, selectedConversation.participantRole, abortController.signal)
+      return () => abortController.abort() // Cleanup on unmount or conversation change
     }
   }, [selectedConversation, fetchConversation])
 

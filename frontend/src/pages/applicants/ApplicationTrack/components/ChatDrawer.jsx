@@ -55,6 +55,9 @@ const ChatDrawer = ({
   open,
   onClose,
   chatList,
+  allEvaluators = [], // New prop for all evaluators
+  allApplicants = [], // New prop for all applicants
+  allProgramAdmins = [], // New prop for all program admins
   loading,
   selectedConversation,
   onSelectConversation,
@@ -91,15 +94,93 @@ const ChatDrawer = ({
   // Search state
   const [searchTerm, setSearchTerm] = useState("")
 
-  // Filter chat list based on search term
+  // For PROGRAM_ADMIN: merge chat list with all evaluators for search, but filter to only show those with messages
+  // For EVALUATOR: merge chat list with all program admins for search, but filter to only show those with messages
+  const mergedChatList = useMemo(() => {
+    if (currentUserType === "PROGRAM_ADMIN") {
+      // Create sets of IDs that already have conversations
+      const existingEvaluatorIds = new Set(
+        chatList
+          .filter(chat => chat.participantRole === "EVALUATOR")
+          .map(chat => chat.participantId)
+      )
+      const existingApplicantIds = new Set(
+        chatList
+          .filter(chat => chat.participantRole === "APPLICANT")
+          .map(chat => chat.participantId)
+      )
+
+      // Add evaluators without existing conversations (for search purposes)
+      const evaluatorsWithoutChat = allEvaluators
+        .filter(evaluator => !existingEvaluatorIds.has(evaluator.evaluatorId))
+        .map(evaluator => ({
+          participantId: evaluator.evaluatorId,
+          participantName: evaluator.name,
+          participantRole: "EVALUATOR",
+          lastMessageContent: null,
+          lastMessageTimestamp: null,
+          unread: false,
+          isNew: true, // Flag to indicate this is a new conversation
+        }))
+
+      // Add applicants without existing conversations (for search purposes)
+      const applicantsWithoutChat = allApplicants
+        .filter(applicant => !existingApplicantIds.has(applicant.applicantId))
+        .map(applicant => ({
+          participantId: applicant.applicantId,
+          participantName: applicant.name,
+          participantRole: "APPLICANT",
+          lastMessageContent: null,
+          lastMessageTimestamp: null,
+          unread: false,
+          isNew: true, // Flag to indicate this is a new conversation
+        }))
+
+      // Merge for search, but will filter out isNew items unless searching
+      return [...chatList, ...evaluatorsWithoutChat, ...applicantsWithoutChat]
+    } else if (currentUserType === "EVALUATOR") {
+      // Create set of admin IDs that already have conversations
+      const existingAdminIds = new Set(
+        chatList
+          .filter(chat => chat.participantRole === "PROGRAM_ADMIN")
+          .map(chat => chat.participantId)
+      )
+
+      // Add program admins without existing conversations (for search purposes)
+      const adminsWithoutChat = allProgramAdmins
+        .filter(admin => !existingAdminIds.has(admin.adminId))
+        .map(admin => ({
+          participantId: admin.adminId,
+          participantName: admin.name,
+          participantRole: "PROGRAM_ADMIN",
+          lastMessageContent: null,
+          lastMessageTimestamp: null,
+          unread: false,
+          isNew: true, // Flag to indicate this is a new conversation
+        }))
+
+      // Merge for search, but will filter out isNew items unless searching
+      return [...chatList, ...adminsWithoutChat]
+    }
+    
+    return chatList
+  }, [chatList, allEvaluators, allApplicants, allProgramAdmins, currentUserType])
+
+  // Filter chat list based on search term and show only conversations with messages when not searching
   const filteredChatList = useMemo(() => {
-    if (!searchTerm.trim()) return chatList
-    const searchLower = searchTerm.toLowerCase()
-    return chatList.filter(chat => 
-      chat.participantName?.toLowerCase().includes(searchLower) ||
-      getRoleDisplayName(chat.participantRole)?.toLowerCase().includes(searchLower)
-    )
-  }, [chatList, searchTerm])
+    // If searching, show all matches including new conversations
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase()
+      return mergedChatList.filter(chat => 
+        chat.participantName?.toLowerCase().includes(searchLower) ||
+        getRoleDisplayName(chat.participantRole)?.toLowerCase().includes(searchLower)
+      )
+    }
+    
+    // If not searching, show conversations with messages OR assigned applicants
+    // But filter out isNew items (like program admins for evaluators, or evaluators/applicants for program admins when not searching)
+    return mergedChatList.filter(chat => !chat.isNew || chat.isAssigned)
+  }, [mergedChatList, searchTerm])
 
   // Clear search when drawer closes or conversation is selected
   React.useEffect(() => {
@@ -272,6 +353,14 @@ const ChatDrawer = ({
             formatMessageTime={formatMessageTime}
             colors={safeColors}
             currentUserType={currentUserType}
+            lastSeen={selectedConversation.lastMessageTimestamp ? 
+              new Date(selectedConversation.lastMessageTimestamp).toLocaleString([], { 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              }) : null
+            }
           />
         ) : (
           <Box sx={{ flex: 1, overflow: "auto" }}>

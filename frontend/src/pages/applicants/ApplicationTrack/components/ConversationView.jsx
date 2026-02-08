@@ -1,16 +1,23 @@
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import {
   Box,
   Typography,
   TextField,
   IconButton,
   CircularProgress,
+  Skeleton,
+  Fade,
+  Grow,
+  Tooltip,
 } from "@mui/material"
 import { 
   Send as SendIcon,
   Done as DoneIcon,
   DoneAll as DoneAllIcon,
+  CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material"
+
+const CHARACTER_LIMIT = 500
 
 const ConversationView = ({
   conversationMessages,
@@ -23,7 +30,9 @@ const ConversationView = ({
   formatMessageTime,
   colors,
   currentUserType = "APPLICANT", // Default to APPLICANT for backward compatibility
+  lastSeen, // Optional: last seen timestamp
 }) => {
+  const [showSentConfirmation, setShowSentConfirmation] = useState(false)
   // Ensure colors object has all required properties with defaults
   const safeColors = {
     primary: { main: colors?.primary?.main || "#6A0000", dark: colors?.primary?.dark || "#450000" },
@@ -62,11 +71,27 @@ const ConversationView = ({
   }, [conversationMessages]);
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // Ctrl+Enter or Cmd+Enter to send
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault()
-      onSendMessage()
+      handleSendWithAnimation()
     }
+    // Shift+Enter for new line (default behavior)
+    // Plain Enter for new line
   }
+
+  const handleSendWithAnimation = async () => {
+    if (!newMessage.trim() || sendingMessage) return
+    await onSendMessage()
+    // Show confirmation animation
+    setShowSentConfirmation(true)
+    setTimeout(() => setShowSentConfirmation(false), 2000)
+  }
+
+  // Character count validation
+  const characterCount = newMessage.length
+  const isOverLimit = characterCount > CHARACTER_LIMIT
+  const showCharCount = characterCount > CHARACTER_LIMIT * 0.8 // Show at 80%
 
   const getStatusIcon = (message) => {
     const isFromCurrentUser = message.senderType === currentUserType
@@ -97,9 +122,16 @@ const ConversationView = ({
         }}
       >
         {conversationLoading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress size={32} sx={{ color: safeColors.primary.main }} />
-          </Box>
+          // Loading skeleton instead of spinner
+          <>
+            {[1, 2, 3].map((i) => (
+              <Box key={i} sx={{ display: "flex", justifyContent: i % 2 === 0 ? "flex-end" : "flex-start", mb: 1.5 }}>
+                <Box sx={{ maxWidth: "70%" }}>
+                  <Skeleton variant="rounded" height={60} width={i === 2 ? 250 : 180} animation="wave" />
+                </Box>
+              </Box>
+            ))}
+          </>
         ) : conversationMessages.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 4 }}>
             <Typography variant="body2" color={safeColors.neutral[500]}>
@@ -110,19 +142,25 @@ const ConversationView = ({
           <>
             {uniqueMessages.map((msg, idx) => {
               const isFromCurrentUser = msg.senderType === currentUserType
+              const fullTimestamp = msg.sentAt ? new Date(msg.sentAt).toLocaleString() : ""
               return (
-                <Box
+                <Tooltip 
                   key={msg.messageId || idx}
-                  sx={{
-                    display: "flex",
-                    justifyContent: isFromCurrentUser ? "flex-end" : "flex-start",
-                  }}
+                  title={fullTimestamp || "Sending..."}
+                  placement={isFromCurrentUser ? "left" : "right"}
+                  arrow
                 >
                   <Box
                     sx={{
-                      maxWidth: "80%",
-                      p: 1.5,
-                      borderRadius: 2,
+                      display: "flex",
+                      justifyContent: isFromCurrentUser ? "flex-end" : "flex-start",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        maxWidth: "80%",
+                        p: 1.5,
+                        borderRadius: 2,
                       bgcolor: isFromCurrentUser ? safeColors.primary.main : "white",
                       color: isFromCurrentUser ? "white" : safeColors.neutral[800],
                       border: isFromCurrentUser ? "none" : `1px solid ${safeColors.neutral[200]}`,
@@ -146,6 +184,7 @@ const ConversationView = ({
                     </Box>
                   </Box>
                 </Box>
+              </Tooltip>
               )
             })}
             {/* Scroll anchor */}
@@ -153,6 +192,31 @@ const ConversationView = ({
           </>
         )}
       </Box>
+
+      {/* Message sent confirmation */}
+      <Grow in={showSentConfirmation}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            bgcolor: "rgba(76, 175, 80, 0.95)",
+            color: "white",
+            px: 3,
+            py: 1.5,
+            borderRadius: 2,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            zIndex: 1000,
+          }}
+        >
+          <CheckCircleIcon sx={{ fontSize: 20 }} />
+          <Typography variant="body2" fontWeight={600}>Message sent!</Typography>
+        </Box>
+      </Grow>
 
       {/* Message Input */}
       <Box
@@ -163,37 +227,71 @@ const ConversationView = ({
           flexShrink: 0,
         }}
       >
+        {/* Last seen indicator */}
+        {lastSeen && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontSize: 11 }}>
+            Last seen: {lastSeen}
+          </Typography>
+        )}
         <Box sx={{ display: "flex", gap: 1, alignItems: "flex-end" }}>
-          <TextField
-            fullWidth
-            multiline
-            maxRows={4}
-            placeholder="Type your message..."
-            value={newMessage}
-            onChange={(e) => onMessageChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={sendingMessage}
-            size="small"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
-                bgcolor: safeColors.neutral[50],
-                fontSize: 14,
-                "& fieldset": {
-                  borderColor: safeColors.neutral[200],
+          <Box sx={{ flex: 1, position: "relative" }}>
+            <TextField
+              fullWidth
+              multiline
+              maxRows={4}
+              placeholder="Type your message... (Ctrl+Enter to send)"
+              value={newMessage}
+              onChange={(e) => {
+                const value = e.target.value
+                if (value.length <= CHARACTER_LIMIT) {
+                  onMessageChange(value)
+                }
+              }}
+              onKeyDown={handleKeyDown}
+              disabled={sendingMessage}
+              size="small"
+              error={isOverLimit}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  bgcolor: safeColors.neutral[50],
+                  fontSize: 14,
+                  "& fieldset": {
+                    borderColor: isOverLimit ? "error.main" : safeColors.neutral[200],
+                  },
+                  "&:hover fieldset": {
+                    borderColor: isOverLimit ? "error.main" : safeColors.neutral[300],
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: isOverLimit ? "error.main" : safeColors.primary.main,
+                  },
                 },
-                "&:hover fieldset": {
-                  borderColor: safeColors.neutral[300],
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: safeColors.primary.main,
-                },
-              },
-            }}
-          />
+              }}
+            />
+            {/* Character counter */}
+            {showCharCount && (
+              <Fade in={showCharCount}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    position: "absolute",
+                    bottom: 8,
+                    right: 12,
+                    fontSize: 10,
+                    color: isOverLimit ? "error.main" : "text.secondary",
+                    bgcolor: "white",
+                    px: 0.5,
+                    borderRadius: 0.5,
+                  }}
+                >
+                  {characterCount}/{CHARACTER_LIMIT}
+                </Typography>
+              </Fade>
+            )}
+          </Box>
           <IconButton
-            onClick={onSendMessage}
-            disabled={!newMessage.trim() || sendingMessage}
+            onClick={handleSendWithAnimation}
+            disabled={!newMessage.trim() || sendingMessage || isOverLimit}
             sx={{
               bgcolor: safeColors.primary.main,
               color: "white",

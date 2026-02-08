@@ -16,6 +16,7 @@ const defaultColors = {
 const EvaluatorChat = ({ evaluatorId, colors }) => {
   const [inboxOpen, setInboxOpen] = useState(false)
   const [chatList, setChatList] = useState([])
+  const [allProgramAdmins, setAllProgramAdmins] = useState([])
   const [selectedConversation, setSelectedConversation] = useState(null)
   const [conversationMessages, setConversationMessages] = useState([])
   const [conversationLoading, setConversationLoading] = useState(false)
@@ -25,6 +26,17 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
   const messagesEndRef = useRef(null)
 
   const c = colors || defaultColors
+
+  // Fetch all program admins
+  const fetchAllProgramAdmins = useCallback(async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/api/messages/program-admins/all`)
+      setAllProgramAdmins(response.data || [])
+    } catch (error) {
+      console.error("Failed to fetch program admins:", error)
+      setAllProgramAdmins([])
+    }
+  }, [])
 
   // Helper function to fetch existing chats
   const fetchExistingChats = async () => {
@@ -41,11 +53,44 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
     }
   }
 
-  // Helper function to fetch assigned applicants
+  // Helper function to fetch assigned applicants (from evaluations)
   const fetchAssignedApplicants = async (existingParticipants) => {
-    // No longer showing applicants without messages
-    // Only show applicants with actual message history
-    return []
+    try {
+      const evaluationsResponse = await axios.get(`${BACKEND_URL}/api/evaluations/evaluator/${evaluatorId}`)
+      const evaluations = evaluationsResponse.data || []
+      
+      // Get unique applicants from evaluations
+      const applicantMap = new Map()
+      evaluations.forEach(evaluation => {
+        if (evaluation.applicant) {
+          const applicantId = evaluation.applicant.applicantId
+          if (!applicantMap.has(applicantId)) {
+            applicantMap.set(applicantId, evaluation.applicant)
+          }
+        }
+      })
+      
+      // Map applicants to chat items, filtering out those with existing conversations
+      const assignedApplicants = Array.from(applicantMap.values())
+        .filter(applicant => {
+          const key = `APPLICANT_${applicant.applicantId}`
+          return !existingParticipants.has(key)
+        })
+        .map(applicant => ({
+          participantId: applicant.applicantId,
+          participantName: `${applicant.firstName} ${applicant.lastName}`,
+          participantRole: "APPLICANT",
+          lastMessageContent: null,
+          lastMessageTimestamp: null,
+          unread: false,
+          isAssigned: true, // Flag to indicate this is an assigned applicant (show by default)
+        }))
+      
+      return assignedApplicants
+    } catch (error) {
+      console.error("Error fetching assigned applicants:", error)
+      return []
+    }
   }
 
   // Helper function to normalize admin list response
@@ -88,8 +133,6 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
     }
     
     setInboxLoading(true)
-    console.log("Fetching evaluator chat list for evaluatorId:", evaluatorId)
-    
     try {
       // Fetch existing conversations
       const existingChats = await fetchExistingChats()
@@ -104,13 +147,11 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
       let programAdmins = await fetchProgramAdmins(existingParticipants)
       programAdmins = addFallbackAdmin(programAdmins, existingParticipants)
       
-      console.log("Program admins (final):", programAdmins)
-      
       // Combine and sort all chats
       const allChats = [...existingChats, ...assignedApplicants, ...programAdmins]
       const sortedChats = sortChats(allChats)
       
-      console.log("Final combined chat list:", sortedChats)
+
       setChatList(sortedChats)
     } catch (error) {
       setChatList([])
@@ -122,7 +163,7 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
 
   // Fetch conversation
   const fetchConversation = useCallback(
-    async (participantId, participantRole) => {
+    async (participantId, participantRole, signal) => {
       if (!evaluatorId || !participantId) return
       setConversationLoading(true)
       try {
@@ -142,19 +183,15 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
           return
         }
 
-        const response = await axios.get(endpoint, { params })
+        const response = await axios.get(endpoint, { params, signal })
         
-        // Merge fetched messages with existing ones, removing duplicates
+        // Replace messages with fetched conversation (don't merge with previous conversation)
         const fetchedMessages = response.data || [];
-        setConversationMessages(prev => {
-          const existingMap = new Map(prev.map(msg => [msg.messageId, msg]));
-          fetchedMessages.forEach(msg => {
-            existingMap.set(msg.messageId, msg);
-          });
-          return Array.from(existingMap.values()).sort((a, b) => 
+        setConversationMessages(
+          fetchedMessages.sort((a, b) => 
             new Date(a.sentAt) - new Date(b.sentAt)
-          );
-        });
+          )
+        );
         
         // Mark messages as seen
         try {
@@ -168,6 +205,10 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
           console.error("Error marking messages as seen:", error)
         }
       } catch (error) {
+        if (error.name === 'CanceledError' || error.name === 'AbortError') {
+          console.log('Fetch conversation cancelled')
+          return
+        }
         console.error("Failed to fetch conversation:", error)
         setConversationMessages([])
       } finally {
@@ -205,7 +246,7 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
 
       await axios.post(`${BACKEND_URL}/api/messages/send`, payload)
       setNewMessage("")
-      await fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
+      await fetchConversation(selectedConversation.participantId, selectedConversation.participantRole, undefined)
       await fetchChatList()
     } catch (error) {
       console.error("Failed to send message:", error)
@@ -217,6 +258,7 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
   // Open conversation
   const openConversation = useCallback((chat) => {
     if (!chat) return
+    setConversationMessages([]) // Clear previous messages
     setSelectedConversation({
       participantId: chat.participantId,
       participantName: chat.participantName,
@@ -231,15 +273,20 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
     fetchChatList()
   }, [fetchChatList])
 
-  // Fetch chat list when inbox opens
+  // Fetch program admins and chat list when inbox opens
   useEffect(() => {
-    if (inboxOpen) fetchChatList()
-  }, [inboxOpen, fetchChatList])
+    if (inboxOpen) {
+      fetchAllProgramAdmins()
+      fetchChatList()
+    }
+  }, [inboxOpen, fetchAllProgramAdmins, fetchChatList])
 
   // Fetch conversation when selectedConversation changes
   useEffect(() => {
     if (selectedConversation?.participantId && selectedConversation?.participantRole) {
-      fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
+      const abortController = new AbortController()
+      fetchConversation(selectedConversation.participantId, selectedConversation.participantRole, abortController.signal)
+      return () => abortController.abort() // Cleanup on unmount or conversation change
     }
   }, [selectedConversation, fetchConversation])
 
@@ -269,8 +316,12 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
       </Tooltip>
       <ChatDrawer
         open={inboxOpen}
-        onClose={() => setInboxOpen(false)}
+        onClose={() => {
+          setInboxOpen(false)
+          closeConversation()
+        }}
         chatList={chatList}
+        allProgramAdmins={allProgramAdmins}
         loading={inboxLoading}
         selectedConversation={selectedConversation}
         onSelectConversation={openConversation}

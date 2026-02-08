@@ -113,7 +113,7 @@ const ChatListItem = ({
               color={safeColors.neutral[400]}
               sx={{ flexShrink: 0, fontSize: 11 }}
             >
-              {formatMessageTime(chat.lastMessageTimestamp)}
+              {chat.isNew || chat.isAssigned ? "" : formatMessageTime(chat.lastMessageTimestamp)}
             </Typography>
           </Box>
           {/* Role badge */}
@@ -146,7 +146,7 @@ const ChatListItem = ({
           {/* Last message preview */}
           <Typography
             variant="body2"
-            color={safeColors.neutral[600]}
+            color={chat.isNew || chat.isAssigned ? safeColors.neutral[400] : safeColors.neutral[600]}
             sx={{
               fontSize: 13,
               display: "-webkit-box",
@@ -154,9 +154,14 @@ const ChatListItem = ({
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
               fontWeight: isUnread ? 500 : 400,
+              fontStyle: chat.isNew || chat.isAssigned ? "italic" : "normal",
             }}
           >
-            {parseMessageContent(chat.lastMessageContent)}
+            {chat.isAssigned 
+              ? "Assigned applicant - start conversation" 
+              : chat.isNew 
+                ? "Start a new conversation" 
+                : parseMessageContent(chat.lastMessageContent)}
           </Typography>
         </Box>
       </Box>

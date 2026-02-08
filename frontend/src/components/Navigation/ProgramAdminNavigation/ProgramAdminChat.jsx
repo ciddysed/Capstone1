@@ -16,6 +16,8 @@ const defaultColors = {
 const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
   const [inboxOpen, setInboxOpen] = useState(false)
   const [chatList, setChatList] = useState([])
+  const [allEvaluators, setAllEvaluators] = useState([])
+  const [allApplicants, setAllApplicants] = useState([])
   const [selectedConversation, setSelectedConversation] = useState(null)
   const [conversationMessages, setConversationMessages] = useState([])
   const [conversationLoading, setConversationLoading] = useState(false)
@@ -25,6 +27,28 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
   const messagesEndRef = useRef(null)
 
   const c = colors || defaultColors
+
+  // Fetch all evaluators
+  const fetchAllEvaluators = useCallback(async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/api/messages/evaluators/all`)
+      setAllEvaluators(response.data || [])
+    } catch (error) {
+      console.error("Failed to fetch evaluators:", error)
+      setAllEvaluators([])
+    }
+  }, [])
+
+  // Fetch all applicants
+  const fetchAllApplicants = useCallback(async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/api/messages/applicants/all`)
+      setAllApplicants(response.data || [])
+    } catch (error) {
+      console.error("Failed to fetch applicants:", error)
+      setAllApplicants([])
+    }
+  }, [])
 
   // Fetch chat list for program admin (defined first)
   const fetchChatList = useCallback(async () => {
@@ -45,7 +69,7 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
 
   // Fetch conversation
   const fetchConversation = useCallback(
-    async (participantId, participantRole) => {
+    async (participantId, participantRole, signal) => {
       if (!programAdminId || !participantId) return
       setConversationLoading(true)
       try {
@@ -65,24 +89,15 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
           return
         }
 
-        const response = await axios.get(endpoint, { params })
+        const response = await axios.get(endpoint, { params, signal })
         
-        // Merge fetched messages with existing ones, removing duplicates
+        // Replace messages with fetched conversation (don't merge with previous conversation)
         const fetchedMessages = response.data || [];
-        setConversationMessages(prev => {
-          // Create a map of existing messages by messageId
-          const existingMap = new Map(prev.map(msg => [msg.messageId, msg]));
-          
-          // Add or update messages from fetched data
-          fetchedMessages.forEach(msg => {
-            existingMap.set(msg.messageId, msg);
-          });
-          
-          // Convert back to array and sort by timestamp
-          return Array.from(existingMap.values()).sort((a, b) => 
+        setConversationMessages(
+          fetchedMessages.sort((a, b) => 
             new Date(a.sentAt) - new Date(b.sentAt)
-          );
-        });
+          )
+        );
         
         // Mark messages as seen
         try {
@@ -96,6 +111,10 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
           console.error("Error marking messages as seen:", error)
         }
       } catch (error) {
+        if (error.name === 'CanceledError' || error.name === 'AbortError') {
+          console.log('Fetch conversation cancelled')
+          return
+        }
         console.error("Failed to fetch conversation:", error)
         setConversationMessages([])
       } finally {
@@ -133,7 +152,7 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
 
       await axios.post(`${BACKEND_URL}/api/messages/send`, payload)
       setNewMessage("")
-      await fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
+      await fetchConversation(selectedConversation.participantId, selectedConversation.participantRole, undefined)
       await fetchChatList() // Refresh chat list to update order
     } catch (error) {
       console.error("Failed to send message:", error)
@@ -145,6 +164,7 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
   // Open conversation
   const openConversation = useCallback((chat) => {
     if (!chat) return
+    setConversationMessages([]) // Clear previous messages
     setSelectedConversation({
       participantId: chat.participantId,
       participantName: chat.participantName,
@@ -159,15 +179,21 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
     fetchChatList() // Refresh chat list when closing conversation to show latest messages
   }, [fetchChatList])
 
-  // Fetch chat list when inbox opens
+  // Fetch evaluators, applicants and chat list when inbox opens
   useEffect(() => {
-    if (inboxOpen) fetchChatList()
-  }, [inboxOpen, fetchChatList])
+    if (inboxOpen) {
+      fetchAllEvaluators()
+      fetchAllApplicants()
+      fetchChatList()
+    }
+  }, [inboxOpen, fetchAllEvaluators, fetchAllApplicants, fetchChatList])
 
   // Fetch conversation when selectedConversation changes
   useEffect(() => {
     if (selectedConversation?.participantId && selectedConversation?.participantRole) {
-      fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
+      const abortController = new AbortController()
+      fetchConversation(selectedConversation.participantId, selectedConversation.participantRole, abortController.signal)
+      return () => abortController.abort() // Cleanup on unmount or conversation change
     }
   }, [selectedConversation, fetchConversation])
 
@@ -189,6 +215,7 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
   // Expose methods to parent component via ref
   useImperativeHandle(ref, () => ({
     initiateChat: (applicantId, applicantName) => {
+      setConversationMessages([]) // Clear previous messages
       setInboxOpen(true)
       setSelectedConversation({
         participantId: applicantId,
@@ -209,8 +236,13 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
       </Tooltip>
       <ChatDrawer
         open={inboxOpen}
-        onClose={() => setInboxOpen(false)}
+        onClose={() => {
+          setInboxOpen(false)
+          closeConversation()
+        }}
         chatList={chatList}
+        allEvaluators={allEvaluators}
+        allApplicants={allApplicants}
         loading={inboxLoading}
         selectedConversation={selectedConversation}
         onSelectConversation={openConversation}

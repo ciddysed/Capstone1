@@ -377,20 +377,27 @@ const ProgramAdminNavigation = ({ children }) => {
                                   <VisibilityIcon />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title="Chat with Applicant">
-                                <IconButton 
-                                  color="secondary"
-                                  onClick={() => handleInitiateChat(application)}
-                                  sx={{ 
-                                    ml: 1,
-                                    backgroundColor: alpha(gold.main, 0.1),
-                                    '&:hover': {
-                                      backgroundColor: alpha(gold.main, 0.2),
-                                    }
-                                  }}
-                                >
-                                  <ChatIcon />
-                                </IconButton>
+                              <Tooltip title={application.applicant?.applicantId ? "Chat with Applicant" : "Applicant data unavailable"}>
+                                <span>
+                                  <IconButton 
+                                    color="secondary"
+                                    onClick={() => handleInitiateChat(application)}
+                                    disabled={!application.applicant?.applicantId}
+                                    sx={{ 
+                                      ml: 1,
+                                      backgroundColor: alpha(gold.main, 0.1),
+                                      '&:hover': {
+                                        backgroundColor: alpha(gold.main, 0.2),
+                                      },
+                                      '&.Mui-disabled': {
+                                        backgroundColor: alpha(theme.palette.action.disabled, 0.05),
+                                        color: theme.palette.action.disabled,
+                                      }
+                                    }}
+                                  >
+                                    <ChatIcon />
+                                  </IconButton>
+                                </span>
                               </Tooltip>
                             </StyledTableCell>
                           </StyledTableRow>
