@@ -337,30 +337,7 @@ const AcceptedStudentsTab = () => {
             </CardContent>
           </InfoCard>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <InfoCard>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" fontWeight="bold" color="#0288d1">
-                {enrolledCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Enrolled
-              </Typography>
-            </CardContent>
-          </InfoCard>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <InfoCard>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" fontWeight="bold" color="#ed6c02">
-                {withdrawnCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Withdrawn
-              </Typography>
-            </CardContent>
-          </InfoCard>
-        </Grid>
+        
       </Grid>
 
       {/* Students Table */}

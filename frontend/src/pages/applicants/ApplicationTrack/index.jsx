@@ -1075,7 +1075,7 @@ const ApplicationTracking = () => {
                   variant="caption"
                   sx={{ opacity: 0.85, fontSize: 11, letterSpacing: "0.02em", fontWeight: 500 }}
                 >
-                  Enrollment Services Dashboard
+                  Application Services Dashboard
                 </Typography>
               </Box>
             </Box>
@@ -1333,7 +1333,7 @@ const ApplicationTracking = () => {
                         color={colors.primary.main}
                         sx={{ textTransform: "uppercase", letterSpacing: "0.5px", fontSize: 10 }}
                       >
-                        Evaluator Remarks
+                        ETEEAP Application Remarks
                       </Typography>
                     </Box>
                     {notesLoading ? (
