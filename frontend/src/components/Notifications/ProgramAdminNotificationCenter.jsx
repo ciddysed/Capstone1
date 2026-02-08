@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Notifications as NotificationsIcon, Circle } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import * as localNotificationService from '../../services/localNotificationService';
 import notificationService from '../../services/notificationService';
 
 const maroon = {
@@ -63,18 +64,22 @@ const ProgramAdminNotificationCenter = ({ programAdminId }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [error, setError] = useState(null);
 
-  // Fetch notifications from backend
+  // Fetch notifications from backend or localStorage (fallback)
   const fetchNotifications = useCallback(() => {
     if (!programAdminId) return;
     setLoading(true);
     setError(null);
+
+    // Try backend first, fallback to localStorage on error
     notificationService.getNotifications('program-admin', programAdminId)
       .then(data => {
         setNotifications(data || []);
         setLoading(false);
       })
       .catch(err => {
-        setNotifications([]);
+        console.warn('Notification API unavailable, falling back to localStorage', err);
+        const userNotifications = localNotificationService.getNotifications('program-admin', programAdminId);
+        setNotifications(userNotifications || []);
         setError('Failed to load notifications');
         setLoading(false);
       });
@@ -82,9 +87,35 @@ const ProgramAdminNotificationCenter = ({ programAdminId }) => {
 
   useEffect(() => {
     fetchNotifications();
-    const intervalId = setInterval(fetchNotifications, 60000);
-    return () => clearInterval(intervalId);
-  }, [fetchNotifications]);
+
+    // Set up polling for new notifications (standardized to 10 seconds)
+    const intervalId = setInterval(fetchNotifications, 10000); // Poll every 10 seconds
+
+    // Listen for notification updates dispatched elsewhere (optimistic create reconciliation)
+    const handler = (e) => {
+      const detail = e?.detail || {};
+      // If detail contains userType/userId, only refresh for that user
+      if (detail.userType && detail.userId) {
+        if (String(detail.userType) !== 'program-admin' || String(detail.userId) !== String(programAdminId)) {
+          return;
+        }
+      }
+      fetchNotifications();
+    };
+
+    const eventTarget = window;
+
+    if (eventTarget && typeof eventTarget.addEventListener === 'function') {
+      eventTarget.addEventListener('notifications:updated', handler);
+    }
+
+    return () => {
+      clearInterval(intervalId);
+      if (eventTarget && typeof eventTarget.removeEventListener === 'function') {
+        eventTarget.removeEventListener('notifications:updated', handler);
+      }
+    };
+  }, [fetchNotifications, programAdminId]);
 
   // Menu handlers
   const handleOpenMenu = (event) => {
@@ -95,6 +126,7 @@ const ProgramAdminNotificationCenter = ({ programAdminId }) => {
   };
 
   const handleMarkAsRead = (notificationId) => {
+    // Try backend first
     notificationService.markAsRead(notificationId)
       .then(ok => {
         if (!ok) throw new Error('API markAsRead failed');
@@ -105,6 +137,8 @@ const ProgramAdminNotificationCenter = ({ programAdminId }) => {
         ));
       })
       .catch(() => {
+        // Fallback to localStorage
+        localNotificationService.markAsRead(notificationId);
         setNotifications(notifications.map(notification => 
           notification.id === notificationId 
             ? { ...notification, read: true } 
@@ -114,12 +148,15 @@ const ProgramAdminNotificationCenter = ({ programAdminId }) => {
   };
 
   const handleMarkAllAsRead = () => {
+    // Try backend first
     notificationService.markAllAsRead('program-admin', programAdminId)
       .then(ok => {
         if (!ok) throw new Error('API markAllAsRead failed');
         setNotifications(notifications.map(notification => ({ ...notification, read: true })));
       })
       .catch(() => {
+        // Fallback to localStorage
+        localNotificationService.markAllAsRead('program-admin', programAdminId);
         setNotifications(notifications.map(notification => ({ ...notification, read: true })));
       });
   };

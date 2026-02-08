@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Notifications as NotificationsIcon, Circle } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import * as localNotificationService from '../../services/localNotificationService';
 import notificationService from '../../services/notificationService';
 
 const maroon = {
@@ -43,18 +44,22 @@ const EvaluatorNotificationCenter = ({ evaluatorId }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [error, setError] = useState(null);
 
-  // Fetch notifications from backend
+  // Fetch notifications from backend or localStorage (fallback)
   const fetchNotifications = useCallback(() => {
     if (!evaluatorId) return;
     setLoading(true);
     setError(null);
+
+    // Try backend first, fallback to localStorage on error
     notificationService.getNotifications('evaluator', evaluatorId)
       .then(data => {
         setNotifications(data || []);
         setLoading(false);
       })
       .catch(err => {
-        setNotifications([]);
+        console.warn('Notification API unavailable, falling back to localStorage', err);
+        const userNotifications = localNotificationService.getNotifications('evaluator', evaluatorId);
+        setNotifications(userNotifications || []);
         setError('Failed to load notifications');
         setLoading(false);
       });
@@ -62,9 +67,35 @@ const EvaluatorNotificationCenter = ({ evaluatorId }) => {
 
   useEffect(() => {
     fetchNotifications();
+
+    // Set up polling for new notifications
     const intervalId = setInterval(fetchNotifications, 10000); // Poll every 10 seconds
-    return () => clearInterval(intervalId);
-  }, [fetchNotifications]);
+
+    // Listen for notification updates dispatched elsewhere (optimistic create reconciliation)
+    const handler = (e) => {
+      const detail = e?.detail || {};
+      // If detail contains userType/userId, only refresh for that user
+      if (detail.userType && detail.userId) {
+        if (String(detail.userType) !== 'evaluator' || String(detail.userId) !== String(evaluatorId)) {
+          return;
+        }
+      }
+      fetchNotifications();
+    };
+
+    const eventTarget = window;
+
+    if (eventTarget && typeof eventTarget.addEventListener === 'function') {
+      eventTarget.addEventListener('notifications:updated', handler);
+    }
+
+    return () => {
+      clearInterval(intervalId);
+      if (eventTarget && typeof eventTarget.removeEventListener === 'function') {
+        eventTarget.removeEventListener('notifications:updated', handler);
+      }
+    };
+  }, [fetchNotifications, evaluatorId]);
 
   // Menu handlers
   const handleOpenMenu = (event) => {
@@ -74,15 +105,38 @@ const EvaluatorNotificationCenter = ({ evaluatorId }) => {
     setAnchorEl(null);
   };
 
-  // const handleMarkAsRead = (notificationId) => { ... } // Removed unused function
+  const handleMarkAsRead = (notificationId) => {
+    // Try backend first
+    notificationService.markAsRead(notificationId)
+      .then(ok => {
+        if (!ok) throw new Error('API markAsRead failed');
+        setNotifications(notifications.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, read: true } 
+            : notification
+        ));
+      })
+      .catch(() => {
+        // Fallback to localStorage
+        localNotificationService.markAsRead(notificationId);
+        setNotifications(notifications.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, read: true } 
+            : notification
+        ));
+      });
+  };
 
   const handleMarkAllAsRead = () => {
+    // Try backend first
     notificationService.markAllAsRead('evaluator', evaluatorId)
       .then(ok => {
         if (!ok) throw new Error('API markAllAsRead failed');
         setNotifications(notifications.map(notification => ({ ...notification, read: true })));
       })
       .catch(() => {
+        // Fallback to localStorage
+        localNotificationService.markAllAsRead('evaluator', evaluatorId);
         setNotifications(notifications.map(notification => ({ ...notification, read: true })));
       });
   };
