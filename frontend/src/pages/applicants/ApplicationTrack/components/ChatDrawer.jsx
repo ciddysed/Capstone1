@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useMemo } from "react"
 import {
   Drawer,
   Box,
@@ -7,6 +7,8 @@ import {
   CircularProgress,
   Avatar,
   alpha,
+  TextField,
+  InputAdornment,
 } from "@mui/material"
 import {
   Close as CloseIcon,
@@ -16,9 +18,38 @@ import {
   SupervisorAccount as EvaluatorIcon,
   AdminPanelSettings as AdminIcon,
   Refresh as RefreshIcon,
+  Search as SearchIcon,
+  Clear as ClearIcon,
 } from "@mui/icons-material"
 import ConversationView from "./ConversationView"
 import ChatListItem from "./ChatListItem"
+
+// Helper functions moved outside component for stability
+const getRoleIcon = (role) => {
+  switch (role) {
+    case "EVALUATOR":
+      return EvaluatorIcon
+    case "PROGRAM_ADMIN":
+      return AdminIcon
+    case "APPLICANT":
+      return MailIcon
+    default:
+      return MailIcon
+  }
+}
+
+const getRoleDisplayName = (role) => {
+  switch (role) {
+    case "EVALUATOR":
+      return "Evaluator"
+    case "PROGRAM_ADMIN":
+      return "Program Admin"
+    case "APPLICANT":
+      return "Applicant"
+    default:
+      return "Unknown"
+  }
+}
 
 const ChatDrawer = ({
   open,
@@ -40,31 +71,42 @@ const ChatDrawer = ({
   currentUserType = "APPLICANT", // Default to APPLICANT for backward compatibility
   onRefreshChatList, // New prop for manual refresh
 }) => {
-  const getRoleIcon = (role) => {
-    switch (role) {
-      case "EVALUATOR":
-        return EvaluatorIcon
-      case "PROGRAM_ADMIN":
-        return AdminIcon
-      case "APPLICANT":
-        return MailIcon
-      default:
-        return MailIcon
-    }
+  // Ensure colors object has all required properties with defaults
+  const safeColors = {
+    primary: { main: colors?.primary?.main || "#6A0000", dark: colors?.primary?.dark || "#450000" },
+    secondary: { main: colors?.secondary?.main || "#FFC72C", light: colors?.secondary?.light || "#FFD54F" },
+    accent: { info: colors?.accent?.info || "#0288d1" },
+    neutral: {
+      50: colors?.neutral?.[50] || "#fafafa",
+      100: colors?.neutral?.[100] || "#f5f5f5",
+      200: colors?.neutral?.[200] || "#e0e0e0",
+      300: colors?.neutral?.[300] || "#d0d0d0",
+      400: colors?.neutral?.[400] || "#999",
+      500: colors?.neutral?.[500] || "#888",
+      600: colors?.neutral?.[600] || "#666",
+      800: colors?.neutral?.[800] || "#222",
+    },
   }
 
-  const getRoleDisplayName = (role) => {
-    switch (role) {
-      case "EVALUATOR":
-        return "Evaluator"
-      case "PROGRAM_ADMIN":
-        return "Program Admin"
-      case "APPLICANT":
-        return "Applicant"
-      default:
-        return "Unknown"
+  // Search state
+  const [searchTerm, setSearchTerm] = useState("")
+
+  // Filter chat list based on search term
+  const filteredChatList = useMemo(() => {
+    if (!searchTerm.trim()) return chatList
+    const searchLower = searchTerm.toLowerCase()
+    return chatList.filter(chat => 
+      chat.participantName?.toLowerCase().includes(searchLower) ||
+      getRoleDisplayName(chat.participantRole)?.toLowerCase().includes(searchLower)
+    )
+  }, [chatList, searchTerm])
+
+  // Clear search when drawer closes or conversation is selected
+  React.useEffect(() => {
+    if (!open || selectedConversation) {
+      setSearchTerm("")
     }
-  }
+  }, [open, selectedConversation])
 
   return (
     <Drawer
@@ -83,14 +125,14 @@ const ChatDrawer = ({
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          bgcolor: colors.neutral[50],
+          bgcolor: safeColors.neutral[50],
         }}
       >
         {/* Drawer Header */}
         <Box
           sx={{
             p: 2,
-            borderBottom: `1px solid ${colors.neutral[200]}`,
+            borderBottom: `1px solid ${safeColors.neutral[200]}`,
             bgcolor: "white",
             display: "flex",
             alignItems: "center",
@@ -100,7 +142,7 @@ const ChatDrawer = ({
         >
           {selectedConversation ? (
             <>
-              <IconButton size="small" onClick={onCloseConversation} sx={{ color: colors.neutral[600] }}>
+              <IconButton size="small" onClick={onCloseConversation} sx={{ color: safeColors.neutral[600] }}>
                 <ArrowBackIcon sx={{ fontSize: 20 }} />
               </IconButton>
               {(() => {
@@ -112,12 +154,12 @@ const ChatDrawer = ({
                       height: 36,
                       bgcolor:
                         selectedConversation.participantRole === "EVALUATOR"
-                          ? alpha(colors.primary.main, 0.1)
-                          : alpha(colors.accent.info, 0.1),
+                          ? alpha(safeColors.primary.main, 0.1)
+                          : alpha(safeColors.accent.info, 0.1),
                       color:
                         selectedConversation.participantRole === "EVALUATOR"
-                          ? colors.primary.main
-                          : colors.accent.info,
+                          ? safeColors.primary.main
+                          : safeColors.accent.info,
                     }}
                   >
                     <RoleIcon sx={{ fontSize: 20 }} />
@@ -125,18 +167,18 @@ const ChatDrawer = ({
                 )
               })()}
               <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle2" fontWeight={700} color={colors.neutral[800]}>
+                <Typography variant="subtitle2" fontWeight={700} color={safeColors.neutral[800]}>
                   {selectedConversation.participantName}
                 </Typography>
-                <Typography variant="caption" color={colors.neutral[500]} sx={{ fontSize: 11 }}>
+                <Typography variant="caption" color={safeColors.neutral[500]} sx={{ fontSize: 11 }}>
                   {getRoleDisplayName(selectedConversation.participantRole)}
                 </Typography>
               </Box>
             </>
           ) : (
             <>
-              <InboxIcon sx={{ color: colors.primary.main }} />
-              <Typography variant="subtitle1" fontWeight={700} color={colors.neutral[800]}>
+              <InboxIcon sx={{ color: safeColors.primary.main }} />
+              <Typography variant="subtitle1" fontWeight={700} color={safeColors.neutral[800]}>
                 Messages
               </Typography>
               <Box sx={{ flex: 1 }} />
@@ -146,8 +188,8 @@ const ChatDrawer = ({
                   onClick={onRefreshChatList}
                   disabled={loading}
                   sx={{ 
-                    color: colors.neutral[600],
-                    '&:hover': { color: colors.primary.main }
+                    color: safeColors.neutral[600],
+                    '&:hover': { color: safeColors.primary.main }
                   }}
                   title="Refresh messages"
                 >
@@ -159,11 +201,63 @@ const ChatDrawer = ({
           <IconButton
             size="small"
             onClick={onClose}
-            sx={{ color: colors.neutral[500] }}
+            sx={{ color: safeColors.neutral[500] }}
           >
             <CloseIcon sx={{ fontSize: 20 }} />
           </IconButton>
         </Box>
+
+        {/* Search Bar (only show when no conversation is selected) */}
+        {!selectedConversation && (
+          <Box
+            sx={{
+              px: 2,
+              py: 1.5,
+              borderBottom: `1px solid ${safeColors.neutral[200]}`,
+              bgcolor: "white",
+              flexShrink: 0,
+            }}
+          >
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Search by name or role..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: 20, color: safeColors.neutral[400] }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchTerm && (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={() => setSearchTerm("")}
+                      sx={{ padding: 0.5 }}
+                    >
+                      <ClearIcon sx={{ fontSize: 18, color: safeColors.neutral[400] }} />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+                sx: {
+                  fontSize: 14,
+                  bgcolor: safeColors.neutral[50],
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: safeColors.neutral[200],
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: safeColors.neutral[300],
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: safeColors.primary.main,
+                  },
+                },
+              }}
+            />
+          </Box>
+        )}
 
         {/* Content Area */}
         {selectedConversation ? (
@@ -176,24 +270,29 @@ const ChatDrawer = ({
             sendingMessage={sendingMessage}
             messagesEndRef={messagesEndRef}
             formatMessageTime={formatMessageTime}
-            colors={colors}
+            colors={safeColors}
             currentUserType={currentUserType}
           />
         ) : (
           <Box sx={{ flex: 1, overflow: "auto" }}>
             {loading ? (
               <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                <CircularProgress size={32} sx={{ color: colors.primary.main }} />
+                <CircularProgress size={32} sx={{ color: safeColors.primary.main }} />
               </Box>
-            ) : chatList.length === 0 ? (
+            ) : filteredChatList.length === 0 ? (
               <Box sx={{ textAlign: "center", py: 6 }}>
-                <MailIcon sx={{ fontSize: 48, color: colors.neutral[300], mb: 2 }} />
-                <Typography variant="body2" color={colors.neutral[500]}>
-                  No conversations yet
+                <MailIcon sx={{ fontSize: 48, color: safeColors.neutral[300], mb: 2 }} />
+                <Typography variant="body2" color={safeColors.neutral[500]}>
+                  {searchTerm ? "No conversations match your search" : "No conversations yet"}
                 </Typography>
+                {searchTerm && (
+                  <Typography variant="caption" color={safeColors.neutral[400]} sx={{ mt: 1, display: "block" }}>
+                    Try searching for a different name or role
+                  </Typography>
+                )}
               </Box>
             ) : (
-              chatList.map((chat, idx) => (
+              filteredChatList.map((chat, idx) => (
                 <ChatListItem
                   key={`${chat.participantRole}-${chat.participantId || idx}`}
                   chat={chat}
@@ -201,7 +300,7 @@ const ChatDrawer = ({
                   getRoleIcon={getRoleIcon}
                   getRoleDisplayName={getRoleDisplayName}
                   formatMessageTime={formatMessageTime}
-                  colors={colors}
+                  colors={safeColors}
                 />
               ))
             )}

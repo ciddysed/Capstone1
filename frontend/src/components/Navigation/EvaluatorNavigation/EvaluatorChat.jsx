@@ -26,127 +26,92 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
 
   const c = colors || defaultColors
 
+  // Helper function to fetch existing chats
+  const fetchExistingChats = async () => {
+    try {
+      const chatResponse = await axios.get(`${BACKEND_URL}/api/messages/inbox/evaluator/chat-list`, {
+        params: { evaluatorId: evaluatorId },
+      })
+      const chats = chatResponse.data || []
+      console.log("Existing chat conversations:", chats)
+      return chats
+    } catch (error) {
+      console.log("No existing chats or error fetching:", error.message)
+      return []
+    }
+  }
+
+  // Helper function to fetch assigned applicants
+  const fetchAssignedApplicants = async (existingParticipants) => {
+    // No longer showing applicants without messages
+    // Only show applicants with actual message history
+    return []
+  }
+
+  // Helper function to normalize admin list response
+  const normalizeAdminList = (admins) => {
+    if (Array.isArray(admins)) return admins
+    if (admins && admins.adminId) return [admins]
+    return []
+  }
+
+  // Helper function to fetch program admins
+  const fetchProgramAdmins = async (existingParticipants) => {
+    // No longer showing program admins without messages
+    // Only show admins with actual message history
+    return []
+  }
+
+  // Helper function to add fallback admin
+  const addFallbackAdmin = (programAdmins, existingParticipants) => {
+    // No longer adding fallback admin without messages
+    return programAdmins
+  }
+
+  // Helper function to sort chats
+  const sortChats = (chats) => {
+    return chats.sort((a, b) => {
+      const t1 = a.lastMessageTimestamp
+      const t2 = b.lastMessageTimestamp
+      if (t1 && t2) return new Date(t2) - new Date(t1)
+      if (t1) return -1
+      if (t2) return 1
+      return (a.participantName || '').localeCompare(b.participantName || '')
+    })
+  }
+
   // Fetch chat list for evaluator (conversations with applicants and admins)
   const fetchChatList = useCallback(async () => {
     if (!evaluatorId) {
       console.log("No evaluatorId provided, skipping chat list fetch")
       return
     }
+    
     setInboxLoading(true)
     console.log("Fetching evaluator chat list for evaluatorId:", evaluatorId)
     
     try {
-      // 1. Fetch existing message conversations
-      let existingChats = []
-      try {
-        const chatResponse = await axios.get(`${BACKEND_URL}/api/messages/inbox/evaluator/chat-list`, {
-          params: { evaluatorId: evaluatorId },
-        })
-        existingChats = chatResponse.data || []
-        console.log("Existing chat conversations:", existingChats)
-      } catch (error) {
-        console.log("No existing chats or error fetching:", error.message)
-      }
+      // Fetch existing conversations
+      const existingChats = await fetchExistingChats()
       
       // Track which participants we already have
       const existingParticipants = new Set(
         existingChats.map(chat => `${chat.participantRole}_${chat.participantId}`)
       )
       
-      // 2. Fetch assigned applicants from evaluations
-      let assignedApplicants = []
-      try {
-        const evalResponse = await axios.get(`${BACKEND_URL}/api/evaluations/evaluator/${evaluatorId}`)
-        const evaluations = evalResponse.data || []
-        console.log("Evaluations for evaluator:", evaluations)
-        
-        // Extract unique applicants from evaluations
-        const seenApplicants = new Set()
-        for (const evaluation of evaluations) {
-          const applicant = evaluation.applicant
-          if (applicant && !seenApplicants.has(applicant.applicantId)) {
-            seenApplicants.add(applicant.applicantId)
-            const key = `APPLICANT_${applicant.applicantId}`
-            if (!existingParticipants.has(key)) {
-              assignedApplicants.push({
-                participantId: applicant.applicantId,
-                participantName: `${applicant.firstName || ''} ${applicant.lastName || ''}`.trim() || 'Unknown Applicant',
-                participantRole: 'APPLICANT',
-                lastMessageContent: 'No messages yet - Assigned for evaluation',
-                lastMessageTimestamp: null,
-                unread: false,
-              })
-              existingParticipants.add(key)
-            }
-          }
-        }
-        console.log("Assigned applicants (no messages yet):", assignedApplicants)
-      } catch (error) {
-        console.log("Could not fetch evaluations:", error.message)
-      }
+      // Fetch assigned applicants and program admins
+      const assignedApplicants = await fetchAssignedApplicants(existingParticipants)
+      let programAdmins = await fetchProgramAdmins(existingParticipants)
+      programAdmins = addFallbackAdmin(programAdmins, existingParticipants)
       
-      // 3. Fetch all program admins - try API first, fallback to hardcoded
-      let programAdmins = []
-      try {
-        const adminResponse = await axios.get(`${BACKEND_URL}/api/program-admins`)
-        const admins = adminResponse.data || []
-        console.log("Program admins from API:", admins)
-        
-        // Handle both array response and single admin response
-        const adminList = Array.isArray(admins) ? admins : (admins.adminId ? [admins] : [])
-        
-        for (const admin of adminList) {
-          const adminId = admin.adminId || admin.id
-          const key = `PROGRAM_ADMIN_${adminId}`
-          if (adminId && !existingParticipants.has(key)) {
-            programAdmins.push({
-              participantId: adminId,
-              participantName: admin.name || admin.firstName || 'Program Admin',
-              participantRole: 'PROGRAM_ADMIN',
-              lastMessageContent: 'No messages yet',
-              lastMessageTimestamp: null,
-              unread: false,
-            })
-            existingParticipants.add(key)
-          }
-        }
-      } catch (error) {
-        console.log("Could not fetch admins from API:", error.message)
-      }
-      
-      // Fallback: Add hardcoded ETEEAP Coordinator if no admins found
-      if (programAdmins.length === 0) {
-        const key = `PROGRAM_ADMIN_1`
-        if (!existingParticipants.has(key)) {
-          programAdmins.push({
-            participantId: 1,
-            participantName: 'ETEEAP Coordinator',
-            participantRole: 'PROGRAM_ADMIN',
-            lastMessageContent: 'No messages yet',
-            lastMessageTimestamp: null,
-            unread: false,
-          })
-          existingParticipants.add(key)
-          console.log("Added fallback ETEEAP Coordinator")
-        }
-      }
       console.log("Program admins (final):", programAdmins)
       
-      // 4. Combine all and sort
+      // Combine and sort all chats
       const allChats = [...existingChats, ...assignedApplicants, ...programAdmins]
+      const sortedChats = sortChats(allChats)
       
-      // Sort: conversations with messages first (by timestamp desc), then no-message entries alphabetically
-      allChats.sort((a, b) => {
-        const t1 = a.lastMessageTimestamp
-        const t2 = b.lastMessageTimestamp
-        if (t1 && t2) return new Date(t2) - new Date(t1)
-        if (t1) return -1
-        if (t2) return 1
-        return (a.participantName || '').localeCompare(b.participantName || '')
-      })
-      
-      console.log("Final combined chat list:", allChats)
-      setChatList(allChats)
+      console.log("Final combined chat list:", sortedChats)
+      setChatList(sortedChats)
     } catch (error) {
       setChatList([])
       console.error("Failed to fetch evaluator chat list:", error)

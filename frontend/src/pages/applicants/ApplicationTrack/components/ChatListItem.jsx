@@ -26,6 +26,20 @@ const ChatListItem = ({
     }
   }
 
+  // Ensure colors object has all required properties with defaults
+  const safeColors = {
+    primary: { main: colors?.primary?.main || "#6A0000" },
+    secondary: { main: colors?.secondary?.main || "#FFC72C", light: colors?.secondary?.light || "#FFD54F" },
+    accent: { info: colors?.accent?.info || "#0288d1" },
+    neutral: {
+      100: colors?.neutral?.[100] || "#f5f5f5",
+      200: colors?.neutral?.[200] || "#e0e0e0",
+      400: colors?.neutral?.[400] || "#999",
+      600: colors?.neutral?.[600] || "#666",
+      800: colors?.neutral?.[800] || "#222",
+    },
+  }
+
   const RoleIcon = getRoleIcon(chat.participantRole)
   const isUnread = chat.unread
 
@@ -34,12 +48,12 @@ const ChatListItem = ({
       onClick={onClick}
       sx={{
         p: 2,
-        borderBottom: `1px solid ${colors.neutral[200]}`,
+        borderBottom: `1px solid ${safeColors.neutral[200]}`,
         cursor: "pointer",
-        bgcolor: isUnread ? alpha(colors.secondary.light, 0.08) : "transparent",
+        bgcolor: isUnread ? alpha(safeColors.secondary.light, 0.08) : "transparent",
         transition: "background-color 0.15s ease",
         "&:hover": {
-          bgcolor: isUnread ? alpha(colors.secondary.light, 0.12) : colors.neutral[100],
+          bgcolor: isUnread ? alpha(safeColors.secondary.light, 0.12) : safeColors.neutral[100],
         },
       }}
     >
@@ -51,16 +65,16 @@ const ChatListItem = ({
             height: 40,
             bgcolor:
               chat.participantRole === "EVALUATOR"
-                ? alpha(colors.primary.main, 0.1)
+                ? alpha(safeColors.primary.main, 0.1)
                 : chat.participantRole === "PROGRAM_ADMIN"
-                ? alpha(colors.secondary.main, 0.1)
-                : alpha(colors.accent.info, 0.1),
+                ? alpha(safeColors.secondary.main, 0.1)
+                : alpha(safeColors.accent.info, 0.1),
             color:
               chat.participantRole === "EVALUATOR"
-                ? colors.primary.main
+                ? safeColors.primary.main
                 : chat.participantRole === "PROGRAM_ADMIN"
-                ? colors.secondary.main
-                : colors.accent.info,
+                ? safeColors.secondary.main
+                : safeColors.accent.info,
             flexShrink: 0,
           }}
         >
@@ -79,7 +93,7 @@ const ChatListItem = ({
               <Typography
                 variant="subtitle2"
                 fontWeight={isUnread ? 700 : 600}
-                color={colors.neutral[800]}
+                color={safeColors.neutral[800]}
                 noWrap
               >
                 {chat.participantName || "Unknown"}
@@ -88,7 +102,7 @@ const ChatListItem = ({
                 <UnreadIcon
                   sx={{
                     fontSize: 8,
-                    color: colors.primary.main,
+                    color: safeColors.primary.main,
                     flexShrink: 0,
                   }}
                 />
@@ -96,7 +110,7 @@ const ChatListItem = ({
             </Box>
             <Typography
               variant="caption"
-              color={colors.neutral[400]}
+              color={safeColors.neutral[400]}
               sx={{ flexShrink: 0, fontSize: 11 }}
             >
               {formatMessageTime(chat.lastMessageTimestamp)}
@@ -115,16 +129,16 @@ const ChatListItem = ({
               fontWeight: 600,
               bgcolor:
                 chat.participantRole === "EVALUATOR"
-                  ? alpha(colors.primary.main, 0.08)
+                  ? alpha(safeColors.primary.main, 0.08)
                   : chat.participantRole === "PROGRAM_ADMIN"
-                  ? alpha(colors.secondary.main, 0.08)
-                  : alpha(colors.accent.info, 0.08),
+                  ? alpha(safeColors.secondary.main, 0.08)
+                  : alpha(safeColors.accent.info, 0.08),
               color:
                 chat.participantRole === "EVALUATOR"
-                  ? colors.primary.main
+                  ? safeColors.primary.main
                   : chat.participantRole === "PROGRAM_ADMIN"
-                  ? colors.secondary.main
-                  : colors.accent.info,
+                  ? safeColors.secondary.main
+                  : safeColors.accent.info,
             }}
           >
             {getRoleDisplayName(chat.participantRole)}
@@ -132,7 +146,7 @@ const ChatListItem = ({
           {/* Last message preview */}
           <Typography
             variant="body2"
-            color={colors.neutral[600]}
+            color={safeColors.neutral[600]}
             sx={{
               fontSize: 13,
               display: "-webkit-box",

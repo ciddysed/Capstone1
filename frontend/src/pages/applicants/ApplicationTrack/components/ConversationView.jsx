@@ -24,6 +24,20 @@ const ConversationView = ({
   colors,
   currentUserType = "APPLICANT", // Default to APPLICANT for backward compatibility
 }) => {
+  // Ensure colors object has all required properties with defaults
+  const safeColors = {
+    primary: { main: colors?.primary?.main || "#6A0000", dark: colors?.primary?.dark || "#450000" },
+    secondary: { main: colors?.secondary?.main || "#FFC72C" },
+    neutral: {
+      50: colors?.neutral?.[50] || "#fafafa",
+      200: colors?.neutral?.[200] || "#e0e0e0",
+      300: colors?.neutral?.[300] || "#d0d0d0",
+      400: colors?.neutral?.[400] || "#999",
+      500: colors?.neutral?.[500] || "#888",
+      800: colors?.neutral?.[800] || "#222",
+    },
+  }
+
   // Parse message content (handles both JSON and plain text)
   const parseMessageContent = (content) => {
     if (!content) return ""
@@ -61,7 +75,7 @@ const ConversationView = ({
     const status = message.status || "SENT"
     
     if (status === "SEEN") {
-      return <DoneAllIcon sx={{ fontSize: 12, ml: 0.5, color: colors.secondary.main }} />
+      return <DoneAllIcon sx={{ fontSize: 12, ml: 0.5, color: safeColors.secondary.main }} />
     } else if (status === "DELIVERED") {
       return <DoneAllIcon sx={{ fontSize: 12, ml: 0.5 }} />
     } else {
@@ -84,11 +98,11 @@ const ConversationView = ({
       >
         {conversationLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress size={32} sx={{ color: colors.primary.main }} />
+            <CircularProgress size={32} sx={{ color: safeColors.primary.main }} />
           </Box>
         ) : conversationMessages.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 4 }}>
-            <Typography variant="body2" color={colors.neutral[500]}>
+            <Typography variant="body2" color={safeColors.neutral[500]}>
               No messages yet. Start the conversation!
             </Typography>
           </Box>
@@ -109,9 +123,9 @@ const ConversationView = ({
                       maxWidth: "80%",
                       p: 1.5,
                       borderRadius: 2,
-                      bgcolor: isFromCurrentUser ? colors.primary.main : "white",
-                      color: isFromCurrentUser ? "white" : colors.neutral[800],
-                      border: isFromCurrentUser ? "none" : `1px solid ${colors.neutral[200]}`,
+                      bgcolor: isFromCurrentUser ? safeColors.primary.main : "white",
+                      color: isFromCurrentUser ? "white" : safeColors.neutral[800],
+                      border: isFromCurrentUser ? "none" : `1px solid ${safeColors.neutral[200]}`,
                       boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
                     }}
                   >
@@ -144,7 +158,7 @@ const ConversationView = ({
       <Box
         sx={{
           p: 2,
-          borderTop: `1px solid ${colors.neutral[200]}`,
+          borderTop: `1px solid ${safeColors.neutral[200]}`,
           bgcolor: "white",
           flexShrink: 0,
         }}
@@ -163,16 +177,16 @@ const ConversationView = ({
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2,
-                bgcolor: colors.neutral[50],
+                bgcolor: safeColors.neutral[50],
                 fontSize: 14,
                 "& fieldset": {
-                  borderColor: colors.neutral[200],
+                  borderColor: safeColors.neutral[200],
                 },
                 "&:hover fieldset": {
-                  borderColor: colors.neutral[300],
+                  borderColor: safeColors.neutral[300],
                 },
                 "&.Mui-focused fieldset": {
-                  borderColor: colors.primary.main,
+                  borderColor: safeColors.primary.main,
                 },
               },
             }}
@@ -181,16 +195,16 @@ const ConversationView = ({
             onClick={onSendMessage}
             disabled={!newMessage.trim() || sendingMessage}
             sx={{
-              bgcolor: colors.primary.main,
+              bgcolor: safeColors.primary.main,
               color: "white",
               width: 40,
               height: 40,
               "&:hover": {
-                bgcolor: colors.primary.dark,
+                bgcolor: safeColors.primary.dark,
               },
               "&.Mui-disabled": {
-                bgcolor: colors.neutral[200],
-                color: colors.neutral[400],
+                bgcolor: safeColors.neutral[200],
+                color: safeColors.neutral[400],
               },
             }}
           >
