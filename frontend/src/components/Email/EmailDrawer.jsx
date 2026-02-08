@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useMemo } from "react"
 import {
   Drawer,
   Box,
@@ -17,8 +17,8 @@ import {
   Edit as ComposeIcon,
   Refresh as RefreshIcon,
 } from "@mui/icons-material"
-import EmailInboxView from "./EmailInboxView"
-import EmailDetailView from "./EmailDetailView"
+import ConversationListView from "./ConversationListView"
+import ConversationDetailView from "./ConversationDetailView"
 import EmailComposer from "./EmailComposer"
 
 const EmailDrawer = ({
@@ -34,34 +34,147 @@ const EmailDrawer = ({
   currentUserType = "APPLICANT",
 }) => {
   const [selectedTab, setSelectedTab] = useState(0) // 0: Inbox, 1: Sent, 2: All
-  const [selectedEmail, setSelectedEmail] = useState(null)
+  const [selectedConversation, setSelectedConversation] = useState(null)
   const [composerOpen, setComposerOpen] = useState(false)
   const [replyTo, setReplyTo] = useState(null)
 
-  // Filter messages based on tab
-  const getFilteredMessages = () => {
-    switch (selectedTab) {
-      case 0: // Inbox
-        return allMessages.filter(msg => msg.recipientType === currentUserType)
-      case 1: // Sent
-        return allMessages.filter(msg => msg.senderType === currentUserType)
-      case 2: // All
-      default:
-        return allMessages
+  // Helper function to get participant info from a message
+  const getParticipantFromMessage = (message, asRecipient = false) => {
+    if (asRecipient) {
+      // Get recipient info
+      if (message.recipientApplicant) {
+        return {
+          id: message.recipientApplicant.applicantId,
+          name: `${message.recipientApplicant.firstName} ${message.recipientApplicant.lastName}`,
+          role: message.recipientType,
+        }
+      } else if (message.recipientEvaluator) {
+        return {
+          id: message.recipientEvaluator.evaluatorId,
+          name: message.recipientEvaluator.name,
+          role: message.recipientType,
+        }
+      } else if (message.recipientAdmin) {
+        return {
+          id: message.recipientAdmin.adminId,
+          name: message.recipientAdmin.name,
+          role: message.recipientType,
+        }
+      }
+    } else {
+      // Get sender info
+      if (message.senderApplicant) {
+        return {
+          id: message.senderApplicant.applicantId,
+          name: `${message.senderApplicant.firstName} ${message.senderApplicant.lastName}`,
+          role: message.senderType,
+        }
+      } else if (message.senderEvaluator) {
+        return {
+          id: message.senderEvaluator.evaluatorId,
+          name: message.senderEvaluator.name,
+          role: message.senderType,
+        }
+      } else if (message.senderAdmin) {
+        return {
+          id: message.senderAdmin.adminId,
+          name: message.senderAdmin.name,
+          role: message.senderType,
+        }
+      }
     }
+    return null
   }
 
-  const filteredMessages = getFilteredMessages()
+  // Group messages into conversations by participant
+  const groupMessagesByConversation = (messages) => {
+    const conversationMap = new Map()
+
+    messages.forEach((message) => {
+      // Determine the "other" participant (not current user)
+      let participant = null
+      const isSent = message.senderType === currentUserType
+      
+      if (isSent) {
+        // If sent, the other person is the recipient
+        participant = getParticipantFromMessage(message, true)
+      } else {
+        // If received, the other person is the sender
+        participant = getParticipantFromMessage(message, false)
+      }
+
+      if (!participant) return
+
+      const conversationKey = `${participant.id}-${participant.role}`
+
+      if (!conversationMap.has(conversationKey)) {
+        conversationMap.set(conversationKey, {
+          participantId: participant.id,
+          participantName: participant.name,
+          participantRole: participant.role,
+          messages: [],
+          lastMessage: message,
+          messageCount: 0,
+          unreadCount: 0,
+        })
+      }
+
+      const conversation = conversationMap.get(conversationKey)
+      conversation.messages.push(message)
+      conversation.messageCount++
+      
+      // Update last message if this message is newer
+      if (new Date(message.sentAt) > new Date(conversation.lastMessage.sentAt)) {
+        conversation.lastMessage = message
+      }
+
+      // Count unread messages (received and not read)
+      if (message.recipientType === currentUserType && !message.isRead) {
+        conversation.unreadCount++
+      }
+    })
+
+    // Sort messages within each conversation by date
+    conversationMap.forEach((conversation) => {
+      conversation.messages.sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt))
+    })
+
+    // Convert to array and sort by last message time
+    return Array.from(conversationMap.values()).sort(
+      (a, b) => new Date(b.lastMessage.sentAt) - new Date(a.lastMessage.sentAt)
+    )
+  }
+
+  // Get filtered conversations based on tab
+  const conversations = useMemo(() => {
+    let filteredMessages = []
+    
+    switch (selectedTab) {
+      case 0: // Inbox
+        filteredMessages = allMessages.filter(msg => msg.recipientType === currentUserType)
+        break
+      case 1: // Sent
+        filteredMessages = allMessages.filter(msg => msg.senderType === currentUserType)
+        break
+      case 2: // All
+      default:
+        filteredMessages = allMessages
+        break
+    }
+
+    return groupMessagesByConversation(filteredMessages)
+  }, [allMessages, selectedTab, currentUserType])
+
   const unreadCount = allMessages.filter(
     msg => msg.recipientType === currentUserType && !msg.isRead
   ).length
 
-  const handleSelectEmail = (email) => {
-    setSelectedEmail(email)
+  const handleSelectConversation = (conversation) => {
+    setSelectedConversation(conversation)
   }
 
   const handleBackToList = () => {
-    setSelectedEmail(null)
+    setSelectedConversation(null)
   }
 
   const handleCompose = () => {
@@ -70,41 +183,24 @@ const EmailDrawer = ({
   }
 
   const handleReply = () => {
-    if (selectedEmail) {
-      // Get the sender info to reply to
-      let recipient = null
-      
-      if (selectedEmail.senderApplicant) {
-        recipient = {
-          id: selectedEmail.senderApplicant.applicantId,
-          name: `${selectedEmail.senderApplicant.firstName} ${selectedEmail.senderApplicant.lastName}`,
-          role: 'APPLICANT',
-        }
-      } else if (selectedEmail.senderEvaluator) {
-        recipient = {
-          id: selectedEmail.senderEvaluator.evaluatorId,
-          name: selectedEmail.senderEvaluator.name,
-          role: 'EVALUATOR',
-        }
-      } else if (selectedEmail.senderAdmin) {
-        recipient = {
-          id: selectedEmail.senderAdmin.adminId,
-          name: selectedEmail.senderAdmin.name,
-          role: 'PROGRAM_ADMIN',
-        }
+    if (selectedConversation) {
+      const recipient = {
+        id: selectedConversation.participantId,
+        name: selectedConversation.participantName,
+        role: selectedConversation.participantRole,
       }
 
-      // Parse the original message subject
+      // Get last message subject for context
       let originalSubject = "(No Subject)"
       try {
-        const parsed = JSON.parse(selectedEmail.content)
+        const lastMessage = selectedConversation.lastMessage
+        const parsed = JSON.parse(lastMessage.content)
         originalSubject = parsed.subject || "(No Subject)"
       } catch {
         originalSubject = "(No Subject)"
       }
 
       setReplyTo({
-        email: selectedEmail,
         recipient: recipient,
         subject: originalSubject,
       })
@@ -131,13 +227,26 @@ const EmailDrawer = ({
     }
   }
 
-  const handleDelete = async () => {
-    if (selectedEmail && onDeleteEmail) {
+  const handleDeleteMessage = async (messageId) => {
+    if (onDeleteEmail) {
       const confirmed = window.confirm('Are you sure you want to delete this message?')
       if (confirmed) {
-        const success = await onDeleteEmail(selectedEmail.messageId)
+        const success = await onDeleteEmail(messageId)
         if (success) {
-          setSelectedEmail(null)
+          // Check if there are any messages left in this conversation
+          const updatedConversation = {
+            ...selectedConversation,
+            messages: selectedConversation.messages.filter(msg => msg.messageId !== messageId)
+          }
+          
+          if (updatedConversation.messages.length === 0) {
+            // No more messages, go back to list
+            setSelectedConversation(null)
+          } else {
+            // Update the selected conversation
+            setSelectedConversation(updatedConversation)
+          }
+          
           if (onRefresh) {
             onRefresh()
           }
@@ -189,7 +298,7 @@ const EmailDrawer = ({
               Messages
             </Typography>
 
-            {!selectedEmail && onRefresh && (
+            {!selectedConversation && onRefresh && (
               <IconButton
                 size="small"
                 onClick={onRefresh}
@@ -203,7 +312,7 @@ const EmailDrawer = ({
               </IconButton>
             )}
 
-            {!selectedEmail && (
+            {!selectedConversation && (
               <IconButton
                 size="small"
                 onClick={handleCompose}
@@ -224,8 +333,8 @@ const EmailDrawer = ({
             </IconButton>
           </Box>
 
-          {/* Tabs - Only show when not viewing an email */}
-          {!selectedEmail && (
+          {/* Tabs - Only show when not viewing a conversation */}
+          {!selectedConversation && (
             <Box
               sx={{
                 borderBottom: `1px solid ${colors?.neutral?.[200] || "#eee"}`,
@@ -280,22 +389,24 @@ const EmailDrawer = ({
 
           {/* Content Area */}
           <Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            {selectedEmail ? (
-              <EmailDetailView
-                email={selectedEmail}
+            {selectedConversation ? (
+              <ConversationDetailView
+                conversation={selectedConversation}
+                messages={selectedConversation.messages}
+                loading={false}
                 onBack={handleBackToList}
                 onReply={handleReply}
-                onDelete={handleDelete}
+                onDeleteMessage={handleDeleteMessage}
                 colors={colors}
                 currentUserType={currentUserType}
               />
             ) : (
               <Box sx={{ flex: 1, overflow: "auto", bgcolor: "white" }}>
-                <EmailInboxView
-                  emails={filteredMessages}
+                <ConversationListView
+                  conversations={conversations}
                   loading={loading}
-                  onSelectEmail={handleSelectEmail}
-                  selectedEmailId={selectedEmail?.messageId}
+                  onSelectConversation={handleSelectConversation}
+                  selectedParticipantId={selectedConversation ? `${selectedConversation.participantId}-${selectedConversation.participantRole}` : null}
                   colors={colors}
                   currentUserType={currentUserType}
                 />

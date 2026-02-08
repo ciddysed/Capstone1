@@ -22,7 +22,7 @@ import Accreditations from "../../../pages/evaluators/Accreditations/Accreditati
 import AccreditedAccounts from "../../../pages/evaluators/Accreditations/AccreditedAccounts";
 import { handleLogout } from "../../../utils/logoutUtils";
 import EvaluatorNotificationCenter from '../../Notifications/EvaluatorNotificationCenter';
-import EvaluatorEmailInterface from './EvaluatorEmailInterface';
+import EvaluatorChat from './EvaluatorChat';
 
 const EvaluatorNavigation = ({ children }) => {
   const sections = [
@@ -261,7 +261,7 @@ const EvaluatorNavigation = ({ children }) => {
               </Typography>
               <Box display="flex" alignItems="center" gap={1}>
                 <EvaluatorNotificationCenter evaluatorId={evaluatorId} />
-                <EvaluatorEmailInterface evaluatorId={evaluatorId} colors={{ primary: { main: '#6A0000', dark: '#450000' }, secondary: { main: '#FFC72C' }, neutral: { 50: '#faf9f7', 100: '#f5f3f0', 200: '#e8e4df', 600: '#4a4540', 900: '#0d0c0b' }, accent: { info: '#1565c0' } }} />
+                <EvaluatorChat evaluatorId={evaluatorId} colors={{ primary: { main: '#6A0000', dark: '#450000' }, secondary: { main: '#FFC72C' }, neutral: { 50: '#faf9f7', 100: '#f5f3f0', 200: '#e8e4df', 600: '#4a4540', 900: '#0d0c0b' }, accent: { info: '#1565c0' } }} />
               </Box>
             </Toolbar>
           </AppBar>

@@ -376,7 +376,7 @@ const ApplicationTracking = () => {
   const [inboxLoading, setInboxLoading] = useState(false)
   const [inboxOpen, setInboxOpen] = useState(false)
 
-  const [selectedConversation, setSelectedConversation] = useState(null) // { participantId, participantName, participantRole }
+  const [selectedConversation, setSelectedConversation] = useState(null)
   const [conversationMessages, setConversationMessages] = useState([])
   const [conversationLoading, setConversationLoading] = useState(false)
   const [newMessage, setNewMessage] = useState("")
@@ -541,13 +541,6 @@ const ApplicationTracking = () => {
       try {
         setInboxLoading(true)
         const response = await api.get(`${BACKEND_URL}/api/messages/inbox/applicant/chat-list?applicantId=${id}`)
-        console.log("Chat list response:", response.data)
-        
-        // Log each chat item to see its structure
-        if (response.data && response.data.length > 0) {
-          console.log("First chat item structure:", response.data[0])
-        }
-        
         setChatList(response.data || [])
       } catch (error) {
         console.error("Error fetching chat list:", error)
@@ -561,12 +554,7 @@ const ApplicationTracking = () => {
 
   const fetchConversation = useCallback(
     async (participantId, participantRole) => {
-      console.log("fetchConversation called with:", { applicantId, participantId, participantRole })
-      
-      if (!applicantId || !participantId) {
-        console.log("Missing required IDs:", { applicantId, participantId })
-        return
-      }
+      if (!applicantId || !participantId) return
       
       try {
         setConversationLoading(true)
@@ -576,33 +564,23 @@ const ApplicationTracking = () => {
         } else if (participantRole === "PROGRAM_ADMIN") {
           endpoint = `${BACKEND_URL}/api/messages/conversation/applicant-admin?applicantId=${applicantId}&adminId=${participantId}`
         } else {
-          console.error("Unknown participant role:", participantRole)
           setConversationMessages([])
           setConversationLoading(false)
           return
         }
-        console.log("Fetching conversation from:", endpoint)
         const response = await api.get(endpoint)
-        console.log("Conversation response:", response.data)
         
-        // Merge fetched messages with existing ones, removing duplicates
         const fetchedMessages = response.data || [];
         setConversationMessages(prev => {
-          // Create a map of existing messages by messageId
           const existingMap = new Map(prev.map(msg => [msg.messageId, msg]));
-          
-          // Add or update messages from fetched data
           fetchedMessages.forEach(msg => {
             existingMap.set(msg.messageId, msg);
           });
-          
-          // Convert back to array and sort by timestamp
           return Array.from(existingMap.values()).sort((a, b) => 
             new Date(a.sentAt) - new Date(b.sentAt)
           );
         });
         
-        // Mark messages as seen
         try {
           await api.post(`${BACKEND_URL}/api/messages/mark-seen`, {
             userId: Number.parseInt(applicantId),
@@ -635,21 +613,15 @@ const ApplicationTracking = () => {
         content: newMessage.trim(),
       }
 
-      // Add correct recipient based on role
       if (selectedConversation.participantRole === "EVALUATOR") {
         messagePayload.recipientEvaluator = { evaluatorId: selectedConversation.participantId }
-        messagePayload.recipientType = "EVALUATOR"
       } else if (selectedConversation.participantRole === "PROGRAM_ADMIN") {
         messagePayload.recipientAdmin = { adminId: selectedConversation.participantId }
-        messagePayload.recipientType = "PROGRAM_ADMIN"
       }
 
-      console.log("Sending message payload:", messagePayload)
       await api.post(`${BACKEND_URL}/api/messages/send`, messagePayload)
       setNewMessage("")
-      // Refresh conversation after sending
       await fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
-      // Refresh chat list to update latest message preview
       await fetchChatList(applicantId)
     } catch (error) {
       console.error("Error sending message:", error)
@@ -661,20 +633,10 @@ const ApplicationTracking = () => {
 
   const openConversation = useCallback(
     async (chat) => {
-      console.log("=== Opening conversation ===")
-      console.log("Chat data received:", chat)
-      console.log("Current applicantId:", applicantId)
+      if (!applicantId) return
       
-      if (!applicantId) {
-        console.error("No applicantId available")
-        return
-      }
-      
-      // Open the inbox drawer first
       setInboxOpen(true)
-      console.log("Drawer opened")
       
-      // Extract what we have from the notification
       let participantId = chat.participantId || 
                          chat.evaluatorId || 
                          chat.adminId ||
@@ -683,55 +645,34 @@ const ApplicationTracking = () => {
       const participantRole = chat.participantRole
       const participantName = chat.participantName
       
-      console.log("Initial extraction:", { participantId, participantRole, participantName })
-      
-      // If we don't have participantId, we need to fetch the chat list and find it
       if (!participantId && participantName && participantRole) {
-        console.log("No participantId found, fetching chat list to find it...")
-        
-        // TEMPORARY WORKAROUND: Hardcoded ID mapping
-        // TODO: Remove this once backend includes participantId in chat-list API
         const knownParticipants = {
           'ETEEAP Coordinator_PROGRAM_ADMIN': 1,
           'Rea V San_EVALUATOR': 5,
-          // Add more as needed
         }
         
         const lookupKey = `${participantName}_${participantRole}`
         if (knownParticipants[lookupKey]) {
           participantId = knownParticipants[lookupKey]
-          console.log(`Using hardcoded ID for ${lookupKey}:`, participantId)
         }
         
-        // If still no ID, try to fetch and find it
         if (!participantId) {
           try {
-            // Fetch the chat list
             const response = await api.get(`${BACKEND_URL}/api/messages/inbox/applicant/chat-list?applicantId=${applicantId}`)
             const chatListData = response.data || []
-            console.log("Fetched chat list:", chatListData)
             
-            // Find the matching chat by name and role
             const matchingChat = chatListData.find(c => 
               c.participantName === participantName && 
               c.participantRole === participantRole
             )
             
-            console.log("Matching chat found:", matchingChat)
-            
             if (matchingChat) {
-              // Extract the ID from the matching chat
               participantId = matchingChat.participantId || 
                              matchingChat.evaluatorId || 
                              matchingChat.adminId ||
                              matchingChat.programAdminId
               
-              console.log("Extracted participantId from chat list:", participantId)
-              
-              // Update the chat list state
               setChatList(chatListData)
-            } else {
-              console.error("Could not find matching chat in list")
             }
           } catch (error) {
             console.error("Error fetching chat list:", error)
@@ -739,55 +680,34 @@ const ApplicationTracking = () => {
         }
       }
       
-      // Final validation
       if (!participantId) {
-        console.error("Still no participantId after all attempts. Chat object:", chat)
         alert("Cannot open conversation: Missing participant ID. Please try clicking the conversation from the Messages list.")
         return
       }
       
       if (!participantRole) {
-        console.error("No participantRole found")
         return
       }
-      
-      // Set the selected conversation
-      console.log("Setting selectedConversation with:", {
-        participantId,
-        participantName,
-        participantRole,
-      })
       
       setSelectedConversation({
         participantId,
         participantName,
         participantRole,
       })
-      
-      console.log("=== Conversation setup complete ===")
     },
     [applicantId, api],
   )
 
   useEffect(() => {
-    console.log("selectedConversation changed:", selectedConversation)
     if (
       selectedConversation &&
       selectedConversation.participantId &&
       selectedConversation.participantRole
     ) {
-      console.log("Fetching conversation for:", selectedConversation.participantId, selectedConversation.participantRole)
       fetchConversation(selectedConversation.participantId, selectedConversation.participantRole)
-    } else {
-      console.log("Not fetching conversation - missing data:", {
-        hasSelectedConversation: !!selectedConversation,
-        hasParticipantId: selectedConversation?.participantId,
-        hasParticipantRole: selectedConversation?.participantRole
-      })
     }
   }, [selectedConversation, fetchConversation])
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current && conversationMessages.length > 0) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
@@ -884,12 +804,9 @@ const ApplicationTracking = () => {
     return () => clearInterval(intervalId)
   }, [applicantId, isAccepted, checkAcceptedApplicant])
 
-  // Expose openConversation for external use (like notifications)
   useEffect(() => {
-    // Store the function in window so notifications can call it
     window.applicantOpenConversation = openConversation
     
-    // Listen for custom event to open conversation
     const handleOpenConversationEvent = (event) => {
       const chatData = event.detail
       if (chatData) {
@@ -1046,11 +963,9 @@ const ApplicationTracking = () => {
   }
 
   const unreadCount = useMemo(() => {
-    // Adjusted to check chatList for unread messages
     return chatList.filter((msg) => msg.unread).length
   }, [chatList])
 
-  // Helper to format time for chat messages
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return ""
     const date = new Date(timestamp)
@@ -1064,25 +979,21 @@ const ApplicationTracking = () => {
     if (diffMins < 60) return `${diffMins}m ago`
     if (diffHours < 24) return `${diffHours}h ago`
     if (diffDays < 7) return `${diffDays}d ago`
-    // For older dates, show in HH:MM format
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   }
 
   const progress = calculateProgress()
 
-  // Place closeConversation BEFORE any JSX or use in render
   const closeConversation = useCallback(() => {
     setSelectedConversation(null)
     setConversationMessages([])
     setNewMessage("")
-    // Refresh chat list when closing conversation to update latest message
     if (applicantId) {
       fetchChatList(applicantId)
     }
   }, [applicantId, fetchChatList])
 
   const handleInboxOpen = useCallback(() => {
-    console.log("Opening inbox, applicantId:", applicantId)
     setInboxOpen(true)
     if (applicantId) {
       fetchChatList(applicantId)

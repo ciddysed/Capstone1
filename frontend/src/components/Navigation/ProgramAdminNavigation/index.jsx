@@ -47,7 +47,7 @@ import axios from "axios";
 import AcceptedStudentsTab from "../../../pages/ProgramAdmin/HomePage/components/AcceptedStudentsTab";
 import ApplicationDetailsDialog from "../../../pages/ProgramAdmin/HomePage/components/ApplicationDetailsDialog";
 import ProgramAdminNotificationCenter from "../../Notifications/ProgramAdminNotificationCenter";
-import ProgramAdminEmailInterface from "./ProgramAdminEmailInterface";
+import ProgramAdminChat from "./ProgramAdminChat";
 
 const API_URL = "https://eteeap-foth.onrender.com/api/program-admins";
 
@@ -561,7 +561,7 @@ const ProgramAdminNavigation = ({ children }) => {
                 
                 {/* Program Admin Notification Center */}
                 <ProgramAdminNotificationCenter programAdminId={programAdminId} />
-                <ProgramAdminEmailInterface adminId={programAdminId} colors={{ primary: maroon, secondary: gold, accent: { info: "#0288d1" }, neutral: { 50: "#faf9f7", 100: "#f5f3f0", 200: "#e8e4df", 600: "#4a4540", 900: "#0d0c0b" } }} />
+                <ProgramAdminChat ref={chatRef} programAdminId={programAdminId} colors={{ primary: maroon, secondary: gold, accent: { info: "#0288d1" }, neutral: { 50: "#faf9f7", 100: "#f5f3f0", 200: "#e8e4df", 600: "#4a4540", 900: "#0d0c0b" } }} />
                 
               </Box>
             </Toolbar>

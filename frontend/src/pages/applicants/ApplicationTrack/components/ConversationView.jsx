@@ -24,6 +24,17 @@ const ConversationView = ({
   colors,
   currentUserType = "APPLICANT", // Default to APPLICANT for backward compatibility
 }) => {
+  // Parse message content (handles both JSON and plain text)
+  const parseMessageContent = (content) => {
+    if (!content) return ""
+    try {
+      const parsed = JSON.parse(content)
+      return parsed.body || content
+    } catch {
+      return content
+    }
+  }
+
   // Deduplicate messages at render time to prevent React key warnings
   const uniqueMessages = useMemo(() => {
     const seen = new Map();
@@ -104,8 +115,8 @@ const ConversationView = ({
                       boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
                     }}
                   >
-                    <Typography variant="body2" sx={{ fontSize: 13, lineHeight: 1.5 }}>
-                      {msg.content}
+                    <Typography variant="body2" sx={{ fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+                      {parseMessageContent(msg.content)}
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", mt: 0.75 }}>
                       <Typography

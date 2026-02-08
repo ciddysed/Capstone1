@@ -15,6 +15,17 @@ const ChatListItem = ({
   formatMessageTime,
   colors,
 }) => {
+  // Parse message content (handles both JSON and plain text)
+  const parseMessageContent = (content) => {
+    if (!content) return ""
+    try {
+      const parsed = JSON.parse(content)
+      return parsed.body || content
+    } catch {
+      return content
+    }
+  }
+
   const RoleIcon = getRoleIcon(chat.participantRole)
   const isUnread = chat.unread
 
@@ -131,7 +142,7 @@ const ChatListItem = ({
               fontWeight: isUnread ? 500 : 400,
             }}
           >
-            {chat.lastMessageContent}
+            {parseMessageContent(chat.lastMessageContent)}
           </Typography>
         </Box>
       </Box>
