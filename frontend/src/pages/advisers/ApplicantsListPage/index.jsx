@@ -114,7 +114,8 @@ const ApplicantsListPage = () => {
       console.log("Fetching assignments for adviser:", adviserId);
       
       // First, fetch assignments for this adviser
-      const assignmentsRes = await fetch(`https://eteeap-foth.onrender.com/api/assignments/evaluator/${adviserId}`);
+      // const assignmentsRes = await fetch(`https://eteeap-foth.onrender.com/api/assignments/evaluator/${adviserId}`);
+      const assignmentsRes = await fetch(`http://localhost:8080/api/assignments/evaluator/${adviserId}`);
       
       console.log("Assignments response status:", assignmentsRes.status);
       

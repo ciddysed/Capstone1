@@ -24,6 +24,7 @@ import {
   Autocomplete,
   Dialog,
   DialogContent,
+  MenuItem,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -31,16 +32,17 @@ import GradeIcon from '@mui/icons-material/Grade';
 import SchoolIcon from '@mui/icons-material/School';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import BookIcon from '@mui/icons-material/Book';
-import LockIcon from '@mui/icons-material/Lock';
-import LockOpenIcon from '@mui/icons-material/LockOpen';
 import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import axios from "axios";
 import toast from "../../../utils/toast";
 
-const API_BASE = 'https://eteeap-foth.onrender.com/api';
-const EVALUATOR_API = 'https://eteeap-foth.onrender.com/api/evaluators';
+// //const API_BASE = 'https://eteeap-foth.onrender.com/api';
+// const EVALUATOR_API = 'https://eteeap-foth.onrender.com/api/evaluators';
+
+const API_BASE = 'http://localhost:8080/api';
+const EVALUATOR_API = 'http://localhost:8080/api/evaluators';
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -321,13 +323,11 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
   // Accreditation function (bulk create records from curriculum)
 
 
-  // Toggle lock/unlock status via PUT; unlocking sets status to PENDING, locking sets to APPROVED
-  const handleToggleLock = async (rec) => {
-    const nextStatus = rec.status === "APPROVED" ? "PENDING" : "APPROVED";
-
+  // Handle status change via PUT
+  const handleStatusChange = async (rec, newStatus) => {
     try {
       const params = new URLSearchParams();
-      params.append('status', nextStatus);
+      params.append('status', newStatus);
 
       await axios.put(
         `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
@@ -339,9 +339,10 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
         `${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`
       );
       setRecords(sortSemesterSubjects(refreshed.data));
+      toast.success(`Status changed to ${newStatus}`);
     } catch (err) {
-      console.error("Failed to toggle lock:", err);
-      toast.error("Failed to toggle lock status.");
+      console.error("Failed to change status:", err);
+      toast.error("Failed to change status.");
     }
   };
 
@@ -508,8 +509,8 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                     </TableHead>
                     <TableBody>
                       {records[semester].map((rec) => {
-                        const isLocked = rec.status === "APPROVED";
-                        
+                        const isEditable = rec.status === "PENDING";
+
                         return (
                           <StyledTableRow key={rec.id}>
                             <StyledTableCell>
@@ -522,10 +523,10 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                 </Typography>
                               </Box>
                             </StyledTableCell>
-                            
+
                             {/* Grade Cell */}
                             <StyledTableCell>
-                              {!isLocked ? (
+                              {isEditable ? (
                                 <TextField
                                   size="small"
                                   value={rec.grade || ""}
@@ -540,8 +541,8 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                   }}
                                 />
                               ) : (
-                                <Typography 
-                                  variant="body2" 
+                                <Typography
+                                  variant="body2"
                                   fontWeight={rec.grade ? 600 : 400}
                                   color={rec.grade ? 'text.primary' : 'text.secondary'}
                                   sx={{
@@ -556,10 +557,10 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                 </Typography>
                               )}
                             </StyledTableCell>
-                            
+
                             {/* Process of Accreditation Cell */}
                             <StyledTableCell>
-                              {!isLocked ? (
+                              {isEditable ? (
                                 (() => {
                                   const allowedOptions = [
                                     "TOR Accreditation",
@@ -596,7 +597,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                   );
                                 })()
                               ) : (
-                                <Typography 
+                                <Typography
                                   variant="caption"
                                   color={rec.processOfAccreditation ? 'text.primary' : 'text.secondary'}
                                   sx={{
@@ -611,10 +612,10 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                 </Typography>
                               )}
                             </StyledTableCell>
-                            
+
                             {/* Substantive Basis Cell */}
                             <StyledTableCell>
-                              {!isLocked ? (
+                              {isEditable ? (
                                 <TextField
                                   size="small"
                                   value={rec.substantiveBasis || ""}
@@ -631,7 +632,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                   }}
                                 />
                               ) : (
-                                <Typography 
+                                <Typography
                                   variant="caption"
                                   color={rec.substantiveBasis ? 'text.primary' : 'text.secondary'}
                                   sx={{
@@ -646,23 +647,52 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                 </Typography>
                               )}
                             </StyledTableCell>
-                            
-                            {/* Actions Cell */}
+
+                            {/* Status Dropdown Cell */}
                             <StyledTableCell align="center">
-                              <Tooltip title={isLocked ? "Unlock" : "Lock"}>
-                                <IconButton
+                              <Tooltip
+                                title={!isEditable ? "Change back to PENDING to update this record" : ""}
+                                placement="top"
+                                arrow
+                              >
+                                <TextField
+                                  select
                                   size="small"
-                                  onClick={() => handleToggleLock(rec)}
+                                  value={rec.status || "PENDING"}
+                                  onChange={(e) => handleStatusChange(rec, e.target.value)}
                                   sx={{
-                                    color: isLocked ? '#ff9800' : '#4caf50',
-                                    backgroundColor: alpha(isLocked ? '#ff9800' : '#4caf50', 0.1),
-                                    '&:hover': {
-                                      backgroundColor: alpha(isLocked ? '#ff9800' : '#4caf50', 0.2),
+                                    minWidth: 140,
+                                    '& .MuiOutlinedInput-root': {
+                                      borderRadius: 1,
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      backgroundColor:
+                                        rec.status === "APPROVED"
+                                          ? alpha('#4caf50', 0.1)
+                                          : rec.status === "FOR_ENROLLMENT"
+                                          ? alpha('#2196f3', 0.1)
+                                          : alpha('#ff9800', 0.1),
+                                      color:
+                                        rec.status === "APPROVED"
+                                          ? '#2e7d32'
+                                          : rec.status === "FOR_ENROLLMENT"
+                                          ? '#1565c0'
+                                          : '#e65100',
+                                      '&:hover': {
+                                        backgroundColor:
+                                          rec.status === "APPROVED"
+                                            ? alpha('#4caf50', 0.2)
+                                            : rec.status === "FOR_ENROLLMENT"
+                                            ? alpha('#2196f3', 0.2)
+                                            : alpha('#ff9800', 0.2),
+                                      }
                                     }
                                   }}
                                 >
-                                  {isLocked ? <LockIcon fontSize="small" /> : <LockOpenIcon fontSize="small" />}
-                                </IconButton>
+                                  <MenuItem value="PENDING">PENDING</MenuItem>
+                                  <MenuItem value="APPROVED">APPROVED</MenuItem>
+                                  <MenuItem value="FOR_ENROLLMENT">FOR_ENROLLMENT</MenuItem>
+                                </TextField>
                               </Tooltip>
                             </StyledTableCell>
                           </StyledTableRow>
