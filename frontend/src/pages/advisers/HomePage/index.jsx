@@ -337,6 +337,35 @@ const AdviserHomePage = () => {
     setEditRow((prev) => ({ ...prev, [recId]: false }));
   };
 
+  // Handle status change via PUT
+  const handleStatusChange = async (rec, newStatus, semester, applicantId) => {
+    try {
+      const params = new URLSearchParams();
+      params.append('status', newStatus);
+
+      await fetch(
+        `https://eteeap-foth.onrender.com/api/applicant-subject-records/${rec.id}?${params.toString()}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        }
+      );
+
+      // Update local state after save
+      setRecordsMap((prev) => {
+        const newMap = { ...prev };
+        if (newMap[applicantId] && newMap[applicantId][semester]) {
+          newMap[applicantId][semester] = newMap[applicantId][semester].map((r) =>
+            r.id === rec.id ? { ...r, status: newStatus } : r
+          );
+        }
+        return newMap;
+      });
+    } catch (err) {
+      window.alert("Failed to change status.");
+    }
+  };
+
   return (
     <MainLayout userType="adviser" data={adviserName || "Adviser Portal"} adviserName={adviserName}>
       <Container maxWidth="xl" sx={{ pt: 1, pb: 8 }}>
@@ -593,8 +622,9 @@ const AdviserHomePage = () => {
                                         <StyledTableCell sx={{ width: '30%' }}>Subject</StyledTableCell>
                                         <StyledTableCell sx={{ width: '10%' }}>Grade</StyledTableCell>
                                         <StyledTableCell sx={{ width: '20%' }}>Accreditation Process</StyledTableCell>
-                                        <StyledTableCell sx={{ width: '25%' }}>Substantive Basis</StyledTableCell>
-                                        <StyledTableCell sx={{ width: '15%' }} align="center">Action</StyledTableCell>
+                                        <StyledTableCell sx={{ width: '20%' }}>Substantive Basis</StyledTableCell>
+                                        <StyledTableCell sx={{ width: '12%' }} align="center">Status</StyledTableCell>
+                                        <StyledTableCell sx={{ width: '8%' }} align="center">Action</StyledTableCell>
                                       </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -679,32 +709,70 @@ const AdviserHomePage = () => {
                                                 </Typography>
                                               )}
                                             </StyledTableCell>
-                                            
+
+                                            {/* Status Dropdown Cell */}
+                                            <StyledTableCell align="center">
+                                              <Tooltip
+                                                title={!isPending ? "Change back to PENDING to update this record" : ""}
+                                                placement="top"
+                                                arrow
+                                              >
+                                                <TextField
+                                                  select
+                                                  size="small"
+                                                  value={rec.status || "PENDING"}
+                                                  onChange={(e) => handleStatusChange(rec, e.target.value, semester, applicantId)}
+                                                  sx={{
+                                                    minWidth: 130,
+                                                    '& .MuiOutlinedInput-root': {
+                                                      borderRadius: 1,
+                                                      fontSize: 11,
+                                                      fontWeight: 600,
+                                                      backgroundColor:
+                                                        rec.status === "APPROVED"
+                                                          ? alpha('#4caf50', 0.1)
+                                                          : rec.status === "FOR_ENROLLMENT"
+                                                          ? alpha('#2196f3', 0.1)
+                                                          : alpha('#ff9800', 0.1),
+                                                      color:
+                                                        rec.status === "APPROVED"
+                                                          ? '#2e7d32'
+                                                          : rec.status === "FOR_ENROLLMENT"
+                                                          ? '#1565c0'
+                                                          : '#e65100',
+                                                      '&:hover': {
+                                                        backgroundColor:
+                                                          rec.status === "APPROVED"
+                                                            ? alpha('#4caf50', 0.2)
+                                                            : rec.status === "FOR_ENROLLMENT"
+                                                            ? alpha('#2196f3', 0.2)
+                                                            : alpha('#ff9800', 0.2),
+                                                      }
+                                                    }
+                                                  }}
+                                                >
+                                                  <MenuItem value="PENDING">PENDING</MenuItem>
+                                                  <MenuItem value="APPROVED">APPROVED</MenuItem>
+                                                  <MenuItem value="FOR_ENROLLMENT">FOR_ENROLLMENT</MenuItem>
+                                                </TextField>
+                                              </Tooltip>
+                                            </StyledTableCell>
+
+                                            {/* Action Cell */}
                                             <StyledTableCell align="center">
                                               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
-                                                {/* Status Indicator when not editing */}
-                                                {!isEditing && (
-                                                  <Tooltip title={rec.status}>
-                                                     {rec.status === "APPROVED" ? (
-                                                        <CheckCircleIcon color="success" fontSize="small" />
-                                                     ) : (
-                                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
-                                                     )}
-                                                  </Tooltip>
-                                                )}
-
                                                 {isPending && (
                                                   isEditing ? (
                                                     <>
-                                                      <IconButton 
-                                                        size="small" 
+                                                      <IconButton
+                                                        size="small"
                                                         onClick={() => handleSaveEdit(rec, semester, applicantId)}
                                                         sx={{ color: 'success.main', bgcolor: alpha('#2e7d32', 0.1) }}
                                                       >
                                                         <SaveIcon fontSize="small" />
                                                       </IconButton>
-                                                      <IconButton 
-                                                        size="small" 
+                                                      <IconButton
+                                                        size="small"
                                                         onClick={() => handleCancelEdit(rec.id)}
                                                         sx={{ color: 'error.main', bgcolor: alpha('#d32f2f', 0.1) }}
                                                       >
@@ -712,22 +780,17 @@ const AdviserHomePage = () => {
                                                       </IconButton>
                                                     </>
                                                   ) : (
-                                                    <Button
-                                                      variant="contained"
+                                                    <IconButton
                                                       size="small"
-                                                      startIcon={<EditIcon />}
                                                       onClick={() => handleEditClick(rec)}
                                                       sx={{
-                                                        minWidth: 80,
-                                                        fontSize: 12,
-                                                        boxShadow: 'none',
                                                         bgcolor: alpha(maroon.main, 0.1),
                                                         color: maroon.main,
                                                         '&:hover': { bgcolor: maroon.main, color: '#fff' }
                                                       }}
                                                     >
-                                                      Edit
-                                                    </Button>
+                                                      <EditIcon fontSize="small" />
+                                                    </IconButton>
                                                   )
                                                 )}
                                               </Box>
