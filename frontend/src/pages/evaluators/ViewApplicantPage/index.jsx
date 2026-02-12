@@ -1026,7 +1026,7 @@ const ViewApplicantPage = () => {
                         if (existingEvaluation?.evaluationId) {
                           try {
                             await fetch(
-                              `http://localhost:8080/api/evaluations/${existingEvaluation.evaluationId}/update-status?status=${newStatus}`,
+                              `${BACKEND_URL}/api/evaluations/${existingEvaluation.evaluationId}/update-status?status=${newStatus}`,
                               { method: "PUT" }
                             );
                             setEvaluationStatus(newStatus);

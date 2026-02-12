@@ -37,12 +37,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import axios from "axios";
 import toast from "../../../utils/toast";
+import { API_BASE } from '../../../config';
 
-// //const API_BASE = 'https://eteeap-foth.onrender.com/api';
-// const EVALUATOR_API = 'https://eteeap-foth.onrender.com/api/evaluators';
-
-const API_BASE = 'http://localhost:8080/api';
-const EVALUATOR_API = 'http://localhost:8080/api/evaluators';
+const EVALUATOR_API = `${API_BASE}/evaluators`;
 
 // Custom maroon and gold color palette
 const maroon = {

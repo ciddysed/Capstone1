@@ -24,12 +24,10 @@ import PersonIcon from '@mui/icons-material/Person';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import GradedAccreditation from "./GradedAccreditation";
 import PropTypes from 'prop-types';
+import { API_BASE } from '../../../config';
 
-// const API_ACCEPTED = "https://eteeap-foth.onrender.com/api/accepted-applicants";
-// const API_SUBJECT_RECORDS = "https://eteeap-foth.onrender.com/api/applicant-subject-records";
-
-const API_ACCEPTED = "http://localhost:8080/api/accepted-applicants";
-const API_SUBJECT_RECORDS = "http://localhost:8080/api/applicant-subject-records";
+const API_ACCEPTED = `${API_BASE}/accepted-applicants`;
+const API_SUBJECT_RECORDS = `${API_BASE}/applicant-subject-records`;
 
 // Custom maroon and gold color palette
 const maroon = {

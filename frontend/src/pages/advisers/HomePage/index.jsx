@@ -313,8 +313,7 @@ const AdviserHomePage = () => {
         params.append(key, value ?? "");
       });
       await fetch(
-        //`https://eteeap-foth.onrender.com/api/applicant-subject-records/${rec.id}?${params.toString()}`,
-        `http://localhost:8080/api/applicant-subject-records/${rec.id}?${params.toString()}`,
+        `https://eteeap-foth.onrender.com/api/applicant-subject-records/${rec.id}?${params.toString()}`,
         { method: "PUT", headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
       // Update local state after save
@@ -345,8 +344,7 @@ const AdviserHomePage = () => {
       params.append('status', newStatus);
 
       await fetch(
-        //`https://eteeap-foth.onrender.com/api/applicant-subject-records/${rec.id}?${params.toString()}`,
-        `http://localhost:8080/api/applicant-subject-records/${rec.id}?${params.toString()}`,
+        `https://eteeap-foth.onrender.com/api/applicant-subject-records/${rec.id}?${params.toString()}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
