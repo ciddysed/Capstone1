@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useCallback } from "react";
 import { 
   Box, Typography, Stack, Paper, Grid, Card, CardContent, 
@@ -215,7 +217,7 @@ const AcceptedDashboard = () => {
             totalSubjects: allRecords.length,
             approvedCount: allRecords.filter(r => r.status === 'APPROVED').length,
             pendingCount: allRecords.filter(r => r.status === 'PENDING').length,
-            rejectedCount: allRecords.filter(r => r.status === 'REJECTED').length
+            forEnrollmentCount: allRecords.filter(r => r.status === 'FOR_ENROLLMENT').length
           }
         };
 
@@ -250,8 +252,8 @@ const AcceptedDashboard = () => {
     switch (status) {
       case 'APPROVED':
         return <CheckCircleIcon sx={{ color: '#4caf50', fontSize: 20 }} />;
-      case 'REJECTED':
-        return <CancelIcon sx={{ color: '#f44336', fontSize: 20 }} />;
+      case 'FOR_ENROLLMENT':
+        return <CheckCircleIcon sx={{ color: '#2196f3', fontSize: 20 }} />;
       case 'PENDING':
       default:
         return <PendingIcon sx={{ color: '#ff9800', fontSize: 20 }} />;
@@ -262,8 +264,8 @@ const AcceptedDashboard = () => {
     switch (status) {
       case 'APPROVED':
         return '#4caf50';
-      case 'REJECTED':
-        return '#f44336';
+      case 'FOR_ENROLLMENT':
+        return '#2196f3';
       case 'PENDING':
       default:
         return '#ff9800';
@@ -391,7 +393,14 @@ const AcceptedDashboard = () => {
                         <Typography variant="body2" color="text.secondary">Pending</Typography>
                       </Box>
                     </Grid>
-                    {/* Rejected status removed from summary cards */}
+                    <Grid item xs={6} md={3}>
+                      <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#2196f3', 0.1), borderRadius: 2 }}>
+                        <Typography variant="h4" fontWeight={700} color="#2196f3">
+                          {curriculumSummary.forEnrollmentCount || 0}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">For Enrollment</Typography>
+                      </Box>
+                    </Grid>
                     <Grid item xs={6} md={3}>
                       <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha(maroon.main, 0.1), borderRadius: 2 }}>
                         <Typography variant="h4" fontWeight={700} color={maroon.main}>
