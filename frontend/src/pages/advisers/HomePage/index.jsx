@@ -424,137 +424,19 @@ const AdviserHomePage = () => {
           ) : (
             <Stack spacing={4}>
               
-              {/* SECTION 1: Applicants List */}
-              <ModernCard>
-                <CardHeaderBox>
-                  <Stack direction="row" spacing={2} alignItems="center">
+              {/* Assigned Students with Grading Workspace */}
+              <Grow in={true} timeout={600}>
+                <Box>
+                  <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Avatar sx={{ bgcolor: alpha(maroon.main, 0.1), color: maroon.main }}>
                       <PeopleIcon />
                     </Avatar>
                     <Box>
-                      <Typography variant="h6" fontWeight="bold" color="text.primary">
+                      <Typography variant="h5" fontWeight="bold" color={maroon.dark}>
                         Assigned Students
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        List of accepted applicants under your supervision ({applicants.length})
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardHeaderBox>
-
-                <CardContent sx={{ p: 0 }}>
-                  {applicants.length > 0 ? (
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <StyledTableCell>Student</StyledTableCell>
-                          <StyledTableCell>Program</StyledTableCell>
-                          <StyledTableCell>Status</StyledTableCell>
-                          <StyledTableCell>Accepted On</StyledTableCell>
-                          <StyledTableCell align="right">Actions</StyledTableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {applicants.map((app) => (
-                          <StyledTableRow key={app.acceptedApplicantId}>
-                            <StyledTableCell>
-                              <Stack direction="row" spacing={2} alignItems="center">
-                                <Avatar 
-                                  sx={{ 
-                                    bgcolor: maroon.main, 
-                                    width: 40, 
-                                    height: 40,
-                                    fontSize: 16,
-                                    fontWeight: 'bold',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                                  }}
-                                >
-                                  {app.applicant?.firstName?.charAt(0)}
-                                </Avatar>
-                                <Box>
-                                  <Typography variant="subtitle2" fontWeight={700} color={maroon.dark}>
-                                    {`${app.applicant?.firstName || ""} ${app.applicant?.lastName || ""}`}
-                                  </Typography>
-                                  {/* FIX: Ensure ID is a string before substring */}
-                                  <Typography variant="caption" color="text.secondary">
-                                    ID: {String(app.applicant?.applicantId || "").substring(0,8)}...
-                                  </Typography>
-                                </Box>
-                              </Stack>
-                            </StyledTableCell>
-                            <StyledTableCell>
-                              <Typography variant="body2" fontWeight={500}>
-                                {app.finalCourse?.courseName}
-                              </Typography>
-                            </StyledTableCell>
-                            <StyledTableCell>
-                              <StatusChip 
-                                label={app.status} 
-                                size="small" 
-                                status={app.status}
-                              />
-                            </StyledTableCell>
-                            <StyledTableCell>
-                              <Typography variant="body2" color="text.secondary">
-                                {app.acceptanceDate
-                                  ? new Date(app.acceptanceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                                  : "-"}
-                              </Typography>
-                            </StyledTableCell>
-                            <StyledTableCell align="right">
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                sx={{
-                                  borderRadius: 2,
-                                  textTransform: 'none',
-                                  fontWeight: 600,
-                                  borderColor: alpha(maroon.main, 0.5),
-                                  color: maroon.main,
-                                  '&:hover': { 
-                                    borderColor: maroon.main,
-                                    bgcolor: alpha(maroon.main, 0.05) 
-                                  },
-                                }}
-                                onClick={() => {
-                                  setSelectedApplicant({
-                                    applicantId: app.applicant?.applicantId,
-                                    courseId: app.finalCourse?.courseId,
-                                  });
-                                  setDetailsOpen(true);
-                                }}
-                              >
-                                View Details
-                              </Button>
-                            </StyledTableCell>
-                          </StyledTableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <Box sx={{ textAlign: "center", py: 8 }}>
-                      <PeopleIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.2, mb: 2 }} />
-                      <Typography variant="h6" color="text.secondary">
-                        No assigned students found
-                      </Typography>
-                    </Box>
-                  )}
-                </CardContent>
-              </ModernCard>
-
-              {/* SECTION 2: Grading Workspace */}
-              <Grow in={true} timeout={600}>
-                <Box>
-                  <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar sx={{ bgcolor: gold.main, color: '#000' }}>
-                      <AssignmentIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h5" fontWeight="bold" color={maroon.dark}>
-                        Grading Workspace
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Review subject allocations and assign grades for each semester.
+                        List of accepted applicants under your supervision. Expand to review and grade subjects ({applicants.length})
                       </Typography>
                     </Box>
                   </Box>
@@ -572,25 +454,97 @@ const AdviserHomePage = () => {
                       return (
                         <StyledAccordion key={applicantId} defaultExpanded={false}>
                           <StyledAccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: maroon.main }} />}>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center" sx={{ width: '100%' }}>
+                            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2} alignItems="center" sx={{ width: '100%', pr: 2 }}>
                               
-                              <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
-                                <Avatar sx={{ bgcolor: maroon.main, fontWeight: 'bold' }}>
-                                  {applicant.applicant?.firstName?.charAt(0)}
-                                </Avatar>
+                              {/* Student Info - Clickable */}
+                              <Tooltip title="View Details" arrow placement="top">
+                                <Stack 
+                                  direction="row" 
+                                  spacing={2} 
+                                  alignItems="center" 
+                                  sx={{ 
+                                    flex: { xs: 1, lg: 2 },
+                                    cursor: 'pointer',
+                                    borderRadius: 2,
+                                    padding: 1,
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                      bgcolor: alpha(maroon.main, 0.04),
+                                      transform: 'translateX(4px)',
+                                    }
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedApplicant({
+                                      applicantId: applicant.applicant?.applicantId,
+                                      courseId: applicant.finalCourse?.courseId,
+                                    });
+                                    setDetailsOpen(true);
+                                  }}
+                                >
+                                  <Avatar 
+                                    sx={{ 
+                                      bgcolor: maroon.main, 
+                                      fontWeight: 'bold', 
+                                      width: 48, 
+                                      height: 48,
+                                      transition: 'all 0.2s ease',
+                                      '&:hover': {
+                                        transform: 'scale(1.1)',
+                                        boxShadow: '0 4px 12px rgba(106, 0, 0, 0.3)',
+                                      }
+                                    }}
+                                  >
+                                    {applicant.applicant?.firstName?.charAt(0)}
+                                  </Avatar>
+                                  <Box>
+                                    <Typography 
+                                      variant="h6" 
+                                      fontWeight="bold" 
+                                      color="text.primary"
+                                      sx={{
+                                        transition: 'color 0.2s ease',
+                                        '&:hover': {
+                                          color: maroon.main,
+                                        }
+                                      }}
+                                    >
+                                      {`${applicant.applicant?.firstName || ""} ${applicant.applicant?.lastName || ""}`}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                      {applicant.finalCourse?.courseName}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      ID: {String(applicant.applicant?.applicantId || "").substring(0,8)}...
+                                    </Typography>
+                                  </Box>
+                                </Stack>
+                              </Tooltip>
+
+                              {/* Status & Date Info */}
+                              <Stack direction="row" spacing={3} alignItems="center" sx={{ flex: 1 }}>
                                 <Box>
-                                  <Typography variant="h6" fontWeight="bold" color="text.primary">
-                                    {`${applicant.applicant?.firstName || ""} ${applicant.applicant?.lastName || ""}`}
-                                  </Typography>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {applicant.finalCourse?.courseName}
+                                  <Typography variant="caption" display="block" color="text.secondary" fontWeight="600">STATUS</Typography>
+                                  <StatusChip 
+                                    label={applicant.status} 
+                                    size="small" 
+                                    status={applicant.status}
+                                  />
+                                </Box>
+                                <Box>
+                                  <Typography variant="caption" display="block" color="text.secondary" fontWeight="600">ACCEPTED ON</Typography>
+                                  <Typography variant="body2" fontWeight="500" color="text.primary">
+                                    {applicant.acceptanceDate
+                                      ? new Date(applicant.acceptanceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                      : "-"}
                                   </Typography>
                                 </Box>
                               </Stack>
 
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                              {/* Progress */}
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                 <Box sx={{ textAlign: 'right' }}>
-                                  <Typography variant="caption" display="block" color="text.secondary">PROGRESS</Typography>
+                                  <Typography variant="caption" display="block" color="text.secondary" fontWeight="600">PROGRESS</Typography>
                                   <Typography variant="subtitle2" fontWeight="bold" color={maroon.main}>
                                     {approvedRecords} / {totalRecords} Subjects
                                   </Typography>
@@ -810,9 +764,22 @@ const AdviserHomePage = () => {
                       );
                     })
                   ) : (
-                    <Paper sx={{ p: 4, textAlign: 'center', bgcolor: '#f5f5f5', borderStyle: 'dashed' }}>
-                      <Typography color="text.secondary">No students available for grading yet.</Typography>
-                    </Paper>
+                    <Box sx={{ 
+                      textAlign: 'center', 
+                      py: 8, 
+                      px: 3,
+                      bgcolor: '#f5f5f5', 
+                      borderRadius: 3,
+                      border: '2px dashed rgba(0,0,0,0.1)'
+                    }}>
+                      <PeopleIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.2, mb: 2 }} />
+                      <Typography variant="h6" color="text.secondary">
+                        No assigned students found
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        Students will appear here once they are assigned to you.
+                      </Typography>
+                    </Box>
                   )}
                 </Box>
               </Grow>
