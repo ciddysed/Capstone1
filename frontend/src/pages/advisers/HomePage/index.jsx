@@ -563,8 +563,10 @@ const AdviserHomePage = () => {
                     applicants.map((applicant) => {
                       const applicantId = applicant.applicant?.applicantId;
                       const records = recordsMap[applicantId] || {};
+                      // Define statuses that count as progress
+                      const PROGRESS_STATUSES = ["APPROVED", "FOR_ENROLLMENT"];
                       const totalRecords = Object.values(records).flat().length;
-                      const approvedRecords = Object.values(records).flat().filter(r => r.status === 'APPROVED').length;
+                      const approvedRecords = Object.values(records).flat().filter(r => PROGRESS_STATUSES.includes(r.status)).length;
                       const progress = totalRecords > 0 ? (approvedRecords / totalRecords) * 100 : 0;
 
                       return (

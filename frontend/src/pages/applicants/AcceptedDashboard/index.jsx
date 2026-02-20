@@ -6,6 +6,7 @@ import {
   Button, Divider, Chip, CircularProgress, Avatar, alpha,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Accordion, AccordionSummary, AccordionDetails, LinearProgress,
+  Dialog, DialogContent, DialogTitle, IconButton,
 } from "@mui/material";
 import { 
   School as SchoolIcon, 
@@ -18,7 +19,8 @@ import {
   HourglassEmpty as PendingIcon,
   ExpandMore as ExpandMoreIcon,
   Warning as WarningIcon,
-
+  Close as CloseIcon,
+  ChecklistRounded as ChecklistIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { Link as RouterLink } from "react-router-dom";
@@ -45,30 +47,50 @@ const gold = {
   contrastText: '#000000',
 };
 
-// Styled card component
+// Styled card component with enhanced UI
 const InfoCard = ({ title, icon, children, accentColor = maroon.main }) => (
   <Card 
-    elevation={1} 
+    elevation={0}
     sx={{ 
       height: '100%',
-      transition: 'transform 0.3s, box-shadow 0.3s',
-      borderTop: `3px solid ${accentColor}`,
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      borderTop: `4px solid ${accentColor}`,
+      border: `1px solid ${alpha(accentColor, 0.1)}`,
+      borderRadius: 2.5,
+      background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%)',
+      backdropFilter: 'blur(10px)',
       '&:hover': {
-        transform: 'translateY(-4px)',
-        boxShadow: '0 12px 20px -10px rgba(0,0,0,0.2)',
+        transform: 'translateY(-6px)',
+        boxShadow: `0 16px 40px ${alpha(accentColor, 0.15)}`,
       }
     }}
   >
     <CardContent>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Avatar sx={{ bgcolor: alpha(accentColor, 0.15), color: accentColor }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}>
+        <Avatar 
+          sx={{ 
+            bgcolor: `linear-gradient(135deg, ${alpha(accentColor, 0.2)} 0%, ${alpha(accentColor, 0.1)} 100%)`,
+            color: accentColor,
+            width: 44,
+            height: 44,
+            fontSize: 22
+          }}
+        >
           {icon}
         </Avatar>
-        <Typography variant="h6" sx={{ ml: 1, fontWeight: 600, color: accentColor }}>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            ml: 1.5, 
+            fontWeight: 700, 
+            color: accentColor,
+            letterSpacing: 0.3
+          }}
+        >
           {title}
         </Typography>
       </Box>
-      <Divider sx={{ mb: 2 }} />
+      <Divider sx={{ mb: 2.5, bgcolor: alpha(accentColor, 0.1) }} />
       {children}
     </CardContent>
   </Card>
@@ -79,6 +101,164 @@ InfoCard.propTypes = {
   icon: PropTypes.node,
   children: PropTypes.node,
   accentColor: PropTypes.string,
+};
+
+// Success Modal Component
+const EnrollmentSuccessModal = ({ open, onClose, forEnrollmentSubjects }) => {
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+        }
+      }}
+    >
+      <DialogTitle sx={{ pb: 1, pt: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CelebrationIcon sx={{ fontSize: 32, color: gold.main }} />
+            <Typography variant="h5" sx={{ fontWeight: 700, color: maroon.main }}>
+              Curriculum Evaluation Complete!
+            </Typography>
+          </Box>
+          <IconButton onClick={onClose} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </DialogTitle>
+      <DialogContent dividers sx={{ py: 3 }}>
+        <Stack spacing={3}>
+          {/* Success Message */}
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 3, 
+              borderRadius: 2, 
+              background: 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)',
+              border: '2px solid #22c55e',
+              textAlign: 'center'
+            }}
+          >
+            <CheckCircleIcon sx={{ fontSize: 48, color: '#16a34a', mb: 1 }} />
+            <Typography variant="h6" sx={{ color: '#166534', fontWeight: 700, mb: 1 }}>
+              All Subjects Evaluated
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#166534' }}>
+              You can now proceed to enrollment. Congrats and Good luck on your ETEEAP journey and Success.
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#22c55e', fontWeight: 700, mt: 2, fontSize: 24 }}>
+              All Hail!
+            </Typography>
+          </Paper>
+
+          {/* Remaining Subjects Summary */}
+          {forEnrollmentSubjects && forEnrollmentSubjects.length > 0 && (
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <ChecklistIcon sx={{ color: maroon.main, fontSize: 24 }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, color: maroon.main }}>
+                  Remaining Subjects to Enroll ({forEnrollmentSubjects.length})
+                </Typography>
+              </Box>
+
+              <Stack spacing={1.5}>
+                {forEnrollmentSubjects.map((subject, index) => (
+                  <Paper 
+                    key={index}
+                    elevation={0}
+                    sx={{ 
+                      p: 2, 
+                      borderRadius: 1.5, 
+                      bgcolor: alpha(maroon.main, 0.05),
+                      border: `1px solid ${alpha(maroon.main, 0.2)}`,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: maroon.main }}>
+                        {subject.subjectCode}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                        {subject.descriptiveTitle}
+                      </Typography>
+                    </Box>
+                    <Chip 
+                      label={`${subject.units || 0} units`}
+                      variant="outlined"
+                      sx={{ 
+                        bgcolor: alpha(gold.main, 0.1),
+                        color: gold.dark,
+                        borderColor: gold.main,
+                        fontWeight: 700,
+                        ml: 2
+                      }}
+                    />
+                  </Paper>
+                ))}
+              </Stack>
+
+              {/* Total Units Summary */}
+              <Paper 
+                elevation={0}
+                sx={{ 
+                  p: 2.5, 
+                  borderRadius: 2, 
+                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                  border: `2px solid ${gold.main}`,
+                  mt: 2.5,
+                  textAlign: 'center'
+                }}
+              >
+                <Typography variant="body2" sx={{ color: gold.dark, mb: 0.5 }}>
+                  Total Units to Enroll
+                </Typography>
+                <Typography 
+                  variant="h4" 
+                  sx={{ 
+                    fontWeight: 700, 
+                    color: maroon.main,
+                    fontSize: 32
+                  }}
+                >
+                  {forEnrollmentSubjects.reduce((sum, s) => sum + (s.units || 0), 0)} Units
+                </Typography>
+              </Paper>
+            </Box>
+          )}
+
+          {/* Action Button */}
+          <Button
+            variant="contained"
+            size="large"
+            fullWidth
+            onClick={onClose}
+            sx={{
+              background: `linear-gradient(135deg, ${maroon.main} 0%, ${maroon.light} 100%)`,
+              color: maroon.contrastText,
+              fontWeight: 700,
+              py: 1.5,
+              fontSize: 16,
+              borderRadius: 2,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 100%)`,
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 16px rgba(106, 0, 0, 0.3)'
+              }
+            }}
+          >
+            Got It! Proceed to Enrollment
+          </Button>
+        </Stack>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
 const AcceptedDashboard = () => {
@@ -94,24 +274,22 @@ const AcceptedDashboard = () => {
           );
           if (isMounted && acceptedResponse.data) {
             setAcceptanceData(acceptedResponse.data);
-            // Debug log
             console.log('[AcceptedDashboard] acceptanceData updated:', acceptedResponse.data);
           }
         } catch (err) {
-          // Prevent uncaught errors from crashing the app
           console.error('[AcceptedDashboard] Polling error:', err);
         }
       };
       const intervalId = setInterval(() => {
         pollAcceptance();
-      }, 10000); // Poll every 10 seconds
-      // Initial fetch
+      }, 10000);
       pollAcceptance();
       return () => {
         isMounted = false;
         clearInterval(intervalId);
       };
     }, []);
+    
   const navigate = useNavigate();
   const { handleSuccess, handleError, snackbar } = useResponseHandler();
   const [loading, setLoading] = useState(true);
@@ -122,19 +300,18 @@ const AcceptedDashboard = () => {
   const [expandedSemester, setExpandedSemester] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [forEnrollmentSubjects, setForEnrollmentSubjects] = useState([]);
 
-  // Function to fetch all subjects (flattened from organized data)
   const fetchAllSubjects = useCallback(async () => {
     const applicantId = localStorage.getItem("applicantId");
     if (!applicantId) return [];
 
     try {
-      // Using the actual working API endpoint
       const response = await axios.get(
         `https://eteeap-foth.onrender.com/api/applicant-subject-records/applicant/${applicantId}/organized-clean`
       );
 
-      // Flatten the organized data into a single array
       const allSubjects = [];
       for (const semesterSubjects of Object.values(response.data || {})) {
         if (Array.isArray(semesterSubjects) && semesterSubjects.length > 0) {
@@ -161,41 +338,34 @@ const AcceptedDashboard = () => {
       try {
         setLoading(true);
         
-        // Fetch applicant profile
         const applicantResponse = await axios.get(
           `https://eteeap-foth.onrender.com/api/applicants/${applicantId}`
         );
         
-        // Fetch accepted applicant data
         const acceptedResponse = await axios.get(
           `https://eteeap-foth.onrender.com/api/accepted-applicants/applicant/${applicantId}`
         );
         
         if (!acceptedResponse.data) {
-          // If not accepted, redirect to regular dashboard
           handleError("You have not been accepted yet.");
           navigate("/ApplicantHomePage");
           return;
         }
         
-        // Fetch subject records organized by semester (using working API)
         const subjectRecordsResponse = await axios.get(
           `https://eteeap-foth.onrender.com/api/applicant-subject-records/applicant/${applicantId}/organized-clean`
         );
 
-        // Sort and deduplicate subjects in each semester
         const processSemesterSubjects = (data) => {
           if (!data || typeof data !== 'object') return data;
           const processed = {};
           Object.keys(data).forEach((semester) => {
-            // Sort by subjectCode (or subjectId as fallback)
             let arr = [...data[semester]].sort((a, b) => {
               const codeA = a.subject?.subjectCode || '';
               const codeB = b.subject?.subjectCode || '';
               if (codeA && codeB) return codeA.localeCompare(codeB);
               return (a.subject?.subjectId || a.id || 0) - (b.subject?.subjectId || b.id || 0);
             });
-            // Deduplicate by subjectId (or subjectCode as fallback)
             const seen = new Set();
             arr = arr.filter((item) => {
               const key = item.subject?.subjectId || item.subject?.subjectCode || item.id;
@@ -210,7 +380,6 @@ const AcceptedDashboard = () => {
 
         const processedSubjectRecords = processSemesterSubjects(subjectRecordsResponse.data);
 
-        // Calculate curriculum summary from the processed data
         const allRecords = Object.values(processedSubjectRecords).flat();
         const summaryResponse = {
           data: {
@@ -225,6 +394,24 @@ const AcceptedDashboard = () => {
         setAcceptanceData(acceptedResponse.data);
         setSubjectRecords(processedSubjectRecords);
         setCurriculumSummary(summaryResponse.data);
+
+        // Check if all records are APPROVED or FOR_ENROLLMENT
+        const allCompleted = allRecords.length > 0 && 
+          allRecords.every(r => r.status === 'APPROVED' || r.status === 'FOR_ENROLLMENT');
+        
+        if (allCompleted) {
+          const enrollmentSubjects = allRecords
+            .filter(r => r.status === 'FOR_ENROLLMENT')
+            .map(r => ({
+              subjectCode: r.subject?.subjectCode || 'N/A',
+              descriptiveTitle: r.subject?.descriptiveTitle || 'N/A',
+              units: r.subject?.units || 0,
+              id: r.id
+            }));
+          
+          setForEnrollmentSubjects(enrollmentSubjects);
+          setShowSuccessModal(true);
+        }
 
         handleSuccess("Welcome to your acceptance dashboard!");
         
@@ -317,7 +504,6 @@ const AcceptedDashboard = () => {
     >
       {/* Seamless Applicant Navigation Bar */}
       <Paper elevation={2} sx={{ mb: 3, p: 1.5, borderRadius: 2, display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'center', background: `linear-gradient(90deg, #fffbe6 0%, #fff 100%)`, border: '1px solid #ffe082' }}>
-       
         <Button
           component={RouterLink}
           to="/accepted-dashboard"
@@ -328,42 +514,65 @@ const AcceptedDashboard = () => {
           Accepted Dashboard
         </Button>
       </Paper>
-      {/* Congratulations Banner */}
+      
+      {/* Enhanced Congratulations Banner */}
       <Paper
-        elevation={3}
+        elevation={0}
         sx={{
-          p: 3,
+          p: 4,
           mb: 4,
-          borderRadius: 2,
-          background: `linear-gradient(135deg, ${alpha(gold.light, 0.9)} 0%, ${alpha(gold.main, 0.8)} 100%)`,
-          border: `1px solid ${gold.main}`,
+          borderRadius: 3,
+          background: `linear-gradient(135deg, ${gold.light} 0%, ${gold.main} 50%, ${alpha(gold.main, 0.9)} 100%)`,
+          border: `2px solid ${gold.dark}`,
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          boxShadow: `0 12px 40px ${alpha(gold.main, 0.2)}`
         }}
       >
-        <Box sx={{ position: 'absolute', top: -20, right: -20, opacity: 0.15 }}>
-          <CelebrationIcon sx={{ fontSize: 180, color: maroon.main }} />
+        <Box sx={{ position: 'absolute', top: -40, right: -40, opacity: 0.08 }}>
+          <CelebrationIcon sx={{ fontSize: 240, color: maroon.main }} />
         </Box>
-        <Grid container spacing={2} alignItems="center">
+        <Grid container spacing={3} alignItems="center" position="relative" zIndex={1}>
           <Grid item xs={12} md={8}>
-            <Typography variant="h4" sx={{ color: maroon.main, fontWeight: 700, mb: 1 }}>
+            <Typography 
+              variant="h3" 
+              sx={{ 
+                color: maroon.main, 
+                fontWeight: 800, 
+                mb: 1.5,
+                letterSpacing: -0.5
+              }}
+            >
               Congratulations, {applicantData?.firstName}!
             </Typography>
-            <Typography variant="h6" sx={{ color: maroon.dark, mb: 2 }}>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                color: maroon.dark, 
+                mb: 2,
+                fontWeight: 700,
+                letterSpacing: 0.2
+              }}
+            >
               You have been accepted to {acceptanceData?.finalCourse?.courseName}
             </Typography>
-            <Typography variant="body1" sx={{ color: maroon.dark }}>
-              Your application has been approved on {formatDate(acceptanceData?.acceptanceDate)}. 
-              Review your curriculum evaluation below.
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                color: maroon.dark,
+                lineHeight: 1.7,
+                fontSize: '1.05rem'
+              }}
+            >
+              Your application has been approved on <strong>{formatDate(acceptanceData?.acceptanceDate)}</strong>. 
+              Review your curriculum evaluation below and prepare for your ETEEAP journey!
             </Typography>
           </Grid>
           <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
-            <EmojiEventsIcon sx={{ fontSize: 80, color: maroon.main, mb: 1 }} />
-            {/* Removed redundant 'View Application' and Go to Dashboard button as per new requirements. Use the main navigation or page header to access application tracking. */}
+            <EmojiEventsIcon sx={{ fontSize: 100, color: maroon.main, mb: 1, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }} />
           </Grid>
         </Grid>
       </Paper>
-
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={10}>
@@ -376,38 +585,94 @@ const AcceptedDashboard = () => {
                 accentColor={maroon.main}
               >
                 {curriculumSummary ? (
-                  <Grid container spacing={2}>
+                  <Grid container spacing={2.5}>
                     <Grid item xs={6} md={3}>
-                      <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#4caf50', 0.1), borderRadius: 2 }}>
-                        <Typography variant="h4" fontWeight={700} color="#4caf50">
+                      <Paper
+                        elevation={0}
+                        sx={{ 
+                          textAlign: 'center', 
+                          p: 2.5, 
+                          bgcolor: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+                          borderRadius: 2.5,
+                          border: '1px solid #81c784',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: '0 8px 16px rgba(76, 175, 80, 0.15)'
+                          }
+                        }}
+                      >
+                        <Typography variant="h4" fontWeight={800} color="#2e7d32" sx={{ letterSpacing: -0.5 }}>
                           {curriculumSummary.approvedCount || 0}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">Approved</Typography>
-                      </Box>
+                        <Typography variant="body2" color="#558b2f" fontWeight={600}>Approved</Typography>
+                      </Paper>
                     </Grid>
                     <Grid item xs={6} md={3}>
-                      <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#ff9800', 0.1), borderRadius: 2 }}>
-                        <Typography variant="h4" fontWeight={700} color="#ff9800">
+                      <Paper
+                        elevation={0}
+                        sx={{ 
+                          textAlign: 'center', 
+                          p: 2.5, 
+                          bgcolor: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+                          borderRadius: 2.5,
+                          border: '1px solid #ffb74d',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: '0 8px 16px rgba(255, 152, 0, 0.15)'
+                          }
+                        }}
+                      >
+                        <Typography variant="h4" fontWeight={800} color="#e65100" sx={{ letterSpacing: -0.5 }}>
                           {curriculumSummary.pendingCount || 0}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">Pending</Typography>
-                      </Box>
+                        <Typography variant="body2" color="#bf360c" fontWeight={600}>Pending</Typography>
+                      </Paper>
                     </Grid>
                     <Grid item xs={6} md={3}>
-                      <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha('#2196f3', 0.1), borderRadius: 2 }}>
-                        <Typography variant="h4" fontWeight={700} color="#2196f3">
+                      <Paper
+                        elevation={0}
+                        sx={{ 
+                          textAlign: 'center', 
+                          p: 2.5, 
+                          bgcolor: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                          borderRadius: 2.5,
+                          border: '1px solid #64b5f6',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: '0 8px 16px rgba(33, 150, 243, 0.15)'
+                          }
+                        }}
+                      >
+                        <Typography variant="h4" fontWeight={800} color="#01579b" sx={{ letterSpacing: -0.5 }}>
                           {curriculumSummary.forEnrollmentCount || 0}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">For Enrollment</Typography>
-                      </Box>
+                        <Typography variant="body2" color="#004c97" fontWeight={600}>For Enrollment</Typography>
+                      </Paper>
                     </Grid>
                     <Grid item xs={6} md={3}>
-                      <Box sx={{ textAlign: 'center', p: 2, bgcolor: alpha(maroon.main, 0.1), borderRadius: 2 }}>
-                        <Typography variant="h4" fontWeight={700} color={maroon.main}>
+                      <Paper
+                        elevation={0}
+                        sx={{ 
+                          textAlign: 'center', 
+                          p: 2.5, 
+                          bgcolor: `linear-gradient(135deg, ${alpha(maroon.main, 0.15)} 0%, ${alpha(maroon.main, 0.08)} 100%)`,
+                          borderRadius: 2.5,
+                          border: `1px solid ${alpha(maroon.main, 0.3)}`,
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: `0 8px 16px ${alpha(maroon.main, 0.15)}`
+                          }
+                        }}
+                      >
+                        <Typography variant="h4" fontWeight={800} color={maroon.main} sx={{ letterSpacing: -0.5 }}>
                           {curriculumSummary.totalSubjects || 0}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">Total Subjects</Typography>
-                      </Box>
+                        <Typography variant="body2" color={maroon.dark} fontWeight={600}>Total Subjects</Typography>
+                      </Paper>
                     </Grid>
                     <Grid item xs={12}>
                       <Box sx={{ mt: 1 }}>
@@ -503,20 +768,25 @@ const AcceptedDashboard = () => {
                                     }}
                                   >
                                     <TableCell>{record.subject?.subjectCode || 'N/A'}</TableCell>
-                                    <TableCell>{record.subject?.descriptiveTitle || 'N/A'}</TableCell>
+                                    <TableCell>
+                                      {record.subject?.descriptiveTitle || 'N/A'}
+                                    </TableCell>
                                     <TableCell align="center">
-                                      <Chip 
-                                        label={record.grade || 'N/A'}
-                                        size="small"
-                                        variant="outlined"
-                                      />
+                                      {record.originalGrade || 'N/A'}
                                     </TableCell>
                                     <TableCell align="center">
                                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
                                         {getStatusIcon(record.status)}
-                                        <Typography variant="caption" sx={{ color: getStatusColor(record.status), fontWeight: 600 }}>
-                                          {record.status}
-                                        </Typography>
+                                        <Chip
+                                          label={record.status}
+                                          size="small"
+                                          sx={{
+                                            bgcolor: alpha(getStatusColor(record.status), 0.15),
+                                            color: getStatusColor(record.status),
+                                            fontWeight: 600,
+                                            fontSize: '0.75rem'
+                                          }}
+                                        />
                                       </Box>
                                     </TableCell>
                                   </TableRow>
@@ -529,96 +799,11 @@ const AcceptedDashboard = () => {
                     ))}
                   </Box>
                 ) : (
-                  <Box sx={{ textAlign: 'center', py: 3 }}>
-                    <WarningIcon sx={{ fontSize: 48, color: '#ff9800', mb: 1 }} />
-                    <Typography variant="body1" color="text.secondary">
-                      No subject records available yet.
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Your curriculum evaluation is still in progress.
-                    </Typography>
-                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    No subject records available yet.
+                  </Typography>
                 )}
               </InfoCard>
-            </Box>
-            <Box sx={{ minWidth: 320, maxWidth: 340, ml: 2 }}>
-              {/* Acceptance Details - Improved UI, no course code */}
-              <InfoCard 
-                title={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <AccountBalanceIcon sx={{ color: '#2e7d32', fontSize: 28 }} />
-                    <span>Acceptance Details</span>
-                  </Box>
-                }
-                accentColor="#2e7d32"
-              >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 3,
-                    borderRadius: 3,
-                    background: 'linear-gradient(120deg, #e8f5e9 0%, #f1f8e9 100%)',
-                    boxShadow: '0 2px 8px rgba(46,125,50,0.07)',
-                    mb: 1,
-                  }}
-                >
-                  <Stack spacing={2}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip 
-                        label={acceptanceData?.status || "ACCEPTED"} 
-                        color="success" 
-                        variant="filled" 
-                        sx={{ fontWeight: 700, fontSize: 16, px: 2, py: 1, letterSpacing: 1, textTransform: 'capitalize' }}
-                      />
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">Acceptance Date</Typography>
-                      <Typography variant="body1" fontWeight={600} color="#2e7d32">
-                        {formatDate(acceptanceData?.acceptanceDate)}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">Program</Typography>
-                      <Typography variant="h6" fontWeight={700} color="#388e3c" sx={{ letterSpacing: 0.5 }}>
-                        {acceptanceData?.finalCourse?.courseName || 'N/A'}
-                      </Typography>
-                    </Box>
-                    {acceptanceData?.remarks && (
-                      <Box sx={{ mt: 1 }}>
-                        <Typography variant="subtitle2" color="text.secondary">Remarks</Typography>
-                        <Paper elevation={0} sx={{ mt: 0.5, p: 2, bgcolor: alpha('#c8e6c9', 0.5), borderLeft: '4px solid #2e7d32', borderRadius: 2 }}>
-                          <Typography variant="body2" color="#2e7d32">
-                            {acceptanceData.remarks}
-                          </Typography>
-                        </Paper>
-                      </Box>
-                    )}
-                  </Stack>
-                </Paper>
-              </InfoCard>
-
-              {/* Pending Subjects Alert */}
-              {curriculumSummary && curriculumSummary.pendingCount > 0 && (
-                <InfoCard 
-                  title="Action Required" 
-                  icon={<WarningIcon />}
-                  accentColor="#ff9800"
-                >
-                  <Box sx={{ 
-                    p: 2, 
-                    borderRadius: 1, 
-                    bgcolor: alpha('#ff9800', 0.1), 
-                    border: `1px solid ${alpha('#ff9800', 0.3)}`
-                  }}>
-                    <Typography variant="body2" fontWeight={600} color="#ff9800" gutterBottom>
-                      You have {curriculumSummary.pendingCount} subject{curriculumSummary.pendingCount !== 1 ? 's' : ''} pending evaluation
-                    </Typography>
-                    <Typography variant="caption" display="block" color="text.secondary">
-                      Please wait for the evaluators to review your subject credentials. You will be notified once the evaluation is complete.
-                    </Typography>
-                  </Box>
-                </InfoCard>
-              )}
             </Box>
           </Stack>
         </Grid>
@@ -629,6 +814,13 @@ const AcceptedDashboard = () => {
         open={isModalOpen}
         onClose={handleCloseModal}
         subjectRecord={selectedSubject}
+      />
+
+      {/* Enrollment Success Modal */}
+      <EnrollmentSuccessModal
+        open={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        forEnrollmentSubjects={forEnrollmentSubjects}
       />
 
       {snackbar}
