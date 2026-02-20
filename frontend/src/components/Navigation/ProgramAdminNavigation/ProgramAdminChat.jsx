@@ -31,7 +31,7 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
   // Fetch all evaluators
   const fetchAllEvaluators = useCallback(async () => {
     try {
-      const response = await axios.get(`${BACKEND_URL}/api/messages/evaluators/all`)
+      const response = await axios.get(`https://eteeap-foth.onrender.com/api/messages/evaluators/all`)
       setAllEvaluators(response.data || [])
     } catch (error) {
       console.error("Failed to fetch evaluators:", error)
@@ -42,7 +42,7 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
   // Fetch all applicants
   const fetchAllApplicants = useCallback(async () => {
     try {
-      const response = await axios.get(`${BACKEND_URL}/api/messages/applicants/all`)
+      const response = await axios.get(`https://eteeap-foth.onrender.com/api/messages/applicants/all`)
       setAllApplicants(response.data || [])
     } catch (error) {
       console.error("Failed to fetch applicants:", error)
@@ -55,7 +55,7 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
     if (!programAdminId) return
     setInboxLoading(true)
     try {
-      const response = await axios.get(`${BACKEND_URL}/api/messages/inbox/admin/chat-list`, {
+      const response = await axios.get(`https://eteeap-foth.onrender.com/api/messages/inbox/admin/chat-list`, {
         params: { adminId: programAdminId },
       })
       setChatList(response.data || [])
@@ -77,10 +77,10 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
         let params = {}
 
         if (participantRole === "APPLICANT") {
-          endpoint = `${BACKEND_URL}/api/messages/conversation/applicant-admin`
+          endpoint = `https://eteeap-foth.onrender.com/api/messages/conversation/applicant-admin`
           params = { applicantId: participantId, adminId: programAdminId }
         } else if (participantRole === "EVALUATOR") {
-          endpoint = `${BACKEND_URL}/api/messages/conversation/evaluator-admin`
+          endpoint = `https://eteeap-foth.onrender.com/api/messages/conversation/evaluator-admin`
           params = { evaluatorId: participantId, adminId: programAdminId }
         } else {
           console.error("Unknown participantRole:", participantRole)
@@ -101,7 +101,7 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
         
         // Mark messages as seen
         try {
-          await axios.post(`${BACKEND_URL}/api/messages/mark-seen`, {
+          await axios.post(`https://eteeap-foth.onrender.com/api/messages/mark-seen`, {
             userId: Number(programAdminId),
             userType: "PROGRAM_ADMIN",
             participantId: Number(participantId),
@@ -150,7 +150,7 @@ const ProgramAdminChat = forwardRef(({ programAdminId, colors }, ref) => {
         payload.recipientEvaluator = { evaluatorId: participantIdNum }
       }
 
-      await axios.post(`${BACKEND_URL}/api/messages/send`, payload)
+      await axios.post(`https://eteeap-foth.onrender.com/api/messages/send`, payload)
       setNewMessage("")
       await fetchConversation(selectedConversation.participantId, selectedConversation.participantRole, undefined)
       await fetchChatList() // Refresh chat list to update order
