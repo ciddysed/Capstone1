@@ -93,13 +93,6 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
     }
   }
 
-  // Helper function to normalize admin list response
-  const normalizeAdminList = (admins) => {
-    if (Array.isArray(admins)) return admins
-    if (admins && admins.adminId) return [admins]
-    return []
-  }
-
   // Helper function to fetch program admins
   const fetchProgramAdmins = async (existingParticipants) => {
     // No longer showing program admins without messages
@@ -159,6 +152,7 @@ const EvaluatorChat = ({ evaluatorId, colors }) => {
     } finally {
       setInboxLoading(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluatorId])
 
   // Fetch conversation

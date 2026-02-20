@@ -55,7 +55,7 @@ const ProgramAdminNotificationCenter = ({ programAdminId }) => {
       setModalOpen(false);
       setPendingNotification(null);
       } catch (err) {
-        // Optionally show error
+        console.error('Error executing notification action:', err);
       }
       setActionLoading(false);
     };
@@ -113,9 +113,9 @@ const ProgramAdminNotificationCenter = ({ programAdminId }) => {
       fetchNotifications();
     };
 
-    const eventTarget = window;
+    const eventTarget = globalThis;
 
-    if (eventTarget && typeof eventTarget.addEventListener === 'function') {
+    if (eventTarget?.addEventListener) {
       eventTarget.addEventListener('notifications:updated', handler);
     }
 

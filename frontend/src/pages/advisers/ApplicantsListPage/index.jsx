@@ -87,6 +87,13 @@ const ViewButton = styled(Button)(({ theme }) => ({
   },
 }));
 
+// Helper function to get status chip color
+const getStatusChipColor = (status) => {
+  if (status === "ACCEPTED") return "success";
+  if (status === "ENROLLED") return "info";
+  return "error";
+};
+
 const ApplicantsListPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -292,13 +299,7 @@ const ApplicantsListPage = () => {
                         <StyledTableCell>
                           <Chip
                             label={app.status}
-                            color={
-                              app.status === "ACCEPTED"
-                                ? "success"
-                                : app.status === "ENROLLED"
-                                ? "info"
-                                : "error"
-                            }
+                            color={getStatusChipColor(app.status)}
                             variant="outlined"
                             size="small"
                           />

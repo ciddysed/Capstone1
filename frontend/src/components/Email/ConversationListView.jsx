@@ -1,4 +1,5 @@
 import React from "react"
+import PropTypes from "prop-types"
 import {
   Box,
   List,
@@ -271,6 +272,36 @@ const ConversationListView = ({
       })}
     </List>
   )
+}
+
+ConversationListView.propTypes = {
+  conversations: PropTypes.arrayOf(
+    PropTypes.shape({
+      participantId: PropTypes.number,
+      participantName: PropTypes.string,
+      participantRole: PropTypes.string,
+      lastMessage: PropTypes.string,
+      lastMessageTimestamp: PropTypes.string,
+      unreadCount: PropTypes.number,
+    })
+  ),
+  loading: PropTypes.bool,
+  onSelectConversation: PropTypes.func,
+  selectedParticipantId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  colors: PropTypes.shape({
+    primary: PropTypes.shape({
+      main: PropTypes.string,
+      dark: PropTypes.string,
+    }),
+    secondary: PropTypes.shape({
+      main: PropTypes.string,
+    }),
+    accent: PropTypes.shape({
+      info: PropTypes.string,
+    }),
+    neutral: PropTypes.objectOf(PropTypes.string),
+  }),
+  currentUserType: PropTypes.string,
 }
 
 export default ConversationListView

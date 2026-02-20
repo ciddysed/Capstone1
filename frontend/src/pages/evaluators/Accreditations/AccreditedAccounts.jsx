@@ -23,7 +23,6 @@ import { styled } from "@mui/material/styles";
 import PersonIcon from '@mui/icons-material/Person';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import GradedAccreditation from "./GradedAccreditation";
-import PropTypes from 'prop-types';
 import { API_BASE } from '../../../config';
 
 const API_ACCEPTED = `${API_BASE}/accepted-applicants`;
@@ -91,6 +90,13 @@ const ActionButton = styled(Button)(({ theme }) => ({
   },
 }));
 
+// Helper function to get chip color based on status
+const getStatusColor = (status) => {
+  if (status === "ACCEPTED") return "success";
+  if (status === "ENROLLED") return "info";
+  return "error";
+};
+
 const AccreditedAccounts = () => {
   const theme = useTheme();
   const [accreditedApplicants, setAccreditedApplicants] = useState([]);
@@ -103,7 +109,7 @@ const AccreditedAccounts = () => {
   });
   // Open modal automatically if redirected with state
   useEffect(() => {
-    if (location.state && location.state.openApplicantId && location.state.openCurriculumId) {
+    if (location.state?.openApplicantId && location.state?.openCurriculumId) {
       setSelectedModalData({
         applicantId: location.state.openApplicantId,
         curriculumId: location.state.openCurriculumId,
@@ -186,90 +192,90 @@ const AccreditedAccounts = () => {
                 </Stack>
               </Box>
 
-              {loading ? (
-                <Box sx={{ textAlign: "center", py: 4 }}>
-                  <CircularProgress size={32} />
-                  <Typography variant="body2" sx={{ mt: 1.5 }}>
-                    Loading accredited applicants...
-                  </Typography>
-                </Box>
-              ) : accreditedApplicants.length > 0 ? (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <StyledTableCell>Applicant Name</StyledTableCell>
-                      <StyledTableCell>Course</StyledTableCell>
-                      <StyledTableCell>Status</StyledTableCell>
-                      <StyledTableCell>Acceptance Date</StyledTableCell>
-                      <StyledTableCell align="center">Actions</StyledTableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {accreditedApplicants.map(app => (
-                      <StyledTableRow key={app.acceptedApplicantId}>
-                        <StyledTableCell>
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Avatar sx={{ bgcolor: maroon.main, width: 32, height: 32, fontSize: 14 }}>
-                              {app.applicant?.firstName?.charAt(0)}
-                            </Avatar>
-                            <Typography variant="body2" fontWeight={500}>
-                              {`${app.applicant?.firstName || ""} ${app.applicant?.lastName || ""}`}
+              {(() => {
+                if (loading) {
+                  return (
+                    <Box sx={{ textAlign: "center", py: 4 }}>
+                      <CircularProgress size={32} />
+                      <Typography variant="body2" sx={{ mt: 1.5 }}>
+                        Loading accredited applicants...
+                      </Typography>
+                    </Box>
+                  );
+                }
+                
+                if (accreditedApplicants.length === 0) {
+                  return (
+                    <Box sx={{ textAlign: "center", py: 4 }}>
+                      <PersonIcon sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.3, mb: 1 }} />
+                      <Typography variant="body1" color="text.secondary" gutterBottom>
+                        No accredited applicants found
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        No applicants have completed the accreditation process yet.
+                      </Typography>
+                    </Box>
+                  );
+                }
+                
+                return (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <StyledTableCell>Applicant Name</StyledTableCell>
+                        <StyledTableCell>Course</StyledTableCell>
+                        <StyledTableCell>Status</StyledTableCell>
+                        <StyledTableCell>Acceptance Date</StyledTableCell>
+                        <StyledTableCell align="center">Actions</StyledTableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {accreditedApplicants.map(app => (
+                        <StyledTableRow key={app.acceptedApplicantId}>
+                          <StyledTableCell>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Avatar sx={{ bgcolor: maroon.main, width: 32, height: 32, fontSize: 14 }}>
+                                {app.applicant?.firstName?.charAt(0)}
+                              </Avatar>
+                              <Typography variant="body2" fontWeight={500}>
+                                {`${app.applicant?.firstName || ""} ${app.applicant?.lastName || ""}`}
+                              </Typography>
+                            </Stack>
+                          </StyledTableCell>
+                          <StyledTableCell>
+                            <Typography variant="body2">{app.finalCourse?.courseName}</Typography>
+                          </StyledTableCell>
+                          <StyledTableCell>
+                            <Chip
+                              label={app.status}
+                              color={getStatusColor(app.status)}
+                              size="small"
+                              sx={{ height: 22, fontSize: 11 }}
+                            />
+                          </StyledTableCell>
+                          <StyledTableCell>
+                            <Typography variant="body2">
+                              {app.acceptanceDate
+                                ? new Date(app.acceptanceDate).toLocaleDateString()
+                                : "-"}
                             </Typography>
-                          </Stack>
-                        </StyledTableCell>
-                        <StyledTableCell>
-                          <Typography variant="body2">{app.finalCourse?.courseName}</Typography>
-                        </StyledTableCell>
-                        <StyledTableCell>
-                          {(() => {
-                            let chipColor = "error";
-                            if (app.status === "ACCEPTED") {
-                              chipColor = "success";
-                            } else if (app.status === "ENROLLED") {
-                              chipColor = "info";
-                            }
-                            return (
-                              <Chip
-                                label={app.status}
-                                color={chipColor}
-                                size="small"
-                                sx={{ height: 22, fontSize: 11 }}
-                              />
-                            );
-                          })()}
-                        </StyledTableCell>
-                        <StyledTableCell>
-                          <Typography variant="body2">
-                            {app.acceptanceDate
-                              ? new Date(app.acceptanceDate).toLocaleDateString()
-                              : "-"}
-                          </Typography>
-                        </StyledTableCell>
-                        <StyledTableCell align="center">
-                          <ActionButton
-                            variant="contained"
-                            size="small"
-                            onClick={() => handleViewAccreditation(app)}
-                            sx={{ py: 0.5, px: 1.5, fontSize: 12 }}
-                          >
-                            View Details
-                          </ActionButton>
-                        </StyledTableCell>
-                      </StyledTableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <Box sx={{ textAlign: "center", py: 4 }}>
-                  <PersonIcon sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.3, mb: 1 }} />
-                  <Typography variant="body1" color="text.secondary" gutterBottom>
-                    No accredited applicants found
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    No applicants have completed the accreditation process yet.
-                  </Typography>
-                </Box>
-              )}
+                          </StyledTableCell>
+                          <StyledTableCell align="center">
+                            <ActionButton
+                              variant="contained"
+                              size="small"
+                              onClick={() => handleViewAccreditation(app)}
+                              sx={{ py: 0.5, px: 1.5, fontSize: 12 }}
+                            >
+                              View Details
+                            </ActionButton>
+                          </StyledTableCell>
+                        </StyledTableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                );
+              })()}
             </CardContent>
           </InfoCard>
         </Grow>
@@ -284,11 +290,6 @@ const AccreditedAccounts = () => {
       />
     </>
   );
-};
-
-
-AccreditedAccounts.propTypes = {
-  onNavigateToGraded: PropTypes.func,
 };
 
 export default AccreditedAccounts;

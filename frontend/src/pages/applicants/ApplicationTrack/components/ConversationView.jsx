@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react"
+import PropTypes from "prop-types"
 import {
   Box,
   Typography,
@@ -108,6 +109,86 @@ const ConversationView = ({
     }
   }
 
+  const renderMessageContent = () => {
+    if (conversationLoading) {
+      return (
+        <>
+          {[1, 2, 3].map((i) => (
+            <Box key={i} sx={{ display: "flex", justifyContent: i % 2 === 0 ? "flex-end" : "flex-start", mb: 1.5 }}>
+              <Box sx={{ maxWidth: "70%" }}>
+                <Skeleton variant="rounded" height={60} width={i === 2 ? 250 : 180} animation="wave" />
+              </Box>
+            </Box>
+          ))}
+        </>
+      )
+    }
+
+    if (conversationMessages.length === 0) {
+      return (
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <Typography variant="body2" color={safeColors.neutral[500]}>
+            No messages yet. Start the conversation!
+          </Typography>
+        </Box>
+      )
+    }
+
+    return (
+      <>
+        {uniqueMessages.map((msg, idx) => {
+          const isFromCurrentUser = msg.senderType === currentUserType
+          const fullTimestamp = msg.sentAt ? new Date(msg.sentAt).toLocaleString() : ""
+          return (
+            <Tooltip 
+              key={msg.messageId || idx}
+              title={fullTimestamp || "Sending..."}
+              placement={isFromCurrentUser ? "left" : "right"}
+              arrow
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: isFromCurrentUser ? "flex-end" : "flex-start",
+                }}
+              >
+                <Box
+                  sx={{
+                    maxWidth: "80%",
+                    p: 1.5,
+                    borderRadius: 2,
+                  bgcolor: isFromCurrentUser ? safeColors.primary.main : "white",
+                  color: isFromCurrentUser ? "white" : safeColors.neutral[800],
+                  border: isFromCurrentUser ? "none" : `1px solid ${safeColors.neutral[200]}`,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                }}
+              >
+                <Typography variant="body2" sx={{ fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+                  {parseMessageContent(msg.content)}
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", mt: 0.75 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontSize: 10,
+                      opacity: isFromCurrentUser ? 0.8 : 0.6,
+                    }}
+                  >
+                    {formatMessageTime(msg.sentAt || msg.createdAt)}
+                  </Typography>
+                  {getStatusIcon(msg)}
+                </Box>
+              </Box>
+            </Box>
+          </Tooltip>
+          )
+        })}
+        {/* Scroll anchor */}
+        <div ref={messagesEndRef} />
+      </>
+    )
+  }
+
   return (
     <>
       {/* Conversation Messages */}
@@ -121,76 +202,7 @@ const ConversationView = ({
           gap: 1.5,
         }}
       >
-        {conversationLoading ? (
-          // Loading skeleton instead of spinner
-          <>
-            {[1, 2, 3].map((i) => (
-              <Box key={i} sx={{ display: "flex", justifyContent: i % 2 === 0 ? "flex-end" : "flex-start", mb: 1.5 }}>
-                <Box sx={{ maxWidth: "70%" }}>
-                  <Skeleton variant="rounded" height={60} width={i === 2 ? 250 : 180} animation="wave" />
-                </Box>
-              </Box>
-            ))}
-          </>
-        ) : conversationMessages.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 4 }}>
-            <Typography variant="body2" color={safeColors.neutral[500]}>
-              No messages yet. Start the conversation!
-            </Typography>
-          </Box>
-        ) : (
-          <>
-            {uniqueMessages.map((msg, idx) => {
-              const isFromCurrentUser = msg.senderType === currentUserType
-              const fullTimestamp = msg.sentAt ? new Date(msg.sentAt).toLocaleString() : ""
-              return (
-                <Tooltip 
-                  key={msg.messageId || idx}
-                  title={fullTimestamp || "Sending..."}
-                  placement={isFromCurrentUser ? "left" : "right"}
-                  arrow
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: isFromCurrentUser ? "flex-end" : "flex-start",
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        maxWidth: "80%",
-                        p: 1.5,
-                        borderRadius: 2,
-                      bgcolor: isFromCurrentUser ? safeColors.primary.main : "white",
-                      color: isFromCurrentUser ? "white" : safeColors.neutral[800],
-                      border: isFromCurrentUser ? "none" : `1px solid ${safeColors.neutral[200]}`,
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                    }}
-                  >
-                    <Typography variant="body2" sx={{ fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
-                      {parseMessageContent(msg.content)}
-                    </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", mt: 0.75 }}>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontSize: 10,
-                          opacity: isFromCurrentUser ? 0.8 : 0.6,
-                        }}
-                      >
-                        {formatMessageTime(msg.sentAt || msg.createdAt)}
-                      </Typography>
-                      {getStatusIcon(msg)}
-                    </Box>
-                  </Box>
-                </Box>
-              </Tooltip>
-              )
-            })}
-            {/* Scroll anchor */}
-            <div ref={messagesEndRef} />
-          </>
-        )}
+        {renderMessageContent()}
       </Box>
 
       {/* Message sent confirmation */}
@@ -316,6 +328,48 @@ const ConversationView = ({
       </Box>
     </>
   )
+}
+
+ConversationView.propTypes = {
+  conversationMessages: PropTypes.arrayOf(
+    PropTypes.shape({
+      messageId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      content: PropTypes.string,
+      senderType: PropTypes.string,
+      sentAt: PropTypes.string,
+      createdAt: PropTypes.string,
+      status: PropTypes.string,
+    })
+  ).isRequired,
+  conversationLoading: PropTypes.bool.isRequired,
+  newMessage: PropTypes.string.isRequired,
+  onMessageChange: PropTypes.func.isRequired,
+  onSendMessage: PropTypes.func.isRequired,
+  sendingMessage: PropTypes.bool.isRequired,
+  messagesEndRef: PropTypes.oneOfType([
+    PropTypes.func,
+    PropTypes.shape({ current: PropTypes.instanceOf(Element) }),
+  ]).isRequired,
+  formatMessageTime: PropTypes.func.isRequired,
+  colors: PropTypes.shape({
+    primary: PropTypes.shape({
+      main: PropTypes.string,
+      dark: PropTypes.string,
+    }),
+    secondary: PropTypes.shape({
+      main: PropTypes.string,
+    }),
+    neutral: PropTypes.shape({
+      50: PropTypes.string,
+      200: PropTypes.string,
+      300: PropTypes.string,
+      400: PropTypes.string,
+      500: PropTypes.string,
+      800: PropTypes.string,
+    }),
+  }).isRequired,
+  currentUserType: PropTypes.string,
+  lastSeen: PropTypes.string,
 }
 
 export default ConversationView

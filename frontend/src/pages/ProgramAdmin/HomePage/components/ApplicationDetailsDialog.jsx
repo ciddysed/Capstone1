@@ -499,7 +499,7 @@ const ApplicationDetailsDialog = ({
         try {
           link.remove();
         } catch (e) {
-          // ignore removal errors
+          console.error("Error removing download link:", e);
         }
       }, 100);
       
@@ -693,6 +693,7 @@ const ApplicationDetailsDialog = ({
         setApplicationNotes(res.data.applicationNotes || "");
         setNotesStatus(res.data.status || ""); // fetch status for later PUT
       } catch (err) {
+        console.error("Error loading application notes:", err);
         setNotesError("Failed to load application notes.");
         setApplicationNotes("");
         setNotesStatus("");
@@ -720,6 +721,7 @@ const ApplicationDetailsDialog = ({
       setNotesEdit(false);
       toast.success("Application notes updated.");
     } catch (err) {
+      console.error("Error saving application notes:", err);
       setNotesError("Failed to save notes.");
     } finally {
       setNotesSaveLoading(false);
@@ -733,15 +735,17 @@ const ApplicationDetailsDialog = ({
         onClose={handleCloseDialog} 
         maxWidth="md" 
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: '0 8px 40px -12px rgba(106, 0, 0, 0.3)',
-            overflow: 'hidden',
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              boxShadow: '0 8px 40px -12px rgba(106, 0, 0, 0.3)',
+              overflow: 'hidden',
+            }
           }
         }}
         fullScreen={isMobile}
-        TransitionComponent={Grow}
+        slots={{ transition: Grow }}
         transitionDuration={300}
       >
         {selectedApplication && (
@@ -854,7 +858,17 @@ const ApplicationDetailsDialog = ({
                         <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
                           <CircularProgress size={30} />
                         </Box>
-                      ) : coursePreferences.length > 0 ? (
+                      ) : (() => {
+                        if (coursePreferences.length === 0) {
+                          return (
+                            <Box sx={{ textAlign: 'center', py: 3 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                No course preferences added yet.
+                              </Typography>
+                            </Box>
+                          );
+                        }
+                        return (
                         <TableContainer component={Paper} variant="outlined" sx={{ 
                           borderRadius: 2,
                           boxShadow: 'none',
@@ -921,7 +935,7 @@ const ApplicationDetailsDialog = ({
                                           // Show remarks/comments from evaluation, if available
                                           (() => {
                                             const evaluation = getEvaluationStatusForCourse(preference.courseId);
-                                            return evaluation && evaluation.comments
+                                            return evaluation?.comments
                                               ? evaluation.comments
                                               : <span style={{ color: "#888" }}>—</span>;
                                           })()
@@ -934,11 +948,8 @@ const ApplicationDetailsDialog = ({
                             </TableBody>
                           </Table>
                         </TableContainer>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                          No course preferences found
-                        </Typography>
-                      )}
+                        );
+                      })()}
                     </CardContent>
                   </InfoCard>
                 </Grid>
@@ -1178,21 +1189,7 @@ const ApplicationDetailsDialog = ({
                               {notesError}
                             </Typography>
                           )}
-                          {!notesEdit ? (
-                            <Box>
-                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                {applicationNotes ? applicationNotes : <span style={{ color: "#888" }}>No remarks yet.</span>}
-                              </Typography>
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                sx={{ mt: 1 }}
-                                onClick={() => setNotesEdit(true)}
-                              >
-                                Add Remarks
-                              </Button>
-                            </Box>
-                          ) : (
+                          {notesEdit ? (
                             <Box>
                               <TextField
                                 multiline
@@ -1200,15 +1197,13 @@ const ApplicationDetailsDialog = ({
                                 maxRows={8}
                                 fullWidth
                                 value={applicationNotes}
-                                onChange={e => setApplicationNotes(e.target.value)}
-                                disabled={notesSaveLoading}
-                                placeholder="Enter remarks about this application..."
-                                sx={{ mb: 1 }}
+                                onChange={(e) => setApplicationNotes(e.target.value)}
+                                placeholder="Enter application remarks here..."
+                                variant="outlined"
                               />
-                              <Stack direction="row" spacing={1}>
+                              <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                                 <Button
                                   variant="contained"
-                                  color="primary"
                                   size="small"
                                   onClick={handleSaveNotes}
                                   disabled={notesSaveLoading}
@@ -1218,12 +1213,29 @@ const ApplicationDetailsDialog = ({
                                 <Button
                                   variant="outlined"
                                   size="small"
-                                  onClick={() => setNotesEdit(false)}
+                                  onClick={() => {
+                                    setNotesEdit(false);
+                                    setNotesError("");
+                                  }}
                                   disabled={notesSaveLoading}
                                 >
                                   Cancel
                                 </Button>
-                              </Stack>
+                              </Box>
+                            </Box>
+                          ) : (
+                            <Box>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                {applicationNotes || <span style={{ color: "#888" }}>No remarks yet.</span>}
+                              </Typography>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                sx={{ mt: 1 }}
+                                onClick={() => setNotesEdit(true)}
+                              >
+                                Add Remarks
+                              </Button>
                             </Box>
                           )}
                         </>

@@ -6,7 +6,7 @@ import {
   Button, Divider, Chip, CircularProgress, Avatar, alpha,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Accordion, AccordionSummary, AccordionDetails, LinearProgress,
-  Dialog, DialogContent, DialogTitle, IconButton, Fade, Tooltip,
+  Dialog, DialogContent, IconButton, Fade, Tooltip,
 } from "@mui/material";
 import {
   School as SchoolIcon,
@@ -154,7 +154,6 @@ StatusChip.propTypes = { status: PropTypes.string.isRequired };
 const SubjectDetailModal = ({ open, onClose, subjectRecord }) => {
   if (!subjectRecord) return null;
   const subject = subjectRecord.subject || {};
-  const c = statusColors[subjectRecord.status] || statusColors.PENDING;
 
   const DetailRow = ({ label, children }) => (
     <Paper elevation={0} sx={{ p: 2, borderRadius: 2, bgcolor: maroon[50], border: `1px solid ${alpha(maroon.main, 0.06)}` }}>

@@ -4,7 +4,6 @@ import { IconButton, Tooltip, Badge } from "@mui/material";
 import MailIcon from "@mui/icons-material/Mail";
 import ChatDrawer from "../../../pages/applicants/ApplicationTrack/components/ChatDrawer";
 import axios from "axios";
-import { BACKEND_URL } from "../../../config";
 
 const defaultColors = {
   primary: { main: "#6A0000" },

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 /* eslint-disable react-hooks/exhaustive-deps */
 import {
   Box,
@@ -145,7 +146,7 @@ const formatDocumentType = (type) => {
   // Convert enum to readable label
   return type
     .replaceAll("_", " ")
-    .replace(/\b\w/g, (l) => l.toUpperCase());
+    .replaceAll(/\b\w/g, (l) => l.toUpperCase());
 };
 
 const ViewApplicantPage = () => {
@@ -182,7 +183,6 @@ const ViewApplicantPage = () => {
 
   const [applicant, setApplicant] = useState(null);
   const [documents, setDocuments] = useState([]);
-  const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [coursePreferences, setCoursePreferences] = useState([]);
   
@@ -329,12 +329,6 @@ const ViewApplicantPage = () => {
       .then(setDocuments)
       .catch(() => setDocuments([]));
 
-    // Fetch all courses for mapping courseId to courseName
-    fetch("https://eteeap-foth.onrender.com/api/courses")
-      .then((res) => res.json())
-      .then(setCourses)
-      .catch(() => setCourses([]));
-
     // Fetch forwarding information to display which admin forwarded this application
     fetch(`https://eteeap-foth.onrender.com/api/applicants/${applicantId}/forward-info`)
       .then(async (res) => {
@@ -403,6 +397,52 @@ const ViewApplicantPage = () => {
     }
   };
 
+  // Helper to get applicant's display name
+  const getApplicantDisplayName = () => {
+    if (applicant?.firstName && applicant?.lastName) {
+      return `${applicant.firstName} ${applicant.lastName}`;
+    }
+    return 'Applicant';
+  };
+
+  // Helper to get notification type based on evaluation status
+  const getNotificationType = (status) => {
+    if (status === 'APPROVED') return 'success';
+    if (status === 'REJECTED') return 'warning';
+    return 'info';
+  };
+
+  // Helper to normalize admin list response
+  const normalizeAdminList = (admins) => {
+    if (Array.isArray(admins)) return admins;
+    if (admins?.adminId) return [admins];
+    return [];
+  };
+
+  // Helper to get background color for evaluation box
+  const getEvaluationBoxBgColor = (evaluation) => {
+    if (!isEvaluationLocked()) {
+      return alpha(theme.palette.background.default, 0.5);
+    }
+    const statusColor = evaluation.evaluationStatus === "APPROVED" ? '#2e7d32' : '#d32f2f';
+    return alpha(statusColor, 0.1);
+  };
+
+  // Helper to get border color for evaluation box
+  const getEvaluationBoxBorderColor = (evaluation) => {
+    if (!isEvaluationLocked()) {
+      return alpha(theme.palette.divider, 0.5);
+    }
+    const statusColor = evaluation.evaluationStatus === "APPROVED" ? '#2e7d32' : '#d32f2f';
+    return alpha(statusColor, 0.3);
+  };
+
+  // Helper to format evaluation date
+  const formatEvaluationDate = (dateString) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString();
+  };
+
   // Modified submit handler - check if status is final before submitting
   const handleSubmitClick = () => {
     if (!selectedCourse || !evaluationStatus) {
@@ -439,8 +479,7 @@ const ViewApplicantPage = () => {
         { method: "PUT" }
       );
     } catch (e) {
-      // Silently ignore errors
-      // console.error("Background status update failed", e);
+      console.error("Background status update failed:", e);
     }
   };
 
@@ -477,12 +516,18 @@ const ViewApplicantPage = () => {
 
       console.log("Submitting evaluation data:", evaluationData);
 
-      // Determine correct URL based on whether updating or creating
-      const url = existingEvaluation 
-        ? `https://eteeap-foth.onrender.com/api/evaluations/${existingEvaluation.evaluationId}`
-        : currentEvaluation
-          ? `https://eteeap-foth.onrender.com/api/evaluations/${currentEvaluation.evaluationId}`
-          : "https://eteeap-foth.onrender.com/api/evaluations";
+      // Helper to determine URL for update or create
+      const getEvaluationUrl = () => {
+        if (existingEvaluation) {
+          return `https://eteeap-foth.onrender.com/api/evaluations/${existingEvaluation.evaluationId}`;
+        }
+        if (currentEvaluation) {
+          return `https://eteeap-foth.onrender.com/api/evaluations/${currentEvaluation.evaluationId}`;
+        }
+        return "https://eteeap-foth.onrender.com/api/evaluations";
+      };
+
+      const url = getEvaluationUrl();
 
       const method = (existingEvaluation || currentEvaluation) ? "PUT" : "POST";
       console.log(`Making ${method} request to: ${url}`);
@@ -521,13 +566,10 @@ const ViewApplicantPage = () => {
 
         // Notify program admin(s) about evaluation update
         try {
-          const applicantName = applicant?.firstName && applicant?.lastName 
-            ? `${applicant.firstName} ${applicant.lastName}` 
-            : 'Applicant';
+          const applicantName = getApplicantDisplayName();
           const courseName = selectedCourse?.courseName || 'Course';
           const action = (existingEvaluation || currentEvaluation) ? 'updated' : 'submitted';
-          const notificationType = evaluationStatus === 'APPROVED' ? 'success' : 
-                                  evaluationStatus === 'REJECTED' ? 'warning' : 'info';
+          const notificationType = getNotificationType(evaluationStatus);
           
           // Fetch all program admins from API
           console.log('[Notification Debug] Fetching program admins from:', `${BACKEND_URL}/api/program-admins`);
@@ -536,7 +578,7 @@ const ViewApplicantPage = () => {
           console.log('[Notification Debug] Program admins received:', admins);
           
           // Handle both array response and single admin response
-          const adminList = Array.isArray(admins) ? admins : (admins.adminId ? [admins] : []);
+          const adminList = normalizeAdminList(admins);
           console.log('[Notification Debug] Admin list processed:', adminList);
           
           // Send notification to all program admins
@@ -571,9 +613,7 @@ const ViewApplicantPage = () => {
           console.error('[Notification Debug] Error sending notification:', notifError);
           // Fallback: Try sending to default admin ID 1
           try {
-            const applicantName = applicant?.firstName && applicant?.lastName 
-              ? `${applicant.firstName} ${applicant.lastName}` 
-              : 'Applicant';
+            const applicantName = getApplicantDisplayName();
             const courseName = selectedCourse?.courseName || 'Course';
             const action = (existingEvaluation || currentEvaluation) ? 'updated' : 'submitted';
             console.log('[Notification Debug] Fallback: sending to admin ID 1');
@@ -582,7 +622,7 @@ const ViewApplicantPage = () => {
               '1',
               'Evaluation Update',
               `Evaluator has ${action} an evaluation for ${applicantName} - ${courseName} (Status: ${evaluationStatus})`,
-              evaluationStatus === 'APPROVED' ? 'success' : evaluationStatus === 'REJECTED' ? 'warning' : 'info'
+              getNotificationType(evaluationStatus)
             );
           } catch (fallbackError) {
             console.error('[Notification Debug] Fallback notification also failed:', fallbackError);
@@ -608,22 +648,6 @@ const ViewApplicantPage = () => {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const getCourseName = (courseId) => {
-    const course = courses.find((c) => c.courseId === courseId);
-    return course ? course.courseName : "-";
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const formatPriority = (priority) => {
-    const formats = {
-      FIRST: "Course 1",
-      SECOND: "Course 2",
-      THIRD: "Course 3",
-    };
-    return formats[priority] || priority;
   };
 
   // Helper to preview document - NOW OPENS IN NEW TAB
@@ -662,7 +686,7 @@ const ViewApplicantPage = () => {
   // Add a helper function to check if the applicant has been forwarded for evaluation
   const checkForwardStatus = () => {
     // If we have an evaluationId or currentEvaluation, then it's been forwarded
-    return Boolean(evaluationId || currentEvaluation || (applicant && applicant.forwardedForEvaluation === true));
+    return Boolean(evaluationId || currentEvaluation || applicant?.forwardedForEvaluation);
   };
 
   // Get initials from name (matching ProgramAdmin)
@@ -897,13 +921,15 @@ const ViewApplicantPage = () => {
                             <ListItemText
                               primary={formatDocumentType(docType)}
                               secondary={doc ? (doc.fileName || doc.name) : null}
-                              primaryTypographyProps={{
-                                fontWeight: doc ? 600 : 400,
-                                variant: 'body2',
-                                color: doc ? 'text.primary' : 'text.secondary',
-                              }}
-                              secondaryTypographyProps={{
-                                variant: 'caption',
+                              slotProps={{
+                                primary: {
+                                  fontWeight: doc ? 600 : 400,
+                                  variant: 'body2',
+                                  color: doc ? 'text.primary' : 'text.secondary',
+                                },
+                                secondary: {
+                                  variant: 'caption',
+                                }
                               }}
                               sx={{ flex: 1, minWidth: 200 }}
                             />
@@ -1033,17 +1059,14 @@ const ViewApplicantPage = () => {
                             
                             // Notify program admin(s) about status change
                             try {
-                              const applicantName = applicant?.firstName && applicant?.lastName 
-                                ? `${applicant.firstName} ${applicant.lastName}` 
-                                : 'Applicant';
+                              const applicantName = getApplicantDisplayName();
                               const courseName = selectedCourse?.courseName || 'Course';
-                              const notificationType = newStatus === 'APPROVED' ? 'success' : 
-                                                      newStatus === 'REJECTED' ? 'warning' : 'info';
+                              const notificationType = getNotificationType(newStatus);
                               
                               // Fetch all program admins from API
                               const adminResponse = await axios.get(`${BACKEND_URL}/api/program-admins`);
                               const admins = adminResponse.data || [];
-                              const adminList = Array.isArray(admins) ? admins : (admins.adminId ? [admins] : []);
+                              const adminList = normalizeAdminList(admins);
                               
                               // Send notification to all program admins
                               for (const admin of adminList) {
@@ -1106,16 +1129,10 @@ const ViewApplicantPage = () => {
                   {/* Previous Evaluation Info */}
                   {existingEvaluation && (
                     <Box sx={{ 
-                      bgcolor: isEvaluationLocked() 
-                        ? alpha(existingEvaluation.evaluationStatus === "APPROVED" ? '#2e7d32' : '#d32f2f', 0.1)
-                        : alpha(theme.palette.background.default, 0.5),
+                      bgcolor: getEvaluationBoxBgColor(existingEvaluation),
                       p: 1.5,
                       borderRadius: 2,
-                      border: `1px solid ${
-                        isEvaluationLocked()
-                          ? alpha(existingEvaluation.evaluationStatus === "APPROVED" ? '#2e7d32' : '#d32f2f', 0.3)
-                          : alpha(theme.palette.divider, 0.5)
-                      }`,
+                      border: `1px solid ${getEvaluationBoxBorderColor(existingEvaluation)}`,
                     }}>
                       <Typography variant="caption" fontWeight="medium" color="text.secondary">
                         {isEvaluationLocked() ? "Final Decision" : "Previous Evaluation"}
@@ -1128,9 +1145,7 @@ const ViewApplicantPage = () => {
                           size="small"
                         />
                         <Typography variant="caption" color="text.secondary">
-                          {existingEvaluation.dateEvaluated ? 
-                            new Date(existingEvaluation.dateEvaluated).toLocaleDateString() : 
-                            "-"}
+                          {formatEvaluationDate(existingEvaluation.dateEvaluated)}
                         </Typography>
                       </Stack>
                     </Box>
@@ -1254,5 +1269,11 @@ const DetailRowStyled = ({ icon, label, value }) => (
     </Box>
   </Stack>
 );
+
+DetailRowStyled.propTypes = {
+  icon: PropTypes.node.isRequired,
+  label: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+};
 
 export default ViewApplicantPage;

@@ -1,4 +1,5 @@
 import React from "react"
+import PropTypes from "prop-types"
 import {
   Box,
   Typography,
@@ -83,7 +84,7 @@ const ConversationDetailView = ({
       return date.toLocaleDateString([], {
         month: 'long',
         day: 'numeric',
-        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+        year: date.getFullYear() === today.getFullYear() ? undefined : 'numeric'
       })
     }
   }
@@ -288,6 +289,38 @@ const ConversationDetailView = ({
       </Box>
     </Box>
   )
+}
+
+ConversationDetailView.propTypes = {
+  conversation: PropTypes.shape({
+    participantRole: PropTypes.string,
+    participantName: PropTypes.string,
+  }),
+  messages: PropTypes.arrayOf(
+    PropTypes.shape({
+      messageId: PropTypes.number,
+      content: PropTypes.string,
+      sentAt: PropTypes.string,
+      senderType: PropTypes.string,
+    })
+  ),
+  loading: PropTypes.bool,
+  onBack: PropTypes.func,
+  onReply: PropTypes.func,
+  onDeleteMessage: PropTypes.func,
+  colors: PropTypes.shape({
+    primary: PropTypes.shape({
+      main: PropTypes.string,
+      dark: PropTypes.string,
+    }),
+    accent: PropTypes.shape({
+      success: PropTypes.string,
+      error: PropTypes.string,
+      info: PropTypes.string,
+    }),
+    neutral: PropTypes.objectOf(PropTypes.string),
+  }),
+  currentUserType: PropTypes.string,
 }
 
 export default ConversationDetailView

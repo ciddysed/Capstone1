@@ -111,6 +111,24 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
   },
 }));
 
+// Helper functions to avoid nested ternaries
+const getStatusBackgroundColor = (status, alphaValue = 0.1) => {
+  if (status === "APPROVED") return alpha('#4caf50', alphaValue);
+  if (status === "FOR_ENROLLMENT") return alpha('#2196f3', alphaValue);
+  return alpha('#ff9800', alphaValue);
+};
+
+const getStatusTextColor = (status) => {
+  if (status === "APPROVED") return '#2e7d32';
+  if (status === "FOR_ENROLLMENT") return '#1565c0';
+  return '#e65100';
+};
+
+const getGradeStyles = (hasGrade) => ({
+  fontWeight: hasGrade ? 600 : 400,
+  color: hasGrade ? 'text.primary' : 'text.secondary'
+});
+
 const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -147,6 +165,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
           { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
       } catch (err) {
+        console.error(`Failed to save ${field}:`, err);
         toast.error(`Failed to save ${field}.`);
       } finally {
         delete saveTimers.current[key];
@@ -272,7 +291,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
         console.log("Assignment created successfully:", createRes.data);
         toast.success("Adviser assigned successfully.");
         // Set the newly created assignment
-        if (createRes.data && createRes.data.assignmentId) {
+        if (createRes.data?.assignmentId) {
           setExistingAssignment(createRes.data);
         }
       }
@@ -295,7 +314,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
     }
 
     // Confirm deletion
-    if (!window.confirm("Are you sure you want to delete this adviser assignment?")) {
+    if (!globalThis.confirm("Are you sure you want to delete this adviser assignment?")) {
       return;
     }
 
@@ -418,14 +437,16 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                       fontSize: 13,
                     }
                   }}
-                  InputProps={{
-                    ...params.InputProps,
-                    endAdornment: (
-                      <>
-                        {savingAdviser ? <CircularProgress size={16} /> : null}
-                        {params.InputProps.endAdornment}
-                      </>
-                    ),
+                  slotProps={{
+                    input: {
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {savingAdviser ? <CircularProgress size={16} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    },
                   }}
                 />
               )}
@@ -461,14 +482,35 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
         </Stack>
       </Box>
       
-      {loading ? (
-        <Box sx={{ textAlign: "center", py: 4 }}>
-          <CircularProgress size={32} />
-          <Typography variant="body2" sx={{ mt: 1.5 }}>Loading records...</Typography>
-        </Box>
-      ) : Object.keys(records).length > 0 ? (
-        <Grow in={true} timeout={500}>
-          <Box>
+      {(() => {
+        if (loading) {
+          return (
+            <Box sx={{ textAlign: "center", py: 4 }}>
+              <CircularProgress size={32} />
+              <Typography variant="body2" sx={{ mt: 1.5 }}>Loading records...</Typography>
+            </Box>
+          );
+        }
+        
+        if (Object.keys(records).length === 0) {
+          return (
+            <InfoCard>
+              <CardContent sx={{ textAlign: "center", py: 4 }}>
+                <AssignmentIcon sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.3, mb: 1 }} />
+                <Typography variant="body1" color="text.secondary" gutterBottom>
+                  No accreditation records found
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  No subject records have been created for this applicant yet.
+                </Typography>
+              </CardContent>
+            </InfoCard>
+          );
+        }
+        
+        return (
+          <Grow in={true} timeout={500}>
+            <Box>
             {Object.keys(records).map((semester, index) => (
               <StyledAccordion key={semester} defaultExpanded={index === 0}>
                 <StyledAccordionSummary
@@ -540,8 +582,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                               ) : (
                                 <Typography
                                   variant="body2"
-                                  fontWeight={rec.grade ? 600 : 400}
-                                  color={rec.grade ? 'text.primary' : 'text.secondary'}
+                                  {...getGradeStyles(rec.grade)}
                                   sx={{
                                     backgroundColor: alpha(gold.light, 0.3),
                                     padding: 0.75,
@@ -648,7 +689,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                             {/* Status Dropdown Cell */}
                             <StyledTableCell align="center">
                               <Tooltip
-                                title={!isEditable ? "Change back to PENDING to update this record" : ""}
+                                title={isEditable ? "" : "Change back to PENDING to update this record"}
                                 placement="top"
                                 arrow
                               >
@@ -663,25 +704,10 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                                       borderRadius: 1,
                                       fontSize: 12,
                                       fontWeight: 600,
-                                      backgroundColor:
-                                        rec.status === "APPROVED"
-                                          ? alpha('#4caf50', 0.1)
-                                          : rec.status === "FOR_ENROLLMENT"
-                                          ? alpha('#2196f3', 0.1)
-                                          : alpha('#ff9800', 0.1),
-                                      color:
-                                        rec.status === "APPROVED"
-                                          ? '#2e7d32'
-                                          : rec.status === "FOR_ENROLLMENT"
-                                          ? '#1565c0'
-                                          : '#e65100',
+                                      backgroundColor: getStatusBackgroundColor(rec.status, 0.1),
+                                      color: getStatusTextColor(rec.status),
                                       '&:hover': {
-                                        backgroundColor:
-                                          rec.status === "APPROVED"
-                                            ? alpha('#4caf50', 0.2)
-                                            : rec.status === "FOR_ENROLLMENT"
-                                            ? alpha('#2196f3', 0.2)
-                                            : alpha('#ff9800', 0.2),
+                                        backgroundColor: getStatusBackgroundColor(rec.status, 0.2),
                                       }
                                     }
                                   }}
@@ -702,19 +728,8 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
             ))}
           </Box>
         </Grow>
-      ) : (
-        <InfoCard>
-          <CardContent sx={{ textAlign: "center", py: 4 }}>
-            <AssignmentIcon sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.3, mb: 1 }} />
-            <Typography variant="body1" color="text.secondary" gutterBottom>
-              No accreditation records found
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              No subject records have been created for this applicant yet.
-            </Typography>
-          </CardContent>
-        </InfoCard>
-      )}
+        );
+      })()}
     </Box>
   );
 
@@ -725,9 +740,11 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
       maxWidth="xl"
       fullWidth
       fullScreen
-      PaperProps={{
-        sx: {
-          borderRadius: 0,
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: 0,
+          },
         },
       }}
     >

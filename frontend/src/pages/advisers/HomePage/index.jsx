@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import PropTypes from 'prop-types';
 import { styled } from "@mui/material/styles";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PeopleIcon from "@mui/icons-material/People";
@@ -7,7 +8,6 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import BookIcon from "@mui/icons-material/Book";
 import SaveIcon from "@mui/icons-material/Save";
 import EditIcon from "@mui/icons-material/Edit";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import ApplicantDetailsModal from "./ApplicantDetailsModal";
 import MainLayout from "../../../templates/MainLayout";
@@ -158,10 +158,191 @@ const StatusChip = styled(Chip)(({ theme, status }) => {
   };
 });
 
+// Helper functions to avoid nested ternaries
+const getStatusBackgroundColor = (status, alphaValue = 0.1) => {
+  if (status === "APPROVED") return alpha('#4caf50', alphaValue);
+  if (status === "FOR_ENROLLMENT") return alpha('#2196f3', alphaValue);
+  return alpha('#ff9800', alphaValue);
+};
+
+const getStatusTextColor = (status) => {
+  if (status === "APPROVED") return '#2e7d32';
+  if (status === "FOR_ENROLLMENT") return '#1565c0';
+  return '#e65100';
+};
+
+// Component for rendering a single record row to reduce nesting
+const RecordRow = ({ rec, applicantId, semester, editRow, editFields, handleEditFieldChange, handleSaveEdit, handleCancelEdit, handleEditClick, handleStatusChange }) => {
+  const isPending = rec.status === "PENDING";
+  const isEditing = !!editRow[rec.id];
+
+  return (
+    <StyledTableRow key={rec.id} sx={{ bgcolor: '#fff' }}>
+      <StyledTableCell>
+        <Typography variant="body2" fontWeight={600} color="text.primary">
+          {rec.subject?.descriptiveTitle}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'inline-block', mt: 0.5, px: 1, py: 0.2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+          {rec.subject?.subjectCode}
+        </Typography>
+      </StyledTableCell>
+      
+      <StyledTableCell>
+        {isEditing ? (
+          <TextField
+            size="small"
+            value={editFields[rec.id]?.grade ?? ""}
+            onChange={e => handleEditFieldChange(rec.id, "grade", e.target.value)}
+            fullWidth
+            placeholder="1.0"
+            sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff' } }}
+          />
+        ) : (
+          <Typography variant="body2" fontWeight="bold" color={rec.grade ? maroon.main : "text.disabled"}>
+            {rec.grade || "—"}
+          </Typography>
+        )}
+      </StyledTableCell>
+      
+      <StyledTableCell>
+        {isEditing ? (
+          <TextField
+            select
+            size="small"
+            value={editFields[rec.id]?.processOfAccreditation ?? ""}
+            onChange={e => handleEditFieldChange(rec.id, "processOfAccreditation", e.target.value)}
+            fullWidth
+            sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff' } }}
+          >
+            <MenuItem value=""><em>None</em></MenuItem>
+            <MenuItem value="TOR Accreditation">TOR Accreditation</MenuItem>
+            <MenuItem value="Portfolio Review">Portfolio Review</MenuItem>
+            <MenuItem value="Remediation Class">Remediation Class</MenuItem>
+            <MenuItem value="Home Reading Report">Home Reading Report</MenuItem>
+            <MenuItem value="One-on-One Tutorial">One-on-One Tutorial</MenuItem>
+            <MenuItem value="Problem Solving">Problem Solving</MenuItem>
+            <MenuItem value="Job Description Review">Job Description Review</MenuItem>
+          </TextField>
+        ) : (
+          <Typography variant="body2">
+            {rec.processOfAccreditation || "—"}
+          </Typography>
+        )}
+      </StyledTableCell>
+      
+      <StyledTableCell>
+        {isEditing ? (
+          <TextField
+            size="small"
+            value={editFields[rec.id]?.substantiveBasis ?? ""}
+            onChange={e => handleEditFieldChange(rec.id, "substantiveBasis", e.target.value)}
+            fullWidth
+            multiline
+            maxRows={3}
+            placeholder="Basis..."
+            sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff', fontSize: 13 } }}
+          />
+        ) : (
+          <Typography variant="body2" sx={{ 
+            display: '-webkit-box',
+            overflow: 'hidden',
+            WebkitBoxOrient: 'vertical',
+            WebkitLineClamp: 2,
+            color: rec.substantiveBasis ? 'text.primary' : 'text.disabled'
+          }}>
+            {rec.substantiveBasis || "No basis provided"}
+          </Typography>
+        )}
+      </StyledTableCell>
+
+      <StyledTableCell align="center">
+        <Tooltip
+          title={isPending ? "" : "Change back to PENDING to update this record"}
+          placement="top"
+          arrow
+        >
+          <TextField
+            select
+            size="small"
+            value={rec.status || "PENDING"}
+            onChange={(e) => handleStatusChange(rec, e.target.value, semester, applicantId)}
+            sx={{
+              minWidth: 130,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 1,
+                fontSize: 11,
+                fontWeight: 600,
+                backgroundColor: getStatusBackgroundColor(rec.status, 0.1),
+                color: getStatusTextColor(rec.status),
+                '&:hover': {
+                  backgroundColor: getStatusBackgroundColor(rec.status, 0.2),
+                }
+              }
+            }}
+          >
+            <MenuItem value="PENDING">PENDING</MenuItem>
+            <MenuItem value="APPROVED">APPROVED</MenuItem>
+            <MenuItem value="FOR_ENROLLMENT">FOR_ENROLLMENT</MenuItem>
+          </TextField>
+        </Tooltip>
+      </StyledTableCell>
+
+      <StyledTableCell align="center">
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
+          {isPending && (
+            isEditing ? (
+              <>
+                <IconButton
+                  size="small"
+                  onClick={() => handleSaveEdit(rec, semester, applicantId)}
+                  sx={{ color: 'success.main', bgcolor: alpha('#2e7d32', 0.1) }}
+                >
+                  <SaveIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={() => handleCancelEdit(rec.id)}
+                  sx={{ color: 'error.main', bgcolor: alpha('#d32f2f', 0.1) }}
+                >
+                  <CancelIcon fontSize="small" />
+                </IconButton>
+              </>
+            ) : (
+              <IconButton
+                size="small"
+                onClick={() => handleEditClick(rec)}
+                sx={{
+                  bgcolor: alpha(maroon.main, 0.1),
+                  color: maroon.main,
+                  '&:hover': { bgcolor: maroon.main, color: '#fff' }
+                }}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            )
+          )}
+        </Box>
+      </StyledTableCell>
+    </StyledTableRow>
+  );
+};
+
+RecordRow.propTypes = {
+  rec: PropTypes.object.isRequired,
+  applicantId: PropTypes.number.isRequired,
+  semester: PropTypes.string.isRequired,
+  editRow: PropTypes.object.isRequired,
+  editFields: PropTypes.object.isRequired,
+  handleEditFieldChange: PropTypes.func.isRequired,
+  handleSaveEdit: PropTypes.func.isRequired,
+  handleCancelEdit: PropTypes.func.isRequired,
+  handleEditClick: PropTypes.func.isRequired,
+  handleStatusChange: PropTypes.func.isRequired,
+};
+
 // --- Main Component ---
 
 const AdviserHomePage = () => {
-  // const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [applicants, setApplicants] = useState([]);
   const [recordsMap, setRecordsMap] = useState({});
@@ -253,11 +434,20 @@ const AdviserHomePage = () => {
         const recordsData = {};
 
         if (assignedApplicantIds.length > 0) {
-          const promises = assignedApplicantIds.map((id) =>
-            fetch(`https://eteeap-foth.onrender.com/api/applicant-subject-records/applicant/${id}/organized-clean`)
-              .then((r) => (r.ok ? r.json() : {}))
-              .catch(() => ({}))
-          );
+          // Helper to fetch records for a single ID
+          const fetchRecordsForId = async (id) => {
+            try {
+              const response = await fetch(`https://eteeap-foth.onrender.com/api/applicant-subject-records/applicant/${id}/organized-clean`);
+              if (response.ok) {
+                return await response.json();
+              }
+              return {};
+            } catch {
+              return {};
+            }
+          };
+
+          const promises = assignedApplicantIds.map(fetchRecordsForId);
           const results = await Promise.all(promises);
           assignedApplicantIds.forEach((id, idx) => {
             const rec = results[idx];
@@ -319,7 +509,7 @@ const AdviserHomePage = () => {
       // Update local state after save
       setRecordsMap((prev) => {
         const newMap = { ...prev };
-        if (newMap[applicantId] && newMap[applicantId][semester]) {
+        if (newMap[applicantId]?.[semester]) {
           newMap[applicantId][semester] = newMap[applicantId][semester].map((r) =>
             r.id === rec.id ? { ...r, ...updated } : r
           );
@@ -328,7 +518,8 @@ const AdviserHomePage = () => {
       });
       setEditRow((prev) => ({ ...prev, [rec.id]: false }));
     } catch (err) {
-      window.alert("Failed to save changes.");
+      console.error('Failed to save changes:', err);
+      globalThis.alert("Failed to save changes.");
     }
   };
 
@@ -354,7 +545,7 @@ const AdviserHomePage = () => {
       // Update local state after save
       setRecordsMap((prev) => {
         const newMap = { ...prev };
-        if (newMap[applicantId] && newMap[applicantId][semester]) {
+        if (newMap[applicantId]?.[semester]) {
           newMap[applicantId][semester] = newMap[applicantId][semester].map((r) =>
             r.id === rec.id ? { ...r, status: newStatus } : r
           );
@@ -362,7 +553,8 @@ const AdviserHomePage = () => {
         return newMap;
       });
     } catch (err) {
-      window.alert("Failed to change status.");
+      console.error('Failed to change status:', err);
+      globalThis.alert("Failed to change status.");
     }
   };
 
@@ -424,19 +616,137 @@ const AdviserHomePage = () => {
           ) : (
             <Stack spacing={4}>
               
-              {/* Assigned Students with Grading Workspace */}
-              <Grow in={true} timeout={600}>
-                <Box>
-                  <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+              {/* SECTION 1: Applicants List */}
+              <ModernCard>
+                <CardHeaderBox>
+                  <Stack direction="row" spacing={2} alignItems="center">
                     <Avatar sx={{ bgcolor: alpha(maroon.main, 0.1), color: maroon.main }}>
                       <PeopleIcon />
                     </Avatar>
                     <Box>
-                      <Typography variant="h5" fontWeight="bold" color={maroon.dark}>
+                      <Typography variant="h6" fontWeight="bold" color="text.primary">
                         Assigned Students
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        List of accepted applicants under your supervision. Expand to review and grade subjects ({applicants.length})
+                        List of accepted applicants under your supervision ({applicants.length})
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </CardHeaderBox>
+
+                <CardContent sx={{ p: 0 }}>
+                  {applicants.length > 0 ? (
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <StyledTableCell>Student</StyledTableCell>
+                          <StyledTableCell>Program</StyledTableCell>
+                          <StyledTableCell>Status</StyledTableCell>
+                          <StyledTableCell>Accepted On</StyledTableCell>
+                          <StyledTableCell align="right">Actions</StyledTableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {applicants.map((app) => (
+                          <StyledTableRow key={app.acceptedApplicantId}>
+                            <StyledTableCell>
+                              <Stack direction="row" spacing={2} alignItems="center">
+                                <Avatar 
+                                  sx={{ 
+                                    bgcolor: maroon.main, 
+                                    width: 40, 
+                                    height: 40,
+                                    fontSize: 16,
+                                    fontWeight: 'bold',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                  }}
+                                >
+                                  {app.applicant?.firstName?.charAt(0)}
+                                </Avatar>
+                                <Box>
+                                  <Typography variant="subtitle2" fontWeight={700} color={maroon.dark}>
+                                    {`${app.applicant?.firstName || ""} ${app.applicant?.lastName || ""}`}
+                                  </Typography>
+                                  {/* FIX: Ensure ID is a string before substring */}
+                                  <Typography variant="caption" color="text.secondary">
+                                    ID: {String(app.applicant?.applicantId || "").substring(0,8)}...
+                                  </Typography>
+                                </Box>
+                              </Stack>
+                            </StyledTableCell>
+                            <StyledTableCell>
+                              <Typography variant="body2" fontWeight={500}>
+                                {app.finalCourse?.courseName}
+                              </Typography>
+                            </StyledTableCell>
+                            <StyledTableCell>
+                              <StatusChip 
+                                label={app.status} 
+                                size="small" 
+                                status={app.status}
+                              />
+                            </StyledTableCell>
+                            <StyledTableCell>
+                              <Typography variant="body2" color="text.secondary">
+                                {app.acceptanceDate
+                                  ? new Date(app.acceptanceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                  : "-"}
+                              </Typography>
+                            </StyledTableCell>
+                            <StyledTableCell align="right">
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                sx={{
+                                  borderRadius: 2,
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  borderColor: alpha(maroon.main, 0.5),
+                                  color: maroon.main,
+                                  '&:hover': { 
+                                    borderColor: maroon.main,
+                                    bgcolor: alpha(maroon.main, 0.05) 
+                                  },
+                                }}
+                                onClick={() => {
+                                  setSelectedApplicant({
+                                    applicantId: app.applicant?.applicantId,
+                                    courseId: app.finalCourse?.courseId,
+                                  });
+                                  setDetailsOpen(true);
+                                }}
+                              >
+                                View Details
+                              </Button>
+                            </StyledTableCell>
+                          </StyledTableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <Box sx={{ textAlign: "center", py: 8 }}>
+                      <PeopleIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.2, mb: 2 }} />
+                      <Typography variant="h6" color="text.secondary">
+                        No assigned students found
+                      </Typography>
+                    </Box>
+                  )}
+                </CardContent>
+              </ModernCard>
+
+              {/* SECTION 2: Grading Workspace */}
+              <Grow in={true} timeout={600}>
+                <Box>
+                  <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar sx={{ bgcolor: gold.main, color: '#000' }}>
+                      <AssignmentIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h5" fontWeight="bold" color={maroon.dark}>
+                        Grading Workspace
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Review subject allocations and assign grades for each semester.
                       </Typography>
                     </Box>
                   </Box>
@@ -445,106 +755,32 @@ const AdviserHomePage = () => {
                     applicants.map((applicant) => {
                       const applicantId = applicant.applicant?.applicantId;
                       const records = recordsMap[applicantId] || {};
-                      // Define statuses that count as progress
-                      const PROGRESS_STATUSES = ["APPROVED", "FOR_ENROLLMENT"];
                       const totalRecords = Object.values(records).flat().length;
-                      const approvedRecords = Object.values(records).flat().filter(r => PROGRESS_STATUSES.includes(r.status)).length;
+                      const approvedRecords = Object.values(records).flat().filter(r => r.status === 'APPROVED').length;
                       const progress = totalRecords > 0 ? (approvedRecords / totalRecords) * 100 : 0;
 
                       return (
                         <StyledAccordion key={applicantId} defaultExpanded={false}>
                           <StyledAccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: maroon.main }} />}>
-                            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2} alignItems="center" sx={{ width: '100%', pr: 2 }}>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center" sx={{ width: '100%' }}>
                               
-                              {/* Student Info - Clickable */}
-                              <Tooltip title="View Details" arrow placement="top">
-                                <Stack 
-                                  direction="row" 
-                                  spacing={2} 
-                                  alignItems="center" 
-                                  sx={{ 
-                                    flex: { xs: 1, lg: 2 },
-                                    cursor: 'pointer',
-                                    borderRadius: 2,
-                                    padding: 1,
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': {
-                                      bgcolor: alpha(maroon.main, 0.04),
-                                      transform: 'translateX(4px)',
-                                    }
-                                  }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedApplicant({
-                                      applicantId: applicant.applicant?.applicantId,
-                                      courseId: applicant.finalCourse?.courseId,
-                                    });
-                                    setDetailsOpen(true);
-                                  }}
-                                >
-                                  <Avatar 
-                                    sx={{ 
-                                      bgcolor: maroon.main, 
-                                      fontWeight: 'bold', 
-                                      width: 48, 
-                                      height: 48,
-                                      transition: 'all 0.2s ease',
-                                      '&:hover': {
-                                        transform: 'scale(1.1)',
-                                        boxShadow: '0 4px 12px rgba(106, 0, 0, 0.3)',
-                                      }
-                                    }}
-                                  >
-                                    {applicant.applicant?.firstName?.charAt(0)}
-                                  </Avatar>
-                                  <Box>
-                                    <Typography 
-                                      variant="h6" 
-                                      fontWeight="bold" 
-                                      color="text.primary"
-                                      sx={{
-                                        transition: 'color 0.2s ease',
-                                        '&:hover': {
-                                          color: maroon.main,
-                                        }
-                                      }}
-                                    >
-                                      {`${applicant.applicant?.firstName || ""} ${applicant.applicant?.lastName || ""}`}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                      {applicant.finalCourse?.courseName}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      ID: {String(applicant.applicant?.applicantId || "").substring(0,8)}...
-                                    </Typography>
-                                  </Box>
-                                </Stack>
-                              </Tooltip>
-
-                              {/* Status & Date Info */}
-                              <Stack direction="row" spacing={3} alignItems="center" sx={{ flex: 1 }}>
+                              <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
+                                <Avatar sx={{ bgcolor: maroon.main, fontWeight: 'bold' }}>
+                                  {applicant.applicant?.firstName?.charAt(0)}
+                                </Avatar>
                                 <Box>
-                                  <Typography variant="caption" display="block" color="text.secondary" fontWeight="600">STATUS</Typography>
-                                  <StatusChip 
-                                    label={applicant.status} 
-                                    size="small" 
-                                    status={applicant.status}
-                                  />
-                                </Box>
-                                <Box>
-                                  <Typography variant="caption" display="block" color="text.secondary" fontWeight="600">ACCEPTED ON</Typography>
-                                  <Typography variant="body2" fontWeight="500" color="text.primary">
-                                    {applicant.acceptanceDate
-                                      ? new Date(applicant.acceptanceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                                      : "-"}
+                                  <Typography variant="h6" fontWeight="bold" color="text.primary">
+                                    {`${applicant.applicant?.firstName || ""} ${applicant.applicant?.lastName || ""}`}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    {applicant.finalCourse?.courseName}
                                   </Typography>
                                 </Box>
                               </Stack>
 
-                              {/* Progress */}
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                                 <Box sx={{ textAlign: 'right' }}>
-                                  <Typography variant="caption" display="block" color="text.secondary" fontWeight="600">PROGRESS</Typography>
+                                  <Typography variant="caption" display="block" color="text.secondary">PROGRESS</Typography>
                                   <Typography variant="subtitle2" fontWeight="bold" color={maroon.main}>
                                     {approvedRecords} / {totalRecords} Subjects
                                   </Typography>
@@ -584,176 +820,21 @@ const AdviserHomePage = () => {
                                       </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                      {records[semester].map((rec) => {
-                                        const isPending = rec.status === "PENDING";
-                                        const isEditing = !!editRow[rec.id];
-                                        return (
-                                          <StyledTableRow key={rec.id} sx={{ bgcolor: '#fff' }}>
-                                            <StyledTableCell>
-                                              <Typography variant="body2" fontWeight={600} color="text.primary">
-                                                {rec.subject?.descriptiveTitle}
-                                              </Typography>
-                                              <Typography variant="caption" color="text.secondary" sx={{ display: 'inline-block', mt: 0.5, px: 1, py: 0.2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-                                                {rec.subject?.subjectCode}
-                                              </Typography>
-                                            </StyledTableCell>
-                                            
-                                            <StyledTableCell>
-                                              {isEditing ? (
-                                                <TextField
-                                                  size="small"
-                                                  value={editFields[rec.id]?.grade ?? ""}
-                                                  onChange={e => handleEditFieldChange(rec.id, "grade", e.target.value)}
-                                                  fullWidth
-                                                  placeholder="1.0"
-                                                  sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff' } }}
-                                                />
-                                              ) : (
-                                                <Typography variant="body2" fontWeight="bold" color={rec.grade ? maroon.main : "text.disabled"}>
-                                                  {rec.grade || "—"}
-                                                </Typography>
-                                              )}
-                                            </StyledTableCell>
-                                            
-                                            <StyledTableCell>
-                                              {isEditing ? (
-                                                <TextField
-                                                  select
-                                                  size="small"
-                                                  value={editFields[rec.id]?.processOfAccreditation ?? ""}
-                                                  onChange={e => handleEditFieldChange(rec.id, "processOfAccreditation", e.target.value)}
-                                                  fullWidth
-                                                  sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff' } }}
-                                                >
-                                                  <MenuItem value=""><em>None</em></MenuItem>
-                                                  <MenuItem value="TOR Accreditation">TOR Accreditation</MenuItem>
-                                                  <MenuItem value="Portfolio Review">Portfolio Review</MenuItem>
-                                                  <MenuItem value="Remediation Class">Remediation Class</MenuItem>
-                                                  <MenuItem value="Home Reading Report">Home Reading Report</MenuItem>
-                                                  <MenuItem value="One-on-One Tutorial">One-on-One Tutorial</MenuItem>
-                                                  <MenuItem value="Problem Solving">Problem Solving</MenuItem>
-                                                  <MenuItem value="Job Description Review">Job Description Review</MenuItem>
-                                                </TextField>
-                                              ) : (
-                                                <Typography variant="body2">
-                                                  {rec.processOfAccreditation || "—"}
-                                                </Typography>
-                                              )}
-                                            </StyledTableCell>
-                                            
-                                            <StyledTableCell>
-                                              {isEditing ? (
-                                                <TextField
-                                                  size="small"
-                                                  value={editFields[rec.id]?.substantiveBasis ?? ""}
-                                                  onChange={e => handleEditFieldChange(rec.id, "substantiveBasis", e.target.value)}
-                                                  fullWidth
-                                                  multiline
-                                                  maxRows={3}
-                                                  placeholder="Basis..."
-                                                  sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff', fontSize: 13 } }}
-                                                />
-                                              ) : (
-                                                <Typography variant="body2" sx={{ 
-                                                  display: '-webkit-box',
-                                                  overflow: 'hidden',
-                                                  WebkitBoxOrient: 'vertical',
-                                                  WebkitLineClamp: 2,
-                                                  color: rec.substantiveBasis ? 'text.primary' : 'text.disabled'
-                                                }}>
-                                                  {rec.substantiveBasis || "No basis provided"}
-                                                </Typography>
-                                              )}
-                                            </StyledTableCell>
-
-                                            {/* Status Dropdown Cell */}
-                                            <StyledTableCell align="center">
-                                              <Tooltip
-                                                title={!isPending ? "Change back to PENDING to update this record" : ""}
-                                                placement="top"
-                                                arrow
-                                              >
-                                                <TextField
-                                                  select
-                                                  size="small"
-                                                  value={rec.status || "PENDING"}
-                                                  onChange={(e) => handleStatusChange(rec, e.target.value, semester, applicantId)}
-                                                  sx={{
-                                                    minWidth: 130,
-                                                    '& .MuiOutlinedInput-root': {
-                                                      borderRadius: 1,
-                                                      fontSize: 11,
-                                                      fontWeight: 600,
-                                                      backgroundColor:
-                                                        rec.status === "APPROVED"
-                                                          ? alpha('#4caf50', 0.1)
-                                                          : rec.status === "FOR_ENROLLMENT"
-                                                          ? alpha('#2196f3', 0.1)
-                                                          : alpha('#ff9800', 0.1),
-                                                      color:
-                                                        rec.status === "APPROVED"
-                                                          ? '#2e7d32'
-                                                          : rec.status === "FOR_ENROLLMENT"
-                                                          ? '#1565c0'
-                                                          : '#e65100',
-                                                      '&:hover': {
-                                                        backgroundColor:
-                                                          rec.status === "APPROVED"
-                                                            ? alpha('#4caf50', 0.2)
-                                                            : rec.status === "FOR_ENROLLMENT"
-                                                            ? alpha('#2196f3', 0.2)
-                                                            : alpha('#ff9800', 0.2),
-                                                      }
-                                                    }
-                                                  }}
-                                                >
-                                                  <MenuItem value="PENDING">PENDING</MenuItem>
-                                                  <MenuItem value="APPROVED">APPROVED</MenuItem>
-                                                  <MenuItem value="FOR_ENROLLMENT">FOR_ENROLLMENT</MenuItem>
-                                                </TextField>
-                                              </Tooltip>
-                                            </StyledTableCell>
-
-                                            {/* Action Cell */}
-                                            <StyledTableCell align="center">
-                                              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
-                                                {isPending && (
-                                                  isEditing ? (
-                                                    <>
-                                                      <IconButton
-                                                        size="small"
-                                                        onClick={() => handleSaveEdit(rec, semester, applicantId)}
-                                                        sx={{ color: 'success.main', bgcolor: alpha('#2e7d32', 0.1) }}
-                                                      >
-                                                        <SaveIcon fontSize="small" />
-                                                      </IconButton>
-                                                      <IconButton
-                                                        size="small"
-                                                        onClick={() => handleCancelEdit(rec.id)}
-                                                        sx={{ color: 'error.main', bgcolor: alpha('#d32f2f', 0.1) }}
-                                                      >
-                                                        <CancelIcon fontSize="small" />
-                                                      </IconButton>
-                                                    </>
-                                                  ) : (
-                                                    <IconButton
-                                                      size="small"
-                                                      onClick={() => handleEditClick(rec)}
-                                                      sx={{
-                                                        bgcolor: alpha(maroon.main, 0.1),
-                                                        color: maroon.main,
-                                                        '&:hover': { bgcolor: maroon.main, color: '#fff' }
-                                                      }}
-                                                    >
-                                                      <EditIcon fontSize="small" />
-                                                    </IconButton>
-                                                  )
-                                                )}
-                                              </Box>
-                                            </StyledTableCell>
-                                          </StyledTableRow>
-                                        );
-                                      })}
+                                      {records[semester].map((rec) => (
+                                        <RecordRow
+                                          key={rec.id}
+                                          rec={rec}
+                                          applicantId={applicantId}
+                                          semester={semester}
+                                          editRow={editRow}
+                                          editFields={editFields}
+                                          handleEditFieldChange={handleEditFieldChange}
+                                          handleSaveEdit={handleSaveEdit}
+                                          handleCancelEdit={handleCancelEdit}
+                                          handleEditClick={handleEditClick}
+                                          handleStatusChange={handleStatusChange}
+                                        />
+                                      ))}
                                     </TableBody>
                                   </Table>
                                 </Paper>
@@ -764,22 +845,9 @@ const AdviserHomePage = () => {
                       );
                     })
                   ) : (
-                    <Box sx={{ 
-                      textAlign: 'center', 
-                      py: 8, 
-                      px: 3,
-                      bgcolor: '#f5f5f5', 
-                      borderRadius: 3,
-                      border: '2px dashed rgba(0,0,0,0.1)'
-                    }}>
-                      <PeopleIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.2, mb: 2 }} />
-                      <Typography variant="h6" color="text.secondary">
-                        No assigned students found
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        Students will appear here once they are assigned to you.
-                      </Typography>
-                    </Box>
+                    <Paper sx={{ p: 4, textAlign: 'center', bgcolor: '#f5f5f5', borderStyle: 'dashed' }}>
+                      <Typography color="text.secondary">No students available for grading yet.</Typography>
+                    </Paper>
                   )}
                 </Box>
               </Grow>

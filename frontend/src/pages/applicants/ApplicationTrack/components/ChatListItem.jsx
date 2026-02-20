@@ -1,4 +1,5 @@
 import React from "react"
+import PropTypes from 'prop-types'
 import {
   Box,
   Typography,
@@ -6,6 +7,31 @@ import {
   alpha,
 } from "@mui/material"
 import { Circle as UnreadIcon } from "@mui/icons-material"
+
+// Helper functions to avoid nested ternaries
+const getAvatarBackgroundColor = (role, colors) => {
+  if (role === "EVALUATOR") return alpha(colors.primary.main, 0.1);
+  if (role === "PROGRAM_ADMIN") return alpha(colors.secondary.main, 0.1);
+  return alpha(colors.accent.info, 0.1);
+};
+
+const getRoleColor = (role, colors) => {
+  if (role === "EVALUATOR") return colors.primary.main;
+  if (role === "PROGRAM_ADMIN") return colors.secondary.main;
+  return colors.accent.info;
+};
+
+const getRoleBadgeBackgroundColor = (role, colors) => {
+  if (role === "EVALUATOR") return alpha(colors.primary.main, 0.08);
+  if (role === "PROGRAM_ADMIN") return alpha(colors.secondary.main, 0.08);
+  return alpha(colors.accent.info, 0.08);
+};
+
+const getMessagePreviewContent = (chat, parseMessageContent) => {
+  if (chat.isAssigned) return "Assigned applicant - start conversation";
+  if (chat.isNew) return "Start a new conversation";
+  return parseMessageContent(chat.lastMessageContent);
+};
 
 const ChatListItem = ({
   chat,
@@ -63,18 +89,8 @@ const ChatListItem = ({
           sx={{
             width: 40,
             height: 40,
-            bgcolor:
-              chat.participantRole === "EVALUATOR"
-                ? alpha(safeColors.primary.main, 0.1)
-                : chat.participantRole === "PROGRAM_ADMIN"
-                ? alpha(safeColors.secondary.main, 0.1)
-                : alpha(safeColors.accent.info, 0.1),
-            color:
-              chat.participantRole === "EVALUATOR"
-                ? safeColors.primary.main
-                : chat.participantRole === "PROGRAM_ADMIN"
-                ? safeColors.secondary.main
-                : safeColors.accent.info,
+            bgcolor: getAvatarBackgroundColor(chat.participantRole, safeColors),
+            color: getRoleColor(chat.participantRole, safeColors),
             flexShrink: 0,
           }}
         >
@@ -127,18 +143,8 @@ const ChatListItem = ({
               borderRadius: 1,
               fontSize: 10,
               fontWeight: 600,
-              bgcolor:
-                chat.participantRole === "EVALUATOR"
-                  ? alpha(safeColors.primary.main, 0.08)
-                  : chat.participantRole === "PROGRAM_ADMIN"
-                  ? alpha(safeColors.secondary.main, 0.08)
-                  : alpha(safeColors.accent.info, 0.08),
-              color:
-                chat.participantRole === "EVALUATOR"
-                  ? safeColors.primary.main
-                  : chat.participantRole === "PROGRAM_ADMIN"
-                  ? safeColors.secondary.main
-                  : safeColors.accent.info,
+              bgcolor: getRoleBadgeBackgroundColor(chat.participantRole, safeColors),
+              color: getRoleColor(chat.participantRole, safeColors),
             }}
           >
             {getRoleDisplayName(chat.participantRole)}
@@ -157,16 +163,47 @@ const ChatListItem = ({
               fontStyle: chat.isNew || chat.isAssigned ? "italic" : "normal",
             }}
           >
-            {chat.isAssigned 
-              ? "Assigned applicant - start conversation" 
-              : chat.isNew 
-                ? "Start a new conversation" 
-                : parseMessageContent(chat.lastMessageContent)}
+            {getMessagePreviewContent(chat, parseMessageContent)}
           </Typography>
         </Box>
       </Box>
     </Box>
   )
 }
+
+ChatListItem.propTypes = {
+  chat: PropTypes.shape({
+    participantRole: PropTypes.string.isRequired,
+    participantName: PropTypes.string,
+    unread: PropTypes.bool,
+    isNew: PropTypes.bool,
+    isAssigned: PropTypes.bool,
+    lastMessageTimestamp: PropTypes.string,
+    lastMessageContent: PropTypes.string,
+  }).isRequired,
+  onClick: PropTypes.func.isRequired,
+  getRoleIcon: PropTypes.func.isRequired,
+  getRoleDisplayName: PropTypes.func.isRequired,
+  formatMessageTime: PropTypes.func.isRequired,
+  colors: PropTypes.shape({
+    primary: PropTypes.shape({
+      main: PropTypes.string,
+    }),
+    secondary: PropTypes.shape({
+      main: PropTypes.string,
+      light: PropTypes.string,
+    }),
+    accent: PropTypes.shape({
+      info: PropTypes.string,
+    }),
+    neutral: PropTypes.shape({
+      100: PropTypes.string,
+      200: PropTypes.string,
+      400: PropTypes.string,
+      600: PropTypes.string,
+      800: PropTypes.string,
+    }),
+  }).isRequired,
+};
 
 export default ChatListItem

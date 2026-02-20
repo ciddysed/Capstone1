@@ -27,12 +27,12 @@ export const addNotification = (userType, userId, title, message, type = 'info')
   // IMMEDIATELY dispatch event so NotificationCenter updates from localStorage
   try {
     console.log('[addNotification] Dispatching notifications:updated event for:', { userType, userId });
-    window.dispatchEvent(new CustomEvent('notifications:updated', {
+    globalThis.dispatchEvent(new CustomEvent('notifications:updated', {
       detail: { userType, userId, notification: local }
     }));
     console.log('[addNotification] Event dispatched successfully');
-  } catch (evtErr) {
-    console.warn('Failed to dispatch notifications:updated event', evtErr);
+  } catch (error_) {
+    console.warn('Failed to dispatch notifications:updated event', error_);
   }
 
   // Attempt to persist the notification to the backend in the background.
@@ -58,12 +58,12 @@ export const addNotification = (userType, userId, title, message, type = 'info')
             localNotificationService.replaceLocalNotification(clientTempId, userType, userId, serverCreated);
             // Notify any listeners again with server version
             try {
-              window.dispatchEvent(new CustomEvent('notifications:updated', {
+              globalThis.dispatchEvent(new CustomEvent('notifications:updated', {
                 detail: { userType, userId, notification: serverCreated }
               }));
-            } catch (evtErr) {
+            } catch (error_) {
               // Ignore dispatch errors
-              console.warn('Failed to dispatch notifications:updated event', evtErr);
+              console.warn('Failed to dispatch notifications:updated event', error_);
             }
           } catch (e) {
             console.warn('Failed to reconcile server notification with local copy:', e);
@@ -196,7 +196,7 @@ export const notifyEnrollmentComplete = (applicantId) => {
 export const notifyApplicantAcceptedWithRemarks = (applicantId, remarks) => {
   const title = '🎉 You have been accepted!';
   let message = 'Congratulations! You have been accepted by the Program Admin.';
-  if (remarks && remarks.trim()) {
+  if (remarks?.trim()) {
     message += `\n\nRemarks: ${remarks}`;
   }
   // Custom action for dashboard redirection (frontend must handle this in NotificationCenter)
@@ -216,11 +216,11 @@ export const notifyApplicantAcceptedWithRemarks = (applicantId, remarks) => {
     action
   });
   try {
-    window.dispatchEvent(new CustomEvent('notifications:updated', {
+    globalThis.dispatchEvent(new CustomEvent('notifications:updated', {
       detail: { userType, userId, notification: local }
     }));
-  } catch (evtErr) {
-    // Ignore dispatch errors
+  } catch (error_) {
+    console.warn('Failed to dispatch notifications:updated event', error_);
   }
   // Also persist to backend (fire-and-forget)
   addNotification(userType, userId, title, message, 'success');

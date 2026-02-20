@@ -11,7 +11,6 @@ import {
   Chip,
   Typography,
   Box,
-  Tooltip,
   CircularProgress,
   Avatar,
   Stack,
@@ -20,7 +19,6 @@ import {
   createTheme,
   ThemeProvider,
   Grow,
-  IconButton,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
@@ -28,7 +26,6 @@ import ListLayoutWithFilters from "../../../templates/ListLayoutWithFilters";
 import EvaluatorAssignedEvaluationsPoller from "../../../components/EvaluatorAssignedEvaluationsPoller";
  
 import PendingIcon from '@mui/icons-material/Pending';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
@@ -203,12 +200,16 @@ const ApplicantsListPage = () => {
           // Check which applicants are already in accepted applicants
           let excludedIds = [];
           if (applicantIds.length > 0) {
-            const acceptedApplicantPromises = applicantIds.map(id =>
-              fetch(`https://eteeap-foth.onrender.com/api/accepted-applicants/applicant/${id}`)
-                .then(res => res.ok ? res.json() : null)
-                .catch(() => null)
+            const acceptedApplicantResults = await Promise.all(
+              applicantIds.map(async (id) => {
+                try {
+                  const res = await fetch(`https://eteeap-foth.onrender.com/api/accepted-applicants/applicant/${id}`);
+                  return res.ok ? await res.json() : null;
+                } catch {
+                  return null;
+                }
+              })
             );
-            const acceptedApplicantResults = await Promise.all(acceptedApplicantPromises);
             excludedIds = applicantIds.filter((id, idx) => acceptedApplicantResults[idx] !== null);
           }
           
@@ -381,7 +382,17 @@ const ApplicantsListPage = () => {
                   Loading your assigned evaluations...
                 </Typography>
               </Box>
-            ) : paginatedData.length > 0 ? (
+            ) : (() => {
+              if (paginatedData.length === 0) {
+                return (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography variant="h6" color="text.secondary">
+                      No assigned evaluations found.
+                    </Typography>
+                  </Box>
+                );
+              }
+              return (
               <Box sx={{ 
                 borderRadius: 2,
                 boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)',
@@ -466,10 +477,11 @@ const ApplicantsListPage = () => {
                                   <Typography variant="body2" color="text.secondary" fontStyle="italic">
                                     Not evaluated yet
                                   </Typography>
-                                )}
+                                )
+                            }
                           </StyledTableCell>
                           <StyledTableCell align="center">
-                            {!isEvaluated ? (
+                            {isEvaluated && (
                               <ActionButton
                                 variant="contained"
                                 size="small"
@@ -477,31 +489,14 @@ const ApplicantsListPage = () => {
                                 onClick={() => handleViewApplication(item)}
                                 sx={{
                                   borderRadius: "20px",
-                                  backgroundColor: gold.main,
-                                  color: gold.contrastText,
-                                  fontWeight: 600,
+                                  backgroundColor: theme.palette.primary.main,
                                   '&:hover': {
-                                    backgroundColor: gold.dark,
+                                    backgroundColor: theme.palette.primary.dark,
                                   }
                                 }}
                               >
-                                Evaluate Now
+                                View Evaluation
                               </ActionButton>
-                            ) : (
-                              <Tooltip title="View Application Details">
-                                <IconButton 
-                                  color="primary"
-                                  onClick={() => handleViewApplication(item)}
-                                  sx={{ 
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                    '&:hover': {
-                                      backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                                    }
-                                  }}
-                                >
-                                  <VisibilityIcon />
-                                </IconButton>
-                              </Tooltip>
                             )}
                           </StyledTableCell>
                         </StyledTableRow>
@@ -510,23 +505,8 @@ const ApplicantsListPage = () => {
                   </TableBody>
                 </Table>
               </Box>
-            ) : (
-              <Box sx={{ 
-                textAlign: "center", 
-                my: 6, 
-                py: 6,
-                backgroundColor: alpha(theme.palette.background.paper, 0.8),
-                borderRadius: 2
-              }}>
-                <HourglassEmptyIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No evaluations assigned
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  You currently have no evaluations assigned to you.
-                </Typography>
-              </Box>
-            )}
+              );
+            })()}
 
             
           </AnimatedPaper>

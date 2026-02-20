@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Polls assigned evaluations every 10 seconds and calls fetchEvaluations().
@@ -27,6 +28,11 @@ const EvaluatorAssignedEvaluationsPoller = ({ evaluatorId, fetchEvaluations }) =
     };
   }, [evaluatorId, fetchEvaluations]);
   return null; // This component does not render anything
+};
+
+EvaluatorAssignedEvaluationsPoller.propTypes = {
+  evaluatorId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  fetchEvaluations: PropTypes.func.isRequired,
 };
 
 export default EvaluatorAssignedEvaluationsPoller;

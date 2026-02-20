@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import PropTypes from 'prop-types';
 import {
   Box,
   Typography,
@@ -230,7 +231,7 @@ const ProgramAdminNavigation = ({ children }) => {
   };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    setRowsPerPage(Number.parseInt(event.target.value, 10));
     setPage(0);
   };
 
@@ -288,6 +289,143 @@ const ProgramAdminNavigation = ({ children }) => {
     page * rowsPerPage + rowsPerPage
   );
 
+  // Helper function to render applications content based on loading and data state
+  const renderApplicationsContent = () => {
+    if (loading) {
+      return (
+        <Box sx={{ display: "flex", justifyContent: "center", my: 6, alignItems: "center" }}>
+          <CircularProgress />
+          <Typography variant="body1" sx={{ ml: 2, color: 'text.secondary' }}>
+            Loading applications...
+          </Typography>
+        </Box>
+      );
+    }
+
+    if (applications.length === 0) {
+      return (
+        <Box sx={{ 
+          textAlign: "center", 
+          my: 6, 
+          py: 6,
+          backgroundColor: alpha(theme.palette.background.paper, 0.8),
+          borderRadius: 2
+        }}>
+          <PersonIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No applications found
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            There are currently no applications in the system.
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <>
+        <TableContainer sx={{ 
+          borderRadius: 2,
+          boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)',
+          backgroundColor: alpha(theme.palette.background.paper, 0.8),
+          mb: 2
+        }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <StyledTableCell>ID</StyledTableCell>
+                <StyledTableCell>Applicant</StyledTableCell>
+                <StyledTableCell>Application Date</StyledTableCell>
+                <StyledTableCell>Status</StyledTableCell>
+                <StyledTableCell align="center">Actions</StyledTableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {displayedApplications.map((application) => (
+                <StyledTableRow key={application.applicationId || application.id || `app-${Math.random()}`}>
+                  <StyledTableCell>{application.applicationId || application.id}</StyledTableCell>
+                  <StyledTableCell>
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
+                        {getInitials(application.applicantName)}
+                      </Avatar>
+                      <Typography variant="body2" fontWeight={500}>
+                        {application.applicantName}
+                      </Typography>
+                    </Stack>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {application.applicationDate ? 
+                      new Date(application.applicationDate).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      }) : 'N/A'}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <StyledChip 
+                      label={application.status} 
+                      color={getStatusChipColor(application.status)} 
+                      variant="outlined" 
+                      size="small"
+                    />
+                  </StyledTableCell>
+                  <StyledTableCell align="center">
+                    <Tooltip title="View Application Details">
+                      <IconButton 
+                        color="primary"
+                        onClick={() => handleOpenDialog(application)}
+                        sx={{ 
+                          backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                          '&:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                          }
+                        }}
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={application.applicant?.applicantId ? "Chat with Applicant" : "Applicant data unavailable"}>
+                      <span>
+                        <IconButton 
+                          color="secondary"
+                          onClick={() => handleInitiateChat(application)}
+                          disabled={!application.applicant?.applicantId}
+                          sx={{ 
+                            ml: 1,
+                            backgroundColor: alpha(gold.main, 0.1),
+                            '&:hover': {
+                              backgroundColor: alpha(gold.main, 0.2),
+                            },
+                            '&.Mui-disabled': {
+                              backgroundColor: alpha(theme.palette.action.disabled, 0.05),
+                              color: theme.palette.action.disabled,
+                            }
+                          }}
+                        >
+                          <ChatIcon />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </StyledTableCell>
+                </StyledTableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={applications.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+      </>
+    );
+  };
+
   // Function to render the appropriate content based on active button
   const renderContent = () => {
     switch (activeButton) {
@@ -307,131 +445,7 @@ const ProgramAdminNavigation = ({ children }) => {
                 },
               }}
             >
-              {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", my: 6, alignItems: "center" }}>
-                  <CircularProgress />
-                  <Typography variant="body1" sx={{ ml: 2, color: 'text.secondary' }}>
-                    Loading applications...
-                  </Typography>
-                </Box>
-              ) : applications.length > 0 ? (
-                <>
-                  <TableContainer sx={{ 
-                    borderRadius: 2,
-                    boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)',
-                    backgroundColor: alpha(theme.palette.background.paper, 0.8),
-                    mb: 2
-                  }}>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <StyledTableCell>ID</StyledTableCell>
-                          <StyledTableCell>Applicant</StyledTableCell>
-                          <StyledTableCell>Application Date</StyledTableCell>
-                          <StyledTableCell>Status</StyledTableCell>
-                          <StyledTableCell align="center">Actions</StyledTableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {displayedApplications.map((application) => (
-                          <StyledTableRow key={application.applicationId || application.id || `app-${Math.random()}`}>
-                            <StyledTableCell>{application.applicationId || application.id}</StyledTableCell>
-                            <StyledTableCell>
-                              <Stack direction="row" spacing={1.5} alignItems="center">
-                                <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
-                                  {getInitials(application.applicantName)}
-                                </Avatar>
-                                <Typography variant="body2" fontWeight={500}>
-                                  {application.applicantName}
-                                </Typography>
-                              </Stack>
-                            </StyledTableCell>
-                            <StyledTableCell>
-                              {application.applicationDate ? 
-                                new Date(application.applicationDate).toLocaleDateString(undefined, {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric',
-                                }) : 'N/A'}
-                            </StyledTableCell>
-                            <StyledTableCell>
-                              <StyledChip 
-                                label={application.status} 
-                                color={getStatusChipColor(application.status)} 
-                                variant="outlined" 
-                                size="small"
-                              />
-                            </StyledTableCell>
-                            <StyledTableCell align="center">
-                              <Tooltip title="View Application Details">
-                                <IconButton 
-                                  color="primary"
-                                  onClick={() => handleOpenDialog(application)}
-                                  sx={{ 
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                    '&:hover': {
-                                      backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                                    }
-                                  }}
-                                >
-                                  <VisibilityIcon />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title={application.applicant?.applicantId ? "Chat with Applicant" : "Applicant data unavailable"}>
-                                <span>
-                                  <IconButton 
-                                    color="secondary"
-                                    onClick={() => handleInitiateChat(application)}
-                                    disabled={!application.applicant?.applicantId}
-                                    sx={{ 
-                                      ml: 1,
-                                      backgroundColor: alpha(gold.main, 0.1),
-                                      '&:hover': {
-                                        backgroundColor: alpha(gold.main, 0.2),
-                                      },
-                                      '&.Mui-disabled': {
-                                        backgroundColor: alpha(theme.palette.action.disabled, 0.05),
-                                        color: theme.palette.action.disabled,
-                                      }
-                                    }}
-                                  >
-                                    <ChatIcon />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                            </StyledTableCell>
-                          </StyledTableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                  <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
-                    component="div"
-                    count={applications.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                  />
-                </>
-              ) : (
-                <Box sx={{ 
-                  textAlign: "center", 
-                  my: 6, 
-                  py: 6,
-                  backgroundColor: alpha(theme.palette.background.paper, 0.8),
-                  borderRadius: 2
-                }}>
-                  <PersonIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    No applications found
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    There are currently no applications in the system.
-                  </Typography>
-                </Box>
-              )}
+              {renderApplicationsContent()}
 
               {/* Application Details Dialog */}
               <ApplicationDetailsDialog
@@ -560,9 +574,11 @@ const ProgramAdminNavigation = ({ children }) => {
                 <TextField
                   size="small"
                   placeholder="Search..."
-                  InputProps={{
-                    startAdornment: <SearchIcon sx={{ mr: 1 }} />,
-                    sx: { borderRadius: 5, bgcolor: "#fff" },
+                  slotProps={{
+                    input: {
+                      startAdornment: <SearchIcon sx={{ mr: 1 }} />,
+                      sx: { borderRadius: 5, bgcolor: "#fff" },
+                    }
                   }}
                 />
                 
@@ -625,7 +641,9 @@ const ProgramAdminNavigation = ({ children }) => {
                 type="date"
                 value={dateFilter}
                 onChange={e => { setDateFilter(e.target.value); setPage(0); }}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{
+                  inputLabel: { shrink: true }
+                }}
                 sx={{ minWidth: 160 }}
               />
               <Button onClick={() => { setStatusFilter(""); setCourseFilter(""); setDateFilter(""); setPage(0); }} variant="outlined" size="small">Clear Filters</Button>
@@ -647,6 +665,10 @@ const ProgramAdminNavigation = ({ children }) => {
       </Box>
     </Box>
   );
+};
+
+ProgramAdminNavigation.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 export default ProgramAdminNavigation;

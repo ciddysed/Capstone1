@@ -251,9 +251,7 @@ const AcceptedStudentsTab = () => {
 
   // Get statistics
   const totalAccepted = filteredStudents.length;
-  const enrolledCount = filteredStudents.filter(s => s.status === 'ENROLLED').length;
   const acceptedCount = filteredStudents.filter(s => s.status === 'ACCEPTED').length;
-  const withdrawnCount = filteredStudents.filter(s => s.status === 'WITHDRAWN').length;
 
   // Filter students for current page
   const displayedStudents = filteredStudents.slice(

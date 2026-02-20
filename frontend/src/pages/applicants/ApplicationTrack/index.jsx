@@ -1,5 +1,6 @@
 "use client"
 
+import PropTypes from 'prop-types';
 import {
   Assignment,
   Logout,
@@ -236,6 +237,11 @@ const StatusBadge = ({ status, size = "medium" }) => {
   )
 }
 
+StatusBadge.propTypes = {
+  status: PropTypes.string.isRequired,
+  size: PropTypes.string,
+};
+
 const SectionHeader = ({ icon: Icon, title, subtitle, action }) => (
   <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 2, flexShrink: 0 }}>
     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -267,6 +273,13 @@ const SectionHeader = ({ icon: Icon, title, subtitle, action }) => (
     {action}
   </Box>
 )
+
+SectionHeader.propTypes = {
+  icon: PropTypes.elementType.isRequired,
+  title: PropTypes.string.isRequired,
+  subtitle: PropTypes.string,
+  action: PropTypes.node,
+};
 
 const ProgressStep = ({ completed, label, icon: Icon }) => (
   <Box
@@ -311,6 +324,12 @@ const ProgressStep = ({ completed, label, icon: Icon }) => (
   </Box>
 )
 
+ProgressStep.propTypes = {
+  completed: PropTypes.bool.isRequired,
+  label: PropTypes.string.isRequired,
+  icon: PropTypes.elementType.isRequired,
+};
+
 const InfoField = ({ label, value, icon: Icon }) => (
   <Box
     sx={{
@@ -340,6 +359,12 @@ const InfoField = ({ label, value, icon: Icon }) => (
     </Typography>
   </Box>
 )
+
+InfoField.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  icon: PropTypes.elementType,
+};
 
 const ApplicationTracking = () => {
   const { handleSuccess, handleError, snackbar } = useResponseHandler()
@@ -702,11 +727,7 @@ const ApplicationTracking = () => {
   )
 
   useEffect(() => {
-    if (
-      selectedConversation &&
-      selectedConversation.participantId &&
-      selectedConversation.participantRole
-    ) {
+    if (selectedConversation?.participantId && selectedConversation?.participantRole) {
       const abortController = new AbortController()
       fetchConversation(selectedConversation.participantId, selectedConversation.participantRole, abortController.signal)
       return () => abortController.abort() // Cleanup on unmount or conversation change
@@ -769,6 +790,7 @@ const ApplicationTracking = () => {
       }
       setChecked(true)
     } catch (err) {
+      console.error("Error fetching acceptance status:", err);
       setAccepted(false)
       setChecked(true)
     }
@@ -847,7 +869,7 @@ const ApplicationTracking = () => {
   }, [applicantId, isAccepted, checkAcceptedApplicant])
 
   useEffect(() => {
-    window.applicantOpenConversation = openConversation
+    globalThis.applicantOpenConversation = openConversation
     
     const handleOpenConversationEvent = (event) => {
       const chatData = event.detail
@@ -856,11 +878,11 @@ const ApplicationTracking = () => {
       }
     }
     
-    window.addEventListener('applicant:openConversation', handleOpenConversationEvent)
+    globalThis.addEventListener('applicant:openConversation', handleOpenConversationEvent)
     
     return () => {
-      delete window.applicantOpenConversation
-      window.removeEventListener('applicant:openConversation', handleOpenConversationEvent)
+      delete globalThis.applicantOpenConversation
+      globalThis.removeEventListener('applicant:openConversation', handleOpenConversationEvent)
     }
   }, [openConversation])
 
@@ -1246,14 +1268,16 @@ const ApplicationTracking = () => {
           onClose={handleClosePopover}
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
           transformOrigin={{ vertical: "top", horizontal: "right" }}
-          PaperProps={{
-            sx: {
-              width: 240,
-              borderRadius: 3,
-              boxShadow: "0 10px 40px rgba(0,0,0,0.15), 0 2px 10px rgba(0,0,0,0.1)",
-              mt: 1.5,
-              overflow: "hidden",
-              border: `1px solid ${colors.neutral[200]}`,
+          slotProps={{
+            paper: {
+              sx: {
+                width: 240,
+                borderRadius: 3,
+                boxShadow: "0 10px 40px rgba(0,0,0,0.15), 0 2px 10px rgba(0,0,0,0.1)",
+                mt: 1.5,
+                overflow: "hidden",
+                border: `1px solid ${colors.neutral[200]}`,
+              },
             },
           }}
         >
@@ -1339,17 +1363,21 @@ const ApplicationTracking = () => {
                   />
 
                   <Box sx={{ mb: 2 }}>
-                    {[
-                      {
-                        completed: documents.some((f) => f.type === "INFORMATIVE_COPY_OF_TOR"),
-                        label: "Required Documents",
-                        icon: FileTextIcon,
-                      },
-                      { completed: coursePreferences.length > 0, label: "Course Preferences", icon: GraduationCapIcon },
-                      { completed: documents.length >= 3, label: "Minimum Documents (3)", icon: FileTextIcon },
-                    ].map((step, idx) => (
-                      <ProgressStep key={idx} {...step} />
-                    ))}
+                    <ProgressStep
+                      completed={documents.some((f) => f.type === "INFORMATIVE_COPY_OF_TOR")}
+                      label="Required Documents"
+                      icon={FileTextIcon}
+                    />
+                    <ProgressStep
+                      completed={coursePreferences.length > 0}
+                      label="Course Preferences"
+                      icon={GraduationCapIcon}
+                    />
+                    <ProgressStep
+                      completed={documents.length >= 3}
+                      label="Minimum Documents (3)"
+                      icon={FileTextIcon}
+                    />
                   </Box>
 
                   <Divider sx={{ my: 1.5 }} />
@@ -1377,26 +1405,34 @@ const ApplicationTracking = () => {
                         ETEEAP Application Remarks
                       </Typography>
                     </Box>
-                    {notesLoading ? (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <CircularProgress size={14} sx={{ color: colors.primary.main }} />
-                        <Typography variant="caption" color={colors.neutral[500]}>
-                          Loading remarks...
+                    {(() => {
+                      if (notesLoading) {
+                        return (
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <CircularProgress size={14} sx={{ color: colors.primary.main }} />
+                            <Typography variant="caption" color={colors.neutral[500]}>
+                              Loading remarks...
+                            </Typography>
+                          </Box>
+                        );
+                      }
+                      if (notesError) {
+                        return (
+                          <Typography variant="caption" color="error">
+                            {notesError}
+                          </Typography>
+                        );
+                      }
+                      return (
+                        <Typography
+                          variant="body2"
+                          color={applicationNotes ? colors.neutral[700] : colors.neutral[400]}
+                          sx={{ fontSize: 13, lineHeight: 1.6 }}
+                        >
+                          {applicationNotes || "No remarks from evaluators yet."}
                         </Typography>
-                      </Box>
-                    ) : notesError ? (
-                      <Typography variant="caption" color="error">
-                        {notesError}
-                      </Typography>
-                    ) : (
-                      <Typography
-                        variant="body2"
-                        color={applicationNotes ? colors.neutral[700] : colors.neutral[400]}
-                        sx={{ fontSize: 13, lineHeight: 1.6 }}
-                      >
-                        {applicationNotes || "No remarks from evaluators yet."}
-                      </Typography>
-                    )}
+                      );
+                    })()}
                   </Box>
                 </CardContent>
               </Card>

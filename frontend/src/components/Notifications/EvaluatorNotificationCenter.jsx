@@ -105,27 +105,27 @@ const EvaluatorNotificationCenter = ({ evaluatorId }) => {
     setAnchorEl(null);
   };
 
-  const handleMarkAsRead = (notificationId) => {
-    // Try backend first
-    notificationService.markAsRead(notificationId)
-      .then(ok => {
-        if (!ok) throw new Error('API markAsRead failed');
-        setNotifications(notifications.map(notification => 
-          notification.id === notificationId 
-            ? { ...notification, read: true } 
-            : notification
-        ));
-      })
-      .catch(() => {
-        // Fallback to localStorage
-        localNotificationService.markAsRead(notificationId);
-        setNotifications(notifications.map(notification => 
-          notification.id === notificationId 
-            ? { ...notification, read: true } 
-            : notification
-        ));
-      });
-  };
+  // Mark notification as read - currently not used but kept for future functionality
+  // const handleMarkAsRead = (notificationId) => {
+  //   notificationService.markAsRead(notificationId)
+  //     .then(ok => {
+  //       if (!ok) throw new Error('API markAsRead failed');
+  //       setNotifications(notifications.map(notification => 
+  //         notification.id === notificationId 
+  //           ? { ...notification, read: true } 
+  //           : notification
+  //       ));
+  //     })
+  //     .catch(() => {
+  //       // Fallback to localStorage
+  //       localNotificationService.markAsRead(notificationId);
+  //       setNotifications(notifications.map(notification => 
+  //         notification.id === notificationId 
+  //           ? { ...notification, read: true } 
+  //           : notification
+  //       ));
+  //     });
+  // };
 
   const handleMarkAllAsRead = () => {
     // Try backend first

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react"
+import PropTypes from "prop-types"
 import {
   Drawer,
   Box,
@@ -61,26 +62,24 @@ const EmailDrawer = ({
           role: message.recipientType,
         }
       }
-    } else {
+    } else if (message.senderApplicant) {
       // Get sender info
-      if (message.senderApplicant) {
-        return {
-          id: message.senderApplicant.applicantId,
-          name: `${message.senderApplicant.firstName} ${message.senderApplicant.lastName}`,
-          role: message.senderType,
-        }
-      } else if (message.senderEvaluator) {
-        return {
-          id: message.senderEvaluator.evaluatorId,
-          name: message.senderEvaluator.name,
-          role: message.senderType,
-        }
-      } else if (message.senderAdmin) {
-        return {
-          id: message.senderAdmin.adminId,
-          name: message.senderAdmin.name,
-          role: message.senderType,
-        }
+      return {
+        id: message.senderApplicant.applicantId,
+        name: `${message.senderApplicant.firstName} ${message.senderApplicant.lastName}`,
+        role: message.senderType,
+      }
+    } else if (message.senderEvaluator) {
+      return {
+        id: message.senderEvaluator.evaluatorId,
+        name: message.senderEvaluator.name,
+        role: message.senderType,
+      }
+    } else if (message.senderAdmin) {
+      return {
+        id: message.senderAdmin.adminId,
+        name: message.senderAdmin.name,
+        role: message.senderType,
       }
     }
     return null
@@ -229,7 +228,7 @@ const EmailDrawer = ({
 
   const handleDeleteMessage = async (messageId) => {
     if (onDeleteEmail) {
-      const confirmed = window.confirm('Are you sure you want to delete this message?')
+      const confirmed = globalThis.confirm('Are you sure you want to delete this message?')
       if (confirmed) {
         const success = await onDeleteEmail(messageId)
         if (success) {
@@ -266,10 +265,12 @@ const EmailDrawer = ({
         anchor="right"
         open={open}
         onClose={onClose}
-        PaperProps={{
-          sx: {
-            width: { xs: "100%", sm: 480, md: 600 },
-            maxWidth: "100%",
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: "100%", sm: 480, md: 600 },
+              maxWidth: "100%",
+            },
           },
         }}
       >
@@ -430,6 +431,42 @@ const EmailDrawer = ({
       )}
     </>
   )
+}
+
+EmailDrawer.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  allMessages: PropTypes.arrayOf(
+    PropTypes.shape({
+      messageId: PropTypes.number,
+      senderType: PropTypes.string,
+      recipientType: PropTypes.string,
+      content: PropTypes.string,
+      sentAt: PropTypes.string,
+      isRead: PropTypes.bool,
+      senderApplicant: PropTypes.object,
+      senderEvaluator: PropTypes.object,
+      senderAdmin: PropTypes.object,
+      recipientApplicant: PropTypes.object,
+      recipientEvaluator: PropTypes.object,
+      recipientAdmin: PropTypes.object,
+    })
+  ),
+  loading: PropTypes.bool,
+  onRefresh: PropTypes.func,
+  onSendEmail: PropTypes.func,
+  onDeleteEmail: PropTypes.func,
+  sending: PropTypes.bool,
+  colors: PropTypes.shape({
+    primary: PropTypes.shape({
+      main: PropTypes.string,
+    }),
+    secondary: PropTypes.shape({
+      main: PropTypes.string,
+    }),
+    neutral: PropTypes.objectOf(PropTypes.string),
+  }),
+  currentUserType: PropTypes.string,
 }
 
 export default EmailDrawer

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react"
+import PropTypes from 'prop-types'
 import {
   Drawer,
   Box,
@@ -194,10 +195,12 @@ const ChatDrawer = ({
       anchor="right"
       open={open}
       onClose={onClose}
-      PaperProps={{
-        sx: {
-          width: { xs: "100%", sm: 420 },
-          maxWidth: "100%",
+      slotProps={{
+        paper: {
+          sx: {
+            width: { xs: "100%", sm: 420 },
+            maxWidth: "100%",
+          },
         },
       }}
     >
@@ -305,34 +308,36 @@ const ChatDrawer = ({
               placeholder="Search by name or role..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ fontSize: 20, color: safeColors.neutral[400] }} />
-                  </InputAdornment>
-                ),
-                endAdornment: searchTerm && (
-                  <InputAdornment position="end">
-                    <IconButton
-                      size="small"
-                      onClick={() => setSearchTerm("")}
-                      sx={{ padding: 0.5 }}
-                    >
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ fontSize: 20, color: safeColors.neutral[400] }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchTerm && (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => setSearchTerm("")}
+                        sx={{ padding: 0.5 }}
+                      >
                       <ClearIcon sx={{ fontSize: 18, color: safeColors.neutral[400] }} />
                     </IconButton>
                   </InputAdornment>
-                ),
-                sx: {
-                  fontSize: 14,
-                  bgcolor: safeColors.neutral[50],
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: safeColors.neutral[200],
-                  },
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: safeColors.neutral[300],
-                  },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: safeColors.primary.main,
+                  ),
+                  sx: {
+                    fontSize: 14,
+                    bgcolor: safeColors.neutral[50],
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: safeColors.neutral[200],
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: safeColors.neutral[300],
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: safeColors.primary.main,
+                    },
                   },
                 },
               }}
@@ -364,24 +369,32 @@ const ChatDrawer = ({
           />
         ) : (
           <Box sx={{ flex: 1, overflow: "auto" }}>
-            {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                <CircularProgress size={32} sx={{ color: safeColors.primary.main }} />
-              </Box>
-            ) : filteredChatList.length === 0 ? (
-              <Box sx={{ textAlign: "center", py: 6 }}>
-                <MailIcon sx={{ fontSize: 48, color: safeColors.neutral[300], mb: 2 }} />
-                <Typography variant="body2" color={safeColors.neutral[500]}>
-                  {searchTerm ? "No conversations match your search" : "No conversations yet"}
-                </Typography>
-                {searchTerm && (
-                  <Typography variant="caption" color={safeColors.neutral[400]} sx={{ mt: 1, display: "block" }}>
-                    Try searching for a different name or role
-                  </Typography>
-                )}
-              </Box>
-            ) : (
-              filteredChatList.map((chat, idx) => (
+            {(() => {
+              if (loading) {
+                return (
+                  <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                    <CircularProgress size={32} sx={{ color: safeColors.primary.main }} />
+                  </Box>
+                );
+              }
+              
+              if (filteredChatList.length === 0) {
+                return (
+                  <Box sx={{ textAlign: "center", py: 6 }}>
+                    <MailIcon sx={{ fontSize: 48, color: safeColors.neutral[300], mb: 2 }} />
+                    <Typography variant="body2" color={safeColors.neutral[500]}>
+                      {searchTerm ? "No conversations match your search" : "No conversations yet"}
+                    </Typography>
+                    {searchTerm && (
+                      <Typography variant="caption" color={safeColors.neutral[400]} sx={{ mt: 1, display: "block" }}>
+                        Try searching for a different name or role
+                      </Typography>
+                    )}
+                  </Box>
+                );
+              }
+              
+              return filteredChatList.map((chat, idx) => (
                 <ChatListItem
                   key={`${chat.participantRole}-${chat.participantId || idx}`}
                   chat={chat}
@@ -391,13 +404,54 @@ const ChatDrawer = ({
                   formatMessageTime={formatMessageTime}
                   colors={safeColors}
                 />
-              ))
-            )}
+              ));
+            })()}
           </Box>
         )}
       </Box>
     </Drawer>
   )
 }
+
+ChatDrawer.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  chatList: PropTypes.arrayOf(PropTypes.object).isRequired,
+  allEvaluators: PropTypes.arrayOf(PropTypes.object),
+  allApplicants: PropTypes.arrayOf(PropTypes.object),
+  allProgramAdmins: PropTypes.arrayOf(PropTypes.object),
+  loading: PropTypes.bool.isRequired,
+  selectedConversation: PropTypes.shape({
+    participantRole: PropTypes.string,
+    participantName: PropTypes.string,
+    lastMessageTimestamp: PropTypes.string,
+  }),
+  onSelectConversation: PropTypes.func.isRequired,
+  onCloseConversation: PropTypes.func.isRequired,
+  conversationMessages: PropTypes.arrayOf(PropTypes.object).isRequired,
+  conversationLoading: PropTypes.bool.isRequired,
+  newMessage: PropTypes.string.isRequired,
+  onMessageChange: PropTypes.func.isRequired,
+  onSendMessage: PropTypes.func.isRequired,
+  sendingMessage: PropTypes.bool.isRequired,
+  messagesEndRef: PropTypes.object.isRequired,
+  formatMessageTime: PropTypes.func.isRequired,
+  colors: PropTypes.shape({
+    primary: PropTypes.shape({
+      main: PropTypes.string,
+      dark: PropTypes.string,
+    }),
+    secondary: PropTypes.shape({
+      main: PropTypes.string,
+      light: PropTypes.string,
+    }),
+    accent: PropTypes.shape({
+      info: PropTypes.string,
+    }),
+    neutral: PropTypes.object,
+  }).isRequired,
+  currentUserType: PropTypes.string,
+  onRefreshChatList: PropTypes.func,
+};
 
 export default ChatDrawer
