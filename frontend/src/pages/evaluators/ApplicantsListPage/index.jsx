@@ -11,6 +11,7 @@ import {
   Chip,
   Typography,
   Box,
+  Tooltip,
   CircularProgress,
   Avatar,
   Stack,
@@ -19,6 +20,7 @@ import {
   createTheme,
   ThemeProvider,
   Grow,
+  IconButton,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
@@ -26,9 +28,10 @@ import ListLayoutWithFilters from "../../../templates/ListLayoutWithFilters";
 import EvaluatorAssignedEvaluationsPoller from "../../../components/EvaluatorAssignedEvaluationsPoller";
  
 import PendingIcon from '@mui/icons-material/Pending';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-
+ 
 // Custom maroon and gold color palette (matching ProgramAdmin)
 const maroon = {
   light: '#8D323C', // lighter maroon
@@ -36,14 +39,14 @@ const maroon = {
   dark: '#450000', // darker maroon
   contrastText: '#FFFFFF',
 };
-
+ 
 const gold = {
   light: '#FFF0B9', // lighter gold
   main: '#FFC72C', // gold
   dark: '#D4A500', // darker gold
   contrastText: '#000000',
 };
-
+ 
 // Create a custom theme with maroon and gold
 const customTheme = createTheme({
   palette: {
@@ -51,7 +54,7 @@ const customTheme = createTheme({
     secondary: gold,
   },
 });
-
+ 
 // Styled components for enhanced UI (matching ProgramAdmin)
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: 500,
@@ -62,7 +65,7 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
     fontWeight: 600,
   },
 }));
-
+ 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:nth-of-type(odd)': {
     backgroundColor: alpha(gold.light, 0.15),
@@ -76,7 +79,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
     border: 0,
   },
 }));
-
+ 
 const AnimatedPaper = styled(Paper)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 1.5,
   boxShadow: '0 8px 40px -12px rgba(106, 0, 0, 0.2)',
@@ -86,7 +89,7 @@ const AnimatedPaper = styled(Paper)(({ theme }) => ({
     boxShadow: '0 12px 45px -10px rgba(106, 0, 0, 0.25)',
   },
 }));
-
+ 
 const StyledChip = styled(Chip)(({ theme }) => ({
   fontWeight: 600,
   borderWidth: 2,
@@ -111,7 +114,7 @@ const StyledChip = styled(Chip)(({ theme }) => ({
     color: '#ed6c02',
   },
 }));
-
+ 
 const ActionButton = styled(Button)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 1.5,
   textTransform: 'none',
@@ -123,7 +126,7 @@ const ActionButton = styled(Button)(({ theme }) => ({
     boxShadow: '0 4px 12px rgba(106, 0, 0, 0.25)',
   },
 }));
-
+ 
 // Helper to fetch applicant and course details by ID
 const fetchApplicant = async (applicantId) => {
   if (!applicantId) return null;
@@ -136,7 +139,7 @@ const fetchApplicant = async (applicantId) => {
     return null;
   }
 };
-
+ 
 const fetchCourse = async (courseId) => {
   if (!courseId) return null;
   try {
@@ -148,7 +151,7 @@ const fetchCourse = async (courseId) => {
     return null;
   }
 };
-
+ 
 const ApplicantsListPage = () => {
   const theme = useTheme();
   const evaluatorId = localStorage.getItem("evaluatorId");
@@ -160,17 +163,17 @@ const ApplicantsListPage = () => {
   const [rowsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  
+ 
   const fetchEvaluations = () => {
     setLoading(true);
-    
+   
     if (!evaluatorId) {
       console.error("No evaluator ID found in localStorage");
       setEvaluations([]);
       setLoading(false);
       return;
     }
-
+ 
     // Fetch evaluations specific to this evaluator
     fetch(`https://eteeap-foth.onrender.com/api/evaluations/evaluator/${evaluatorId}`)
       .then((res) => {
@@ -189,53 +192,49 @@ const ApplicantsListPage = () => {
             applicantId: ev.applicant?.applicantId || ev.applicantId,
             courseId: ev.course?.courseId || ev.courseId
           }));
-          
+         
           // Get all applicantIds from evaluations
           const applicantIds = [...new Set(
             processedEvaluations
               .map((ev) => ev.applicant?.applicantId || ev.applicantId)
               .filter(Boolean)
           )];
-          
+         
           // Check which applicants are already in accepted applicants
           let excludedIds = [];
           if (applicantIds.length > 0) {
-            const acceptedApplicantResults = await Promise.all(
-              applicantIds.map(async (id) => {
-                try {
-                  const res = await fetch(`https://eteeap-foth.onrender.com/api/accepted-applicants/applicant/${id}`);
-                  return res.ok ? await res.json() : null;
-                } catch {
-                  return null;
-                }
-              })
+            const acceptedApplicantPromises = applicantIds.map(id =>
+              fetch(`https://eteeap-foth.onrender.com/api/accepted-applicants/applicant/${id}`)
+                .then(res => res.ok ? res.json() : null)
+                .catch(() => null)
             );
+            const acceptedApplicantResults = await Promise.all(acceptedApplicantPromises);
             excludedIds = applicantIds.filter((id, idx) => acceptedApplicantResults[idx] !== null);
           }
-          
+         
           // Filter out applicants who are already in accepted applicants
           const filteredEvaluations = processedEvaluations.filter(
             ev => !excludedIds.includes(ev.applicant?.applicantId || ev.applicantId)
           );
-          
+         
           setEvaluations(filteredEvaluations);
-          
+         
           // Extract remaining applicant and course IDs for fetching additional data
           const remainingApplicantIds = [...new Set(
             filteredEvaluations
               .map((ev) => ev.applicant?.applicantId || ev.applicantId)
               .filter(Boolean)
           )];
-          
+         
           const courseIds = [...new Set(
             filteredEvaluations
               .map((ev) => ev.course?.courseId || ev.courseId)
               .filter(Boolean)
           )];
-          
+         
           console.log("Filtered Applicant IDs to fetch:", remainingApplicantIds);
           console.log("Course IDs to fetch:", courseIds);
-          
+         
           // Fetch applicants (only those not in accepted applicants)
           if (remainingApplicantIds.length > 0) {
             const applicantPromises = remainingApplicantIds.map(async id => {
@@ -247,7 +246,7 @@ const ApplicantsListPage = () => {
             );
             setApplicantMap(applicantObj);
           }
-          
+         
           // Fetch courses
           if (courseIds.length > 0) {
             const coursePromises = courseIds.map(async id => {
@@ -271,10 +270,10 @@ const ApplicantsListPage = () => {
         setLoading(false);
       });
   };
-  
+ 
   const fetchEvaluatorDepartment = async () => {
     if (!evaluatorId) return;
-    
+   
     try {
       const response = await fetch(`https://eteeap-foth.onrender.com/api/evaluators/${evaluatorId}`);
       if (response.ok) {
@@ -287,32 +286,32 @@ const ApplicantsListPage = () => {
       console.error("Error fetching evaluator department:", error);
     }
   };
-
+ 
   // Simplified data source - just return all evaluations
   const paginatedData = evaluations.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-
+ 
   // Improved ViewApplication function to handle both applicantId and evaluationId
   const handleViewApplication = (item) => {
     console.log("Viewing application item details:", item);
     const applicantId = item.applicant?.applicantId || item.applicantId;
     const courseId = item.course?.courseId || item.courseId;
     const evaluationId = item.evaluationId;
-    
+   
     if (!applicantId) {
       console.error("Missing applicantId in selected item:", item);
       return; // Prevent navigation with missing ID
     }
-    
+   
     navigate("/evaluator/applicants/view-applicant", {
-      state: { 
+      state: {
         applicantId,
         evaluationId,
         courseId
       }
     });
   };
-
-
+ 
+ 
   // Get initials from name (matching ProgramAdmin)
   const getInitials = (name) => {
     if (!name) return "??";
@@ -323,18 +322,18 @@ const ApplicantsListPage = () => {
       .toUpperCase()
       .slice(0, 2);
   };
-
-  
-  
+ 
+ 
+ 
   // Simplified pagination handlers
-  
-
+ 
+ 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchEvaluations();
     fetchEvaluatorDepartment();
   }, []);
-
+ 
   return (
     <ThemeProvider theme={customTheme}>
       <ListLayoutWithFilters>
@@ -343,7 +342,7 @@ const ApplicantsListPage = () => {
           <AnimatedPaper elevation={3} sx={{ p: 3, my: 2, overflow: 'hidden' }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Box>
-                <Typography variant="h5" fontWeight="bold" color={maroon.dark} sx={{ 
+                <Typography variant="h5" fontWeight="bold" color={maroon.dark} sx={{
                   borderBottom: `2px solid ${gold.main}`,
                   paddingBottom: 1,
                   display: 'inline-block'
@@ -357,7 +356,7 @@ const ApplicantsListPage = () => {
                 )}
               </Box>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Chip 
+                <Chip
                   label={`${evaluations.length} Records`}
                   color="primary"
                   size="medium"
@@ -374,7 +373,7 @@ const ApplicantsListPage = () => {
                 </ActionButton>
               </Box>
             </Box>
-
+ 
             {loading ? (
               <Box sx={{ display: "flex", justifyContent: "center", my: 6, alignItems: "center" }}>
                 <CircularProgress />
@@ -382,18 +381,8 @@ const ApplicantsListPage = () => {
                   Loading your assigned evaluations...
                 </Typography>
               </Box>
-            ) : (() => {
-              if (paginatedData.length === 0) {
-                return (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <Typography variant="h6" color="text.secondary">
-                      No assigned evaluations found.
-                    </Typography>
-                  </Box>
-                );
-              }
-              return (
-              <Box sx={{ 
+            ) : paginatedData.length > 0 ? (
+              <Box sx={{
                 borderRadius: 2,
                 boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)',
                 backgroundColor: alpha(theme.palette.background.paper, 0.8),
@@ -412,17 +401,17 @@ const ApplicantsListPage = () => {
                     {paginatedData.map((item, index) => {
                       // Properly check if the item has been evaluated
                       const isEvaluated = Boolean(
-                        item.evaluationStatus && 
-                        item.evaluationStatus !== "PENDING" && 
+                        item.evaluationStatus &&
+                        item.evaluationStatus !== "PENDING" &&
                         item.dateEvaluated
                       );
-                      
+                     
                       const applicantId = item.applicant?.applicantId;
                       const courseId = item.course?.courseId;
-                      
+                     
                       const applicant = applicantMap[applicantId];
                       const course = courseMap[courseId];
-                      
+                     
                       const fullName = applicant
                         ? [
                             applicant.firstName,
@@ -434,7 +423,7 @@ const ApplicantsListPage = () => {
                             .filter(Boolean)
                             .join(" ")
                         : "-";
-                        
+                       
                       return (
                         <StyledTableRow key={`${item.evaluationId || index}`}>
                           <StyledTableCell>
@@ -477,11 +466,10 @@ const ApplicantsListPage = () => {
                                   <Typography variant="body2" color="text.secondary" fontStyle="italic">
                                     Not evaluated yet
                                   </Typography>
-                                )
-                            }
+                                )}
                           </StyledTableCell>
                           <StyledTableCell align="center">
-                            {isEvaluated && (
+                            {!isEvaluated ? (
                               <ActionButton
                                 variant="contained"
                                 size="small"
@@ -489,14 +477,31 @@ const ApplicantsListPage = () => {
                                 onClick={() => handleViewApplication(item)}
                                 sx={{
                                   borderRadius: "20px",
-                                  backgroundColor: theme.palette.primary.main,
+                                  backgroundColor: gold.main,
+                                  color: gold.contrastText,
+                                  fontWeight: 600,
                                   '&:hover': {
-                                    backgroundColor: theme.palette.primary.dark,
+                                    backgroundColor: gold.dark,
                                   }
                                 }}
                               >
-                                View Evaluation
+                                Evaluate Now
                               </ActionButton>
+                            ) : (
+                              <Tooltip title="View Application Details">
+                                <IconButton
+                                  color="primary"
+                                  onClick={() => handleViewApplication(item)}
+                                  sx={{
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                    '&:hover': {
+                                      backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                                    }
+                                  }}
+                                >
+                                  <VisibilityIcon />
+                                </IconButton>
+                              </Tooltip>
                             )}
                           </StyledTableCell>
                         </StyledTableRow>
@@ -505,10 +510,25 @@ const ApplicantsListPage = () => {
                   </TableBody>
                 </Table>
               </Box>
-              );
-            })()}
-
-            
+            ) : (
+              <Box sx={{
+                textAlign: "center",
+                my: 6,
+                py: 6,
+                backgroundColor: alpha(theme.palette.background.paper, 0.8),
+                borderRadius: 2
+              }}>
+                <HourglassEmptyIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No evaluations assigned
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  You currently have no evaluations assigned to you.
+                </Typography>
+              </Box>
+            )}
+ 
+           
           </AnimatedPaper>
         </Grow>
         {/* Poller for automatic updates */}
@@ -520,5 +540,6 @@ const ApplicantsListPage = () => {
     </ThemeProvider>
   );
 };
-
+ 
 export default ApplicantsListPage;
+ 
