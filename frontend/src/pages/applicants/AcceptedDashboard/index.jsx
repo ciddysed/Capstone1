@@ -641,9 +641,62 @@ const AcceptedDashboard = () => {
             <Box>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>Overall Progress</Typography>
+                <Tooltip 
+                title={
+                  (curriculumSummary?.approvedCount || 0) === 0 
+                    ? (
+                        <Stack spacing={1.5} alignItems="center">
+                          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem', textAlign: 'center' }}>
+                            Hey {applicantData?.firstName || 'there'}, congrats on your acceptance. Please complete your self evaluation for your next step in the acceptance phase
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => navigate('/evaluation-form')}
+                            sx={{
+                              bgcolor: gold.main,
+                              color: maroon.main,
+                              fontWeight: 700,
+                              fontSize: '0.75rem',
+                              textTransform: 'none',
+                              borderRadius: 1.5,
+                              px: 2,
+                              py: 0.5,
+                              '&:hover': {
+                                bgcolor: gold.light,
+                                transform: 'scale(1.05)',
+                              },
+                            }}
+                          >
+                            Start Self Evaluation
+                          </Button>
+                        </Stack>
+                      )
+                    : ""
+                }
+                open={(curriculumSummary?.approvedCount || 0) === 0}
+                arrow
+                placement="left"
+                componentsProps={{
+                  tooltip: {
+                    sx: {
+                      bgcolor: maroon.main,
+                      color: '#fff',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      maxWidth: 320,
+                      p: 2,
+                      borderRadius: 2,
+                      boxShadow: `0 4px 12px ${alpha(maroon.main, 0.3)}`,
+                    }
+                  },
+                  arrow: { sx: { color: maroon.main } }
+                }}
+              >
                 <Typography variant="body2" sx={{ fontWeight: 700, color: maroon.main }}>
-                  {curriculumSummary.approvedCount || 0} / {curriculumSummary.totalSubjects || 0} subjects Evaluated ({progressPercent}%)
+                  {curriculumSummary?.approvedCount || 0} / {curriculumSummary?.totalSubjects || 0} subjects Evaluated ({progressPercent}%)
                 </Typography>
+              </Tooltip>
               </Stack>
               <LinearProgress
                 variant="determinate"

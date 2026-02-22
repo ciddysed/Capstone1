@@ -34,7 +34,6 @@ import DashboardLink from '../../../components/DashboardLink';
 
 // Document type definitions with user-friendly names
 const documentTypes = [
-  { value: "APPLICANTS_EVALUATION_SHEET", label: "Applicant's Evaluation Sheet" },
   { value: "INFORMATIVE_COPY_OF_TOR", label: "Informative Copy of TOR", required: true },
   { value: "PSA_AUTHENTICATED_BIRTH_CERTIFICATE", label: "PSA Birth Certificate" },
   { value: "CERTIFICATE_OF_TRANSFER_CREDENTIAL", label: "Certificate of Transfer Credential" },
@@ -1081,6 +1080,13 @@ export default function ApplicationForm() {
                                 (f) => f.documentType === "CERTIFICATE_OF_EMPLOYMENT"
                               )}
                               label="Certificate of Employment Required"
+                            />
+
+                            <RequirementRow
+                              ok={files.some(
+                                (f) => f.documentType === "EMPLOYER_CERTIFIED_DETAILED_JOB_DESCRIPTION"
+                              )}
+                              label="Employer Certified Job Description"
                             />
                             <RequirementRow
                               ok={files.length >= 3}

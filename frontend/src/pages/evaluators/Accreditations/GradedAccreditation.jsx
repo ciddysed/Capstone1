@@ -25,6 +25,11 @@ import {
   Dialog,
   DialogContent,
   MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  Button,
+  Divider,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -35,6 +40,13 @@ import BookIcon from '@mui/icons-material/Book';
 import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DescriptionIcon from '@mui/icons-material/Description';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import DownloadIcon from '@mui/icons-material/Download';
+import ImageIcon from '@mui/icons-material/Image';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import CloseIcon from '@mui/icons-material/Close';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import axios from "axios";
 import toast from "../../../utils/toast";
 import { API_BASE } from '../../../config';
@@ -111,6 +123,16 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
   },
 }));
 
+const DocumentPreviewContainer = styled(Box)(({ theme }) => ({
+  backgroundColor: '#fff',
+  borderRadius: theme.shape.borderRadius * 1.5,
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
+  borderLeft: `3px solid ${maroon.main}`,
+}));
+
 // Helper functions to avoid nested ternaries
 const getStatusBackgroundColor = (status, alphaValue = 0.1) => {
   if (status === "APPROVED") return alpha('#4caf50', alphaValue);
@@ -129,6 +151,263 @@ const getGradeStyles = (hasGrade) => ({
   color: hasGrade ? 'text.primary' : 'text.secondary'
 });
 
+const getFileIcon = (fileType, size = 'small') => {
+  if (!fileType) return <DescriptionIcon fontSize={size === 'small' ? 'small' : 'large'} />;
+  const type = fileType.toLowerCase();
+  const iconSize = size === 'small' ? 'small' : 'large';
+  const iconStyle = size === 64 ? { fontSize: 64 } : {};
+  
+  if (type.includes('pdf')) {
+    return <PictureAsPdfIcon fontSize={iconSize} sx={{ color: '#d32f2f', ...iconStyle }} />;
+  }
+  if (type.includes('image') || type.includes('jpg') || type.includes('png') || type.includes('gif')) {
+    return <ImageIcon fontSize={iconSize} sx={{ color: '#1976d2', ...iconStyle }} />;
+  }
+  return <DescriptionIcon fontSize={iconSize} sx={iconStyle} />;
+};
+
+const DocumentPreview = ({ document, onPreview, onDownload, previewMode, onClosePreview, fullScreenMode, onFullScreen, onCloseFullScreen }) => {
+  if (!document) {
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', flexDirection: 'column', gap: 1, p: 2 }}>
+        <DescriptionIcon sx={{ fontSize: 40, color: 'text.secondary', opacity: 0.3 }} />
+        <Typography variant="body2" color="text.secondary" align="center">
+          Select a document to preview
+        </Typography>
+      </Box>
+    );
+  }
+
+  // If in preview mode, show the actual document
+  if (previewMode) {
+    const fileType = document.fileType?.toLowerCase() || '';
+    const isImage = fileType.includes('image') || fileType.includes('jpg') || fileType.includes('png') || fileType.includes('gif');
+    const isPdf = fileType.includes('pdf');
+    const isWord = fileType.includes('wordprocessingml') || fileType.includes('msword');
+    const isExcel = fileType.includes('spreadsheetml') || fileType.includes('excel');
+    const isPowerPoint = fileType.includes('presentationml') || fileType.includes('powerpoint');
+    
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        {/* Preview Header */}
+        <Box sx={{ 
+          p: fullScreenMode ? 2 : 1.5, 
+          borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`, 
+          flexShrink: 0, 
+          bgcolor: fullScreenMode ? alpha(maroon.main, 0.08) : alpha(maroon.main, 0.05) 
+        }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Box>
+              <Typography 
+                variant={fullScreenMode ? "h6" : "subtitle2"} 
+                fontWeight="600" 
+                color={maroon.main} 
+                noWrap
+              >
+                {document.fileName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {fullScreenMode ? 'Full Screen Preview - DocumentContainer' : 'Preview Mode'}
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={1}>
+              {fullScreenMode ? (
+                <Tooltip title="Exit Full Screen">
+                  <IconButton
+                    size="medium"
+                    onClick={onCloseFullScreen}
+                    sx={{
+                      color: '#d32f2f',
+                      bgcolor: 'rgba(211,47,47,0.1)',
+                      '&:hover': { bgcolor: 'rgba(211,47,47,0.2)' },
+                      borderRadius: 2,
+                    }}
+                  >
+                    <CloseIcon fontSize="medium" />
+                  </IconButton>
+                </Tooltip>
+              ) : null}
+              {!fullScreenMode && (
+                <Stack direction="row" spacing={1}>
+                  <Tooltip title="Full Screen">
+                    <IconButton
+                      size="small"
+                      onClick={onFullScreen}
+                      sx={{
+                        color: maroon.main,
+                        '&:hover': { bgcolor: alpha(maroon.main, 0.1) },
+                      }}
+                    >
+                      <FullscreenIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Download Document">
+                    <IconButton
+                      size="small"
+                      onClick={() => onDownload(document.documentId)}
+                      sx={{
+                        color: maroon.main,
+                        '&:hover': { bgcolor: alpha(maroon.main, 0.1) },
+                      }}
+                    >
+                      <DownloadIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Close Preview">
+                    <IconButton
+                      size="small"
+                      onClick={onClosePreview}
+                      sx={{
+                        color: '#d32f2f',
+                        '&:hover': { bgcolor: 'rgba(211,47,47,0.1)' },
+                      }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              )}
+            </Stack>
+          </Stack>
+        </Box>
+
+        {/* Document Content */}
+        <Box sx={{ flex: 1, overflow: 'hidden', bgcolor: '#f5f5f5' }}>
+          {isImage ? (
+            <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 1 }}>
+              <img
+                src={`https://eteeap-foth.onrender.com/api/documents/preview/${document.documentId}`}
+                alt={document.fileName}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                  borderRadius: 8,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }}
+              />
+            </Box>
+          ) : isPdf || isWord || isExcel || isPowerPoint ? (
+            <iframe
+              src={`https://eteeap-foth.onrender.com/api/documents/preview/${document.documentId}`}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
+              }}
+              title={document.fileName}
+            />
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', flexDirection: 'column', gap: 1, p: 3 }}>
+              <DescriptionIcon sx={{ fontSize: 64, color: 'text.secondary', opacity: 0.3 }} />
+              <Typography variant="h6" color="text.secondary" align="center">
+                Preview not available
+              </Typography>
+              <Typography variant="body2" color="text.secondary" align="center">
+                This file type ({fileType || 'unknown'}) cannot be previewed inline.
+              </Typography>
+              <Button
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                onClick={() => onDownload(document.documentId)}
+                sx={{
+                  borderColor: maroon.main,
+                  color: maroon.main,
+                  '&:hover': {
+                    borderColor: maroon.dark,
+                    bgcolor: alpha(maroon.main, 0.05),
+                  },
+                  mt: 2,
+                }}
+              >
+                Download File
+              </Button>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  }
+
+  // Default view with action buttons
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      {/* Document Header */}
+      <Box sx={{ p: 1.5, borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`, flexShrink: 0 }}>
+        <Typography variant="subtitle2" fontWeight="600" color={maroon.main} noWrap>
+          {document.fileName}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Uploaded: {new Date(document.uploadDate).toLocaleDateString()}
+        </Typography>
+      </Box>
+
+      {/* Action Buttons */}
+      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, p: 3 }}>
+        <Box sx={{ textAlign: 'center', mb: 2 }}>
+          {getFileIcon(document.fileType, 64)}
+          <Typography variant="h6" color={maroon.main} sx={{ mt: 1, fontWeight: 600 }}>
+            {document.fileName}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {document.fileType} • {(document.fileSize / 1024).toFixed(0)} KB
+          </Typography>
+        </Box>
+        
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="contained"
+            startIcon={<VisibilityIcon />}
+            onClick={() => onPreview(document.documentId)}
+            sx={{
+              bgcolor: maroon.main,
+              '&:hover': { bgcolor: maroon.dark },
+              borderRadius: 2,
+              px: 3,
+            }}
+          >
+            Preview
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<FullscreenIcon />}
+            onClick={onFullScreen}
+            sx={{
+              borderColor: maroon.main,
+              color: maroon.main,
+              '&:hover': {
+                borderColor: maroon.dark,
+                bgcolor: alpha(maroon.main, 0.05),
+              },
+              borderRadius: 2,
+              px: 3,
+            }}
+          >
+            Full Screen
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={() => onDownload(document.documentId)}
+            sx={{
+              borderColor: maroon.main,
+              color: maroon.main,
+              '&:hover': {
+                borderColor: maroon.dark,
+                bgcolor: alpha(maroon.main, 0.05),
+              },
+              borderRadius: 2,
+              px: 3,
+            }}
+          >
+            Download
+          </Button>
+        </Stack>
+      </Box>
+    </Box>
+  );
+};
+
 const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -136,11 +415,45 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
   const [selectedAdviser, setSelectedAdviser] = useState(null);
   const [existingAssignment, setExistingAssignment] = useState(null);
   const [savingAdviser, setSavingAdviser] = useState(false);
+  const [documents, setDocuments] = useState([]);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [selectedFileType, setSelectedFileType] = useState('');
+  const [previewMode, setPreviewMode] = useState(false);
+  const [fullScreenMode, setFullScreenMode] = useState(false);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
   const saveTimers = useRef({});
 
   const flushTimers = () => {
     Object.values(saveTimers.current).forEach(clearTimeout);
     saveTimers.current = {};
+  };
+
+  // Handle document preview inline
+  const handlePreviewDocument = (documentId) => {
+    setPreviewMode(true);
+  };
+
+  // Handle closing preview
+  const handleClosePreview = () => {
+    setPreviewMode(false);
+  };
+
+  // Handle full screen preview
+  const handleFullScreenPreview = () => {
+    setFullScreenMode(true);
+    setPreviewMode(true);
+  };
+
+  // Handle closing full screen preview
+  const handleCloseFullScreen = () => {
+    setFullScreenMode(false);
+    setPreviewMode(false);
+  };
+
+  // Handle document download
+  const handleDownloadDocument = (documentId) => {
+    const downloadUrl = `https://eteeap-foth.onrender.com/api/documents/download/${documentId}`;
+    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
   };
 
   // debounce save helper (also saves empty strings to allow clearing)
@@ -217,6 +530,46 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
       .catch(() => setRecords([]))
       .finally(() => setLoading(false));
   }, [applicantId, isOpen]);
+
+  // Fetch documents
+  useEffect(() => {
+    if (!applicantId || !isOpen) return;
+
+    setDocumentsLoading(true);
+    axios
+      .get(`${API_BASE}/documents/applicant/${applicantId}`)
+      .then((res) => {
+        setDocuments(res.data || []);
+        // Auto-select first document
+        if (res.data && res.data.length > 0) {
+          setSelectedDocument(res.data[0]);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch documents:", err);
+        setDocuments([]);
+      })
+      .finally(() => setDocumentsLoading(false));
+  }, [applicantId, isOpen]);
+
+  // Get unique file types from documents
+  const fileTypes = Array.from(
+    new Set(documents.map(doc => doc.fileType).filter(Boolean))
+  ).sort();
+
+  // Filter documents by selected file type
+  const filteredDocuments = selectedFileType
+    ? documents.filter(doc => doc.fileType === selectedFileType)
+    : documents;
+
+  // Update selected document when filter changes
+  useEffect(() => {
+    if (filteredDocuments.length > 0 && !filteredDocuments.includes(selectedDocument)) {
+      setSelectedDocument(filteredDocuments[0]);
+    } else if (filteredDocuments.length === 0) {
+      setSelectedDocument(null);
+    }
+  }, [selectedFileType, filteredDocuments]);
 
   // Fetch existing assignment for this applicant (only on mount or applicantId change)
   useEffect(() => {
@@ -384,6 +737,12 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
         </Typography>
       </Stack>
 
+      {/* Main Content - Split Layout */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, height: 'calc(100vh - 140px)' }}>
+        
+        {/* Left Side: Subject Evaluation & Grading */}
+        <Box sx={{ overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+          
       {/* Compact Header Section */}
       <Box
         sx={{
@@ -601,6 +960,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                               {isEditable ? (
                                 (() => {
                                   const allowedOptions = [
+                                    "Self-Assessment",
                                     "TOR Accreditation",
                                     "Portfolio Review",
                                     "Remediation Class",
@@ -730,8 +1090,137 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
         </Grow>
         );
       })()}
-    </Box>
-  );
+        </Box>
+
+        {/* Right Side: Documents Preview */}
+        <DocumentPreviewContainer>
+          {/* Header */}
+          {!fullScreenMode && (
+          <Box sx={{ p: 1.5, borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`, flexShrink: 0 }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+              <DescriptionIcon sx={{ color: maroon.main, fontSize: 20 }} />
+              <Typography variant="subtitle1" fontWeight="600" color={maroon.main}>
+                Documents Preview
+              </Typography>
+            </Stack>
+
+            {/* File Type Filter */}
+            <FormControl size="small" fullWidth>
+              <InputLabel id="file-type-label" sx={{ fontSize: 12 }}>
+                Filter by File Type
+              </InputLabel>
+              <Select
+                labelId="file-type-label"
+                id="file-type-select"
+                value={selectedFileType}
+                onChange={(e) => setSelectedFileType(e.target.value)}
+                label="Filter by File Type"
+                sx={{
+                  borderRadius: 1,
+                  backgroundColor: alpha(gold.light, 0.1),
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(maroon.main, 0.2),
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(maroon.main, 0.4),
+                  },
+                }}
+              >
+                <MenuItem value="">
+                  <em>All Documents ({documents.length})</em>
+                </MenuItem>
+                {fileTypes.map(fileType => (
+                  <MenuItem key={fileType} value={fileType}>
+                    {fileType} ({documents.filter(d => d.fileType === fileType).length})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+          )}
+
+          {/* Document List */}
+          {!fullScreenMode && (documentsLoading ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+              <CircularProgress size={32} />
+            </Box>
+          ) : filteredDocuments.length > 0 ? (
+            <Box sx={{ overflow: 'auto', p: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ mb: 1.5 }}>
+                {filteredDocuments.map(doc => (
+                  <Box
+                    key={doc.documentId}
+                    onClick={() => setSelectedDocument(doc)}
+                    sx={{
+                      p: 1.25,
+                      mb: 1,
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      backgroundColor: selectedDocument?.documentId === doc.documentId 
+                        ? alpha(maroon.main, 0.1) 
+                        : 'transparent',
+                      border: selectedDocument?.documentId === doc.documentId
+                        ? `2px solid ${maroon.main}`
+                        : `1px solid ${alpha(maroon.main, 0.1)}`,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        backgroundColor: alpha(maroon.main, 0.05),
+                        borderColor: maroon.main,
+                      },
+                    }}
+                  >
+                    <Stack direction="row" spacing={1} alignItems="flex-start">
+                      <Box sx={{ mt: 0.5, display: 'flex' }}>
+                        {getFileIcon(doc.fileType)}
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography 
+                          variant="caption" 
+                          fontWeight={selectedDocument?.documentId === doc.documentId ? 600 : 500}
+                          noWrap
+                          sx={{ display: 'block' }}
+                        >
+                          {doc.fileName}
+                        </Typography>
+                        
+                        <Typography variant="caption" color="text.secondary">
+                          {(doc.fileSize / 1024).toFixed(0)} KB
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'column', gap: 1, p: 2 }}>
+              <DescriptionIcon sx={{ fontSize: 40, color: 'text.secondary', opacity: 0.3 }} />
+              <Typography variant="body2" color="text.secondary" align="center">
+                {documents.length === 0 ? 'No documents uploaded' : 'No documents match the selected filter'}
+              </Typography>
+            </Box>
+          ))}
+
+          {!fullScreenMode && <Divider />}
+
+          {/* Preview Section */}
+          <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <DocumentPreview 
+              document={selectedDocument} 
+              onPreview={handlePreviewDocument}
+              onDownload={handleDownloadDocument}
+              previewMode={previewMode}
+              onClosePreview={handleClosePreview}
+              fullScreenMode={fullScreenMode}
+              onFullScreen={handleFullScreenPreview}
+              onCloseFullScreen={handleCloseFullScreen}
+            />
+          </Box>
+        </DocumentPreviewContainer>
+
+        </Box>
+      </Box>
+    );
 
   return (
     <Dialog

@@ -33,6 +33,7 @@ import Accreditations from "../pages/evaluators/Accreditations/Accreditations";
 import GradedAccreditation from "../pages/evaluators/Accreditations/GradedAccreditation";
 import AccreditedAccounts from "../pages/evaluators/Accreditations/AccreditedAccounts";
 import AcceptedDashboard from "../pages/applicants/AcceptedDashboard";
+import EvaluationForm from "../pages/applicants/AcceptedDashboard/EvaluationForm";
 import AdviserApplicantsListPage from "../pages/advisers/ApplicantsListPage";
 import AdviserViewApplicantPage from "../pages/advisers/ViewApplicantPage";
 import AdviserGradedAccreditationsPage from "../pages/advisers/GradedAccreditationsPage";
@@ -103,6 +104,14 @@ const AppRoutes = () => {
       element: (
         <ProtectedRoute>
           <AcceptedDashboard />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/evaluation-form",
+      element: (
+        <ProtectedRoute>
+          <EvaluationForm />
         </ProtectedRoute>
       ),
     },
