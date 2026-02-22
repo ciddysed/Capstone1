@@ -18,9 +18,7 @@ import {
   MenuItem,
   Button,
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogActions,
   Card,
   CardContent,
   Grow,
@@ -29,6 +27,10 @@ import { styled } from "@mui/material/styles";
 import SchoolIcon from '@mui/icons-material/School';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import Divider from '@mui/material/Divider';
 import toast from "../../../utils/toast";
 
 const API_URL = 'https://eteeap-foth.onrender.com/api/accepted-applicants';
@@ -389,66 +391,227 @@ const Accreditations = () => {
       </Grow>
 
       {/* Confirmation Dialog */}
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ bgcolor: maroon.main, color: "white", pb: 2 }}>
-          Confirm Accreditation Process
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            You are about to start the accreditation process for:
-          </Typography>
-          {selectedApplicant && (
-            <Box sx={{ p: 2, bgcolor: alpha(gold.light, 0.2), borderRadius: 1, mb: 3 }}>
-              <Typography variant="subtitle1" fontWeight="bold">
-                {`${selectedApplicant.applicant?.firstName || ""} ${selectedApplicant.applicant?.lastName || ""}`}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Course: {selectedApplicant.finalCourse?.courseName}
-              </Typography>
-            </Box>
-          )}
-          <Typography variant="body2" sx={{ mb: 2, fontWeight: 500 }}>
-            Please select the curriculum that will be used for this accreditation:
-          </Typography>
-          <Select
-            value={selectedCurriculumId}
-            onChange={e => setSelectedCurriculumId(e.target.value)}
-            displayEmpty
-            fullWidth
-            sx={{ 
-              minWidth: 220,
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
-              }
+      <Dialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            overflow: 'hidden',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.2)',
+          }
+        }}
+      >
+        {/* Header */}
+        <Box
+          sx={{
+            background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 60%, ${maroon.light} 100%)`,
+            px: 3,
+            py: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              bgcolor: alpha('#fff', 0.15),
+              border: `2px solid ${alpha('#fff', 0.3)}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
-            <MenuItem value="" disabled>
-              <em>Choose curriculum...</em>
-            </MenuItem>
-            {curriculums.map(cur => (
-              <MenuItem key={cur.id} value={cur.id}>
-                <Box>
-                  <Typography variant="body2" fontWeight="medium">
-                    {cur.programName}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Started: {cur.yearStarted}
-                  </Typography>
-                </Box>
-              </MenuItem>
-            ))}
-          </Select>
-          {!selectedCurriculumId && (
-            <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: "block" }}>
-              * Curriculum selection is required to proceed
+            <VerifiedUserIcon sx={{ color: gold.main, fontSize: 24 }} />
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight={700} color="white" sx={{ lineHeight: 1.2 }}>
+              Confirm Accreditation
             </Typography>
-          )}
+            <Typography variant="caption" sx={{ color: alpha('#fff', 0.75), fontSize: 12 }}>
+              Review the details below before proceeding
+            </Typography>
+          </Box>
+        </Box>
+
+        <DialogContent sx={{ p: 0 }}>
+          {/* Applicant Info Section */}
+          <Box sx={{ px: 3, pt: 3, pb: 2 }}>
+            <Typography
+              variant="overline"
+              sx={{ color: maroon.main, fontWeight: 700, letterSpacing: 1, fontSize: 10 }}
+            >
+              Applicant Details
+            </Typography>
+
+            {selectedApplicant && (
+              <Box
+                sx={{
+                  mt: 1,
+                  p: 2,
+                  borderRadius: 2,
+                  border: `1px solid ${alpha(maroon.main, 0.15)}`,
+                  bgcolor: alpha(gold.light, 0.15),
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                <Avatar
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    bgcolor: maroon.main,
+                    fontSize: 18,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  {selectedApplicant.applicant?.firstName?.charAt(0)}
+                </Avatar>
+                <Box>
+                  <Typography variant="subtitle1" fontWeight={700} color={maroon.dark}>
+                    {`${selectedApplicant.applicant?.firstName || ""} ${selectedApplicant.applicant?.lastName || ""}`}
+                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                    <SchoolIcon sx={{ fontSize: 14, color: maroon.light }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {selectedApplicant.finalCourse?.courseName}
+                    </Typography>
+                  </Stack>
+                </Box>
+                <Box sx={{ ml: 'auto' }}>
+                  <Chip
+                    label={selectedApplicant.status}
+                    size="small"
+                    sx={{
+                      bgcolor: alpha('#2e7d32', 0.1),
+                      color: '#2e7d32',
+                      border: '1px solid #a5d6a7',
+                      fontWeight: 600,
+                      fontSize: 11,
+                    }}
+                  />
+                </Box>
+              </Box>
+            )}
+          </Box>
+
+          <Divider sx={{ mx: 3 }} />
+
+          {/* Curriculum Section */}
+          <Box sx={{ px: 3, pt: 2, pb: 3 }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <MenuBookIcon sx={{ fontSize: 16, color: maroon.main }} />
+              <Typography
+                variant="overline"
+                sx={{ color: maroon.main, fontWeight: 700, letterSpacing: 1, fontSize: 10 }}
+              >
+                Select Curriculum
+              </Typography>
+            </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              Choose the curriculum that will be used for this accreditation process.
+            </Typography>
+            <Select
+              value={selectedCurriculumId}
+              onChange={e => setSelectedCurriculumId(e.target.value)}
+              displayEmpty
+              fullWidth
+              sx={{
+                borderRadius: 2,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: selectedCurriculumId ? maroon.main : alpha(maroon.main, 0.3),
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: maroon.main,
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: maroon.main,
+                },
+              }}
+            >
+              <MenuItem value="" disabled>
+                <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                  Choose a curriculum...
+                </Typography>
+              </MenuItem>
+              {curriculums.map(cur => (
+                <MenuItem key={cur.id} value={cur.id}>
+                  <Stack direction="row" spacing={1.5} alignItems="center">
+                    <MenuBookIcon sx={{ fontSize: 16, color: gold.dark }} />
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>
+                        {cur.programName}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Started: {cur.yearStarted}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </MenuItem>
+              ))}
+            </Select>
+
+            {!selectedCurriculumId && (
+              <Typography
+                variant="caption"
+                sx={{
+                  mt: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  color: '#e65100',
+                }}
+              >
+                * Curriculum selection is required to proceed
+              </Typography>
+            )}
+
+            {selectedCurriculumId && (
+              <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: 1 }}>
+                <CheckCircleOutlineIcon sx={{ fontSize: 14, color: '#2e7d32' }} />
+                <Typography variant="caption" color="#2e7d32" fontWeight={600}>
+                  Curriculum selected — ready to proceed
+                </Typography>
+              </Stack>
+            )}
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 2 }}>
-          <Button 
+
+        {/* Footer */}
+        <Box
+          sx={{
+            px: 3,
+            py: 2,
+            bgcolor: alpha(gold.light, 0.1),
+            borderTop: `1px solid ${alpha(maroon.main, 0.1)}`,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 1.5,
+          }}
+        >
+          <Button
             onClick={() => setConfirmOpen(false)}
             variant="outlined"
-            sx={{ borderRadius: 2 }}
+            sx={{
+              borderRadius: 2,
+              borderColor: alpha(maroon.main, 0.4),
+              color: maroon.main,
+              fontWeight: 600,
+              textTransform: 'none',
+              px: 3,
+              '&:hover': {
+                borderColor: maroon.main,
+                bgcolor: alpha(maroon.main, 0.05),
+              },
+            }}
           >
             Cancel
           </Button>
@@ -456,15 +619,25 @@ const Accreditations = () => {
             onClick={handleConfirmAccredit}
             variant="contained"
             disabled={!selectedCurriculumId || accreditLoading}
-            sx={{ 
+            startIcon={
+              accreditLoading
+                ? <CircularProgress size={16} sx={{ color: 'white' }} />
+                : <VerifiedUserIcon sx={{ fontSize: 18 }} />
+            }
+            sx={{
               borderRadius: 2,
               px: 3,
-              bgcolor: (!selectedCurriculumId || accreditLoading) ? "grey.300" : maroon.main
+              textTransform: 'none',
+              fontWeight: 700,
+              bgcolor: (!selectedCurriculumId || accreditLoading) ? 'grey.300' : maroon.main,
+              '&:hover': {
+                bgcolor: (!selectedCurriculumId || accreditLoading) ? 'grey.300' : maroon.dark,
+              },
             }}
           >
-            {accreditLoading ? "Creating Records..." : "Start Accreditation Process"}
+            {accreditLoading ? 'Processing...' : 'Start Accreditation'}
           </ActionButton>
-        </DialogActions>
+        </Box>
       </Dialog>
     </Box>
   );
