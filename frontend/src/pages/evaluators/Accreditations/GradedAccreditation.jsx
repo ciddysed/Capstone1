@@ -607,8 +607,12 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
       try {
         const res = await fetch(`${EVALUATOR_API}`);
         const data = await res.json();
-        console.log("Fetched advisers:", data);
-        setAdvisers(data);
+        // Filter to only include evaluators with role 'adviser'
+        const advisersOnly = data.filter(evaluator => 
+          evaluator.role === 'adviser' || evaluator.role === 'ADVISER'
+        );
+        console.log("Fetched advisers:", advisersOnly);
+        setAdvisers(advisersOnly);
       } catch (error) {
         console.error("Error fetching evaluators:", error);
         setAdvisers([]);

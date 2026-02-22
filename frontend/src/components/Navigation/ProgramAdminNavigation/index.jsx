@@ -594,7 +594,7 @@ const ProgramAdminNavigation = ({ children }) => {
           {shouldShowFilters() && (
             <Box
               sx={{
-                display: "flex",
+                display: "flex",  
                 justifyContent: "flex-end",
                 gap: 2,
                 flexWrap: "wrap",
