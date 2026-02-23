@@ -417,7 +417,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
   const [savingAdviser, setSavingAdviser] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(null);
-  const [selectedFileType, setSelectedFileType] = useState('');
+  const [selectedDocumentType, setSelectedDocumentType] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
   const [fullScreenMode, setFullScreenMode] = useState(false);
   const [documentsLoading, setDocumentsLoading] = useState(false);
@@ -539,10 +539,17 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
     axios
       .get(`${API_BASE}/documents/applicant/${applicantId}`)
       .then((res) => {
-        setDocuments(res.data || []);
+        const mappedDocuments = (res.data || []).map((doc) => ({
+          ...doc,
+          name: doc.fileName,
+          id: doc.documentId,
+          downloadUrl: doc.downloadUrl,
+          documentType: doc.documentType,
+        }));
+        setDocuments(mappedDocuments);
         // Auto-select first document
-        if (res.data && res.data.length > 0) {
-          setSelectedDocument(res.data[0]);
+        if (mappedDocuments.length > 0) {
+          setSelectedDocument(mappedDocuments[0]);
         }
       })
       .catch((err) => {
@@ -552,15 +559,16 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
       .finally(() => setDocumentsLoading(false));
   }, [applicantId, isOpen]);
 
-  // Get unique file types from documents
-  const fileTypes = Array.from(
-    new Set(documents.map(doc => doc.fileType).filter(Boolean))
+  // Get unique document types from documents
+  const documentTypes = Array.from(
+    new Set(documents.map(doc => doc.documentType).filter(Boolean))
   ).sort();
 
-  // Filter documents by selected file type
-  const filteredDocuments = selectedFileType
-    ? documents.filter(doc => doc.fileType === selectedFileType)
-    : documents;
+  // Filter documents by document type
+  const filteredDocuments = documents.filter(doc => {
+    const matchesDocumentType = !selectedDocumentType || doc.documentType === selectedDocumentType;
+    return matchesDocumentType;
+  });
 
   // Update selected document when filter changes
   useEffect(() => {
@@ -569,7 +577,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
     } else if (filteredDocuments.length === 0) {
       setSelectedDocument(null);
     }
-  }, [selectedFileType, filteredDocuments]);
+  }, [selectedDocumentType, filteredDocuments, selectedDocument]);
 
   // Fetch existing assignment for this applicant (only on mount or applicantId change)
   useEffect(() => {
@@ -1108,17 +1116,17 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
               </Typography>
             </Stack>
 
-            {/* File Type Filter */}
-            <FormControl size="small" fullWidth>
-              <InputLabel id="file-type-label" sx={{ fontSize: 12 }}>
-                Filter by File Type
+            {/* Document Type Filter */}
+            <FormControl size="small" fullWidth sx={{ mb: 1 }}>
+              <InputLabel id="document-type-label" sx={{ fontSize: 12 }}>
+                Filter by Document Type
               </InputLabel>
               <Select
-                labelId="file-type-label"
-                id="file-type-select"
-                value={selectedFileType}
-                onChange={(e) => setSelectedFileType(e.target.value)}
-                label="Filter by File Type"
+                labelId="document-type-label"
+                id="document-type-select"
+                value={selectedDocumentType}
+                onChange={(e) => setSelectedDocumentType(e.target.value)}
+                label="Filter by Document Type"
                 sx={{
                   borderRadius: 1,
                   backgroundColor: alpha(gold.light, 0.1),
@@ -1131,11 +1139,11 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                 }}
               >
                 <MenuItem value="">
-                  <em>All Documents ({documents.length})</em>
+                  <em>All Document Types ({documents.length})</em>
                 </MenuItem>
-                {fileTypes.map(fileType => (
-                  <MenuItem key={fileType} value={fileType}>
-                    {fileType} ({documents.filter(d => d.fileType === fileType).length})
+                {documentTypes.map(docType => (
+                  <MenuItem key={docType} value={docType}>
+                    {docType} ({documents.filter(d => d.documentType === docType).length})
                   </MenuItem>
                 ))}
               </Select>
@@ -1186,6 +1194,12 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
                         >
                           {doc.fileName}
                         </Typography>
+                        
+                        {doc.documentType && (
+                          <Typography variant="caption" color={maroon.main} sx={{ fontWeight: 500, display: 'block' }}>
+                            {doc.documentType}
+                          </Typography>
+                        )}
                         
                         <Typography variant="caption" color="text.secondary">
                           {(doc.fileSize / 1024).toFixed(0)} KB
