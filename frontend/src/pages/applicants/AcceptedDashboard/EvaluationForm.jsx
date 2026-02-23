@@ -388,6 +388,7 @@ const GradedAccreditation = () => {
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [selectedFileType, setSelectedFileType] = useState('');
+  const [selectedDocumentType, setSelectedDocumentType] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
   const [fullScreenMode, setFullScreenMode] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -438,10 +439,17 @@ const GradedAccreditation = () => {
     axios
       .get(`${API_BASE}/documents/applicant/${applicantId}`)
       .then((res) => {
-        setDocuments(res.data || []);
+        const mappedDocuments = (res.data || []).map((doc) => ({
+          ...doc,
+          name: doc.fileName,
+          id: doc.documentId,
+          downloadUrl: doc.downloadUrl,
+          documentType: doc.documentType,
+        }));
+        setDocuments(mappedDocuments);
         // Auto-select first document
-        if (res.data && res.data.length > 0) {
-          setSelectedDocument(res.data[0]);
+        if (mappedDocuments.length > 0) {
+          setSelectedDocument(mappedDocuments[0]);
         }
       })
       .catch((err) => {
@@ -456,10 +464,17 @@ const GradedAccreditation = () => {
     new Set(documents.map(doc => doc.fileType).filter(Boolean))
   ).sort();
 
-  // Filter documents by selected file type
-  const filteredDocuments = selectedFileType
-    ? documents.filter(doc => doc.fileType === selectedFileType)
-    : documents;
+  // Get unique document types from documents
+  const documentTypes = Array.from(
+    new Set(documents.map(doc => doc.documentType).filter(Boolean))
+  ).sort();
+
+  // Filter documents by selected file type and document type
+  const filteredDocuments = documents.filter(doc => {
+    const matchesFileType = !selectedFileType || doc.fileType === selectedFileType;
+    const matchesDocumentType = !selectedDocumentType || doc.documentType === selectedDocumentType;
+    return matchesFileType && matchesDocumentType;
+  });
 
   // Update selected document when filter changes
   useEffect(() => {
@@ -468,7 +483,7 @@ const GradedAccreditation = () => {
     } else if (filteredDocuments.length === 0) {
       setSelectedDocument(null);
     }
-  }, [selectedFileType, filteredDocuments, selectedDocument]);
+  }, [selectedFileType, selectedDocumentType, filteredDocuments, selectedDocument]);
 
   // debounce save helper
   const queueSave = (recId, semester, field, value) => {
@@ -772,6 +787,39 @@ const GradedAccreditation = () => {
                 </Typography>
               </Stack>
 
+              {/* Document Type Filter */}
+              <FormControl size="small" fullWidth sx={{ mb: 1 }}>
+                <InputLabel id="document-type-label" sx={{ fontSize: 12 }}>
+                  Filter by Document Type
+                </InputLabel>
+                <Select
+                  labelId="document-type-label"
+                  id="document-type-select"
+                  value={selectedDocumentType}
+                  onChange={(e) => setSelectedDocumentType(e.target.value)}
+                  label="Filter by Document Type"
+                  sx={{
+                    borderRadius: 1,
+                    backgroundColor: alpha(gold.light, 0.1),
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: alpha(maroon.main, 0.2),
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: alpha(maroon.main, 0.4),
+                    },
+                  }}
+                >
+                  <MenuItem value="">
+                    <em>All Document Types ({documents.length})</em>
+                  </MenuItem>
+                  {documentTypes.map(docType => (
+                    <MenuItem key={docType} value={docType}>
+                      {docType} ({documents.filter(d => d.documentType === docType).length})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
               {/* File Type Filter */}
               <FormControl size="small" fullWidth>
                 <InputLabel id="file-type-label" sx={{ fontSize: 12 }}>
@@ -795,7 +843,7 @@ const GradedAccreditation = () => {
                   }}
                 >
                   <MenuItem value="">
-                    <em>All Documents ({documents.length})</em>
+                    <em>All File Types ({documents.length})</em>
                   </MenuItem>
                   {fileTypes.map(fileType => (
                     <MenuItem key={fileType} value={fileType}>
@@ -851,6 +899,12 @@ const GradedAccreditation = () => {
                             {doc.fileName}
                           </Typography>
                           
+                          {doc.documentType && (
+                            <Typography variant="caption" color={maroon.main} sx={{ fontWeight: 500, display: 'block' }}>
+                              {doc.documentType}
+                            </Typography>
+                          )}
+                          
                           <Typography variant="caption" color="text.secondary">
                             {(doc.fileSize / 1024).toFixed(0)} KB
                           </Typography>
@@ -864,7 +918,7 @@ const GradedAccreditation = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'column', gap: 1, p: 2 }}>
                 <DescriptionIcon sx={{ fontSize: 40, color: 'text.secondary', opacity: 0.3 }} />
                 <Typography variant="body2" color="text.secondary" align="center">
-                  {documents.length === 0 ? 'No documents uploaded' : 'No documents match the selected filter'}
+                  {documents.length === 0 ? 'No documents uploaded' : 'No documents match the selected filters'}
                 </Typography>
               </Box>
             ))}
