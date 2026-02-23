@@ -577,7 +577,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
     } else if (filteredDocuments.length === 0) {
       setSelectedDocument(null);
     }
-  }, [selectedFileType, filteredDocuments]);
+  }, [selectedDocumentType, filteredDocuments, selectedDocument]);
 
   // Fetch existing assignment for this applicant (only on mount or applicantId change)
   useEffect(() => {
