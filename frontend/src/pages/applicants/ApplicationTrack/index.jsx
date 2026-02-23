@@ -1240,7 +1240,7 @@ const ApplicationTracking = () => {
                   <InfoIcon sx={{ fontSize: 14, opacity: 0.6, cursor: "help" }} />
                 </Tooltip>
               </Box>
-              <Typography variant="caption" fontWeight={700} sx={{ color: colors.secondary.light }}>
+              <Typography variant="caption" fontWeight={700} sx={{ color: colors.primary.main }}>
                 {Math.round(progress)}% Complete
               </Typography>
             </Box>
@@ -1335,7 +1335,7 @@ const ApplicationTracking = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr", lg: "300px 1fr 340px" },
+              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr", lg: "300px 1fr 420px" },
               gap: 2.5,
               height: "100%",
             }}

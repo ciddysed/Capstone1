@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from "react";
-import PropTypes from 'prop-types';
 import {
   Box,
   Typography,
@@ -8,7 +7,6 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  Chip,
   TextField,
   Stack,
   CircularProgress,
@@ -126,18 +124,6 @@ const DocumentPreviewContainer = styled(Box)(({ theme }) => ({
 }));
 
 // Helper functions
-const getStatusBackgroundColor = (status, alphaValue = 0.1) => {
-  if (status === "APPROVED") return alpha('#4caf50', alphaValue);
-  if (status === "FOR_ENROLLMENT") return alpha('#2196f3', alphaValue);
-  return alpha('#ff9800', alphaValue);
-};
-
-const getStatusTextColor = (status) => {
-  if (status === "APPROVED") return '#2e7d32';
-  if (status === "FOR_ENROLLMENT") return '#1565c0';
-  return '#e65100';
-};
-
 const getGradeStyles = (hasGrade) => ({
   fontWeight: hasGrade ? 600 : 400,
   color: hasGrade ? 'text.primary' : 'text.secondary'
@@ -482,7 +468,7 @@ const GradedAccreditation = () => {
     } else if (filteredDocuments.length === 0) {
       setSelectedDocument(null);
     }
-  }, [selectedFileType, filteredDocuments]);
+  }, [selectedFileType, filteredDocuments, selectedDocument]);
 
   // debounce save helper
   const queueSave = (recId, semester, field, value) => {
@@ -558,29 +544,6 @@ const GradedAccreditation = () => {
       
     return () => flushTimers();
   }, [applicantId]);
-
-  // Handle status change
-  const handleStatusChange = async (rec, newStatus) => {
-    try {
-      const params = new URLSearchParams();
-      params.append('status', newStatus);
-
-      await axios.put(
-        `${API_BASE}/applicant-subject-records/${rec.id}?${params.toString()}`,
-        null,
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-      );
-
-      const refreshed = await axios.get(
-        `${API_BASE}/applicant-subject-records/applicant/${applicantId}/organized-clean`
-      );
-      setRecords(sortSemesterSubjects(refreshed.data));
-      toast.success(`Status changed to ${newStatus}`);
-    } catch (err) {
-      console.error("Failed to change status:", err);
-      toast.error("Failed to change status.");
-    }
-  };
 
   const renderEvaluationContent = () => {
     if (loading) {

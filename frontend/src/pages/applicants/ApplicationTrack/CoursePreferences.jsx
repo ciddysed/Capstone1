@@ -75,85 +75,90 @@ const CoursePreferences = ({
             </Typography>
           </Box>
         ) : (
-          <Stack spacing={2}>
+          <Stack spacing={1.5}>
             {coursePreferences.map((preference) => {
-              // Always use evaluationStatus for status display
               const status = preference.evaluationStatus || "PENDING";
               const statusColor = getStatusColor(status);
-              
+              const isFirst =
+                preference.priorityOrder === "FIRST" ||
+                preference.preferenceOrder === "FIRST" ||
+                preference.priorityOrder === 1 ||
+                preference.preferenceOrder === 1;
+              const accentColor = isFirst ? maroon.main : gold.main;
+
               return (
                 <Paper
                   key={preference.preferenceId || preference.id}
                   variant="outlined"
                   sx={{
-                    p: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
+                    borderLeft: `4px solid ${accentColor}`,
                     border: `1px solid ${alpha('#000', 0.08)}`,
-                    borderLeft: `4px solid ${
-                      preference.priorityOrder === "FIRST" ||
-                      preference.preferenceOrder === "FIRST" ||
-                      preference.priorityOrder === 1 ||
-                      preference.preferenceOrder === 1 
-                        ? maroon.main 
-                        : gold.main
-                    }`,
-                    "&:hover": { 
+                    borderLeftWidth: 4,
+                    borderLeftColor: accentColor,
+                    borderRadius: 1.5,
+                    overflow: 'hidden',
+                    "&:hover": {
                       bgcolor: alpha('#f5f5f5', 0.7),
                       transform: 'translateY(-1px)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
                     },
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  <Chip
-                    label={formatPriority(preference.priorityOrder || preference.preferenceOrder)}
-                    variant="outlined"
-                    size="small"
-                    sx={{ 
-                      minWidth: 80,
-                      backgroundColor: preference.priorityOrder === "FIRST" ||
-                                     preference.preferenceOrder === "FIRST" ||
-                                     preference.priorityOrder === 1 ||
-                                     preference.preferenceOrder === 1 
-                                       ? maroon.main 
-                                       : gold.main,
-                      color: 'white',
-                      borderColor: preference.priorityOrder === "FIRST" ||
-                                  preference.preferenceOrder === "FIRST" ||
-                                  preference.priorityOrder === 1 ||
-                                  preference.preferenceOrder === 1 
-                                    ? maroon.main 
-                                    : gold.main,
-                      fontWeight: 600
-                    }}
-                  />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle1" fontWeight="medium">
+                  {/* Top row: priority chip */}
+                  <Box sx={{ px: 2, pt: 1.5, pb: 0.5 }}>
+                    <Chip
+                      label={formatPriority(preference.priorityOrder || preference.preferenceOrder)}
+                      size="small"
+                      sx={{
+                        backgroundColor: accentColor,
+                        color: 'white',
+                        fontWeight: 700,
+                        fontSize: '0.7rem',
+                        height: 22,
+                        borderRadius: 1,
+                      }}
+                    />
+                  </Box>
+
+                  {/* Middle: course name + department */}
+                  <Box sx={{ px: 2, pb: 1 }}>
+                    <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.4 }}>
                       {getCourseName(preference.course?.courseId || preference.courseId)}
                     </Typography>
                     {preference.course?.department?.departmentName && (
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
                         {preference.course.department.departmentName}
                       </Typography>
                     )}
                   </Box>
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, mb: 0.5 }}>
+
+                  {/* Bottom row: evaluation status */}
+                  <Box
+                    sx={{
+                      px: 2,
+                      py: 0.75,
+                      bgcolor: statusColor.bg,
+                      borderTop: `1px solid ${alpha(statusColor.border, 0.25)}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary" fontWeight={500}>
                       Evaluation Status
                     </Typography>
                     <Chip
                       label={status}
                       size="small"
                       sx={{
-                        fontWeight: 600,
-                        fontSize: '0.75rem',
-                        backgroundColor: statusColor.bg,
+                        fontWeight: 700,
+                        fontSize: '0.7rem',
+                        backgroundColor: 'transparent',
                         color: statusColor.color,
                         border: `1px solid ${statusColor.border}`,
-                        minWidth: 80,
-                        height: 24,
+                        height: 22,
+                        borderRadius: 1,
                       }}
                     />
                   </Box>

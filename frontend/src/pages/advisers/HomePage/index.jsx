@@ -28,11 +28,9 @@ import {
   TableBody,
   Chip,
   Avatar,
-  Button,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Grow,
   TextField,
   MenuItem,
   Container,
@@ -614,10 +612,8 @@ const AdviserHomePage = () => {
               <CircularProgress sx={{ color: maroon.main }} thickness={4} />
             </Box>
           ) : (
-            <Stack spacing={4}>
-              
-              {/* SECTION 1: Applicants List */}
-              <ModernCard>
+            <ModernCard>
+                {/* Unified Header */}
                 <CardHeaderBox>
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Avatar sx={{ bgcolor: alpha(maroon.main, 0.1), color: maroon.main }}>
@@ -628,129 +624,13 @@ const AdviserHomePage = () => {
                         Assigned Students
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        List of accepted applicants under your supervision ({applicants.length})
+                        List of accepted applicants under your supervision ({applicants.length}) — expand each student to manage their grading workspace
                       </Typography>
                     </Box>
                   </Stack>
                 </CardHeaderBox>
 
-                <CardContent sx={{ p: 0 }}>
-                  {applicants.length > 0 ? (
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <StyledTableCell>Student</StyledTableCell>
-                          <StyledTableCell>Program</StyledTableCell>
-                          <StyledTableCell>Status</StyledTableCell>
-                          <StyledTableCell>Accepted On</StyledTableCell>
-                          <StyledTableCell align="right">Actions</StyledTableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {applicants.map((app) => (
-                          <StyledTableRow key={app.acceptedApplicantId}>
-                            <StyledTableCell>
-                              <Stack direction="row" spacing={2} alignItems="center">
-                                <Avatar 
-                                  sx={{ 
-                                    bgcolor: maroon.main, 
-                                    width: 40, 
-                                    height: 40,
-                                    fontSize: 16,
-                                    fontWeight: 'bold',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                                  }}
-                                >
-                                  {app.applicant?.firstName?.charAt(0)}
-                                </Avatar>
-                                <Box>
-                                  <Typography variant="subtitle2" fontWeight={700} color={maroon.dark}>
-                                    {`${app.applicant?.firstName || ""} ${app.applicant?.lastName || ""}`}
-                                  </Typography>
-                                  {/* FIX: Ensure ID is a string before substring */}
-                                  <Typography variant="caption" color="text.secondary">
-                                    ID: {String(app.applicant?.applicantId || "").substring(0,8)}...
-                                  </Typography>
-                                </Box>
-                              </Stack>
-                            </StyledTableCell>
-                            <StyledTableCell>
-                              <Typography variant="body2" fontWeight={500}>
-                                {app.finalCourse?.courseName}
-                              </Typography>
-                            </StyledTableCell>
-                            <StyledTableCell>
-                              <StatusChip 
-                                label={app.status} 
-                                size="small" 
-                                status={app.status}
-                              />
-                            </StyledTableCell>
-                            <StyledTableCell>
-                              <Typography variant="body2" color="text.secondary">
-                                {app.acceptanceDate
-                                  ? new Date(app.acceptanceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                                  : "-"}
-                              </Typography>
-                            </StyledTableCell>
-                            <StyledTableCell align="right">
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                sx={{
-                                  borderRadius: 2,
-                                  textTransform: 'none',
-                                  fontWeight: 600,
-                                  borderColor: alpha(maroon.main, 0.5),
-                                  color: maroon.main,
-                                  '&:hover': { 
-                                    borderColor: maroon.main,
-                                    bgcolor: alpha(maroon.main, 0.05) 
-                                  },
-                                }}
-                                onClick={() => {
-                                  setSelectedApplicant({
-                                    applicantId: app.applicant?.applicantId,
-                                    courseId: app.finalCourse?.courseId,
-                                  });
-                                  setDetailsOpen(true);
-                                }}
-                              >
-                                View Details
-                              </Button>
-                            </StyledTableCell>
-                          </StyledTableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <Box sx={{ textAlign: "center", py: 8 }}>
-                      <PeopleIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.2, mb: 2 }} />
-                      <Typography variant="h6" color="text.secondary">
-                        No assigned students found
-                      </Typography>
-                    </Box>
-                  )}
-                </CardContent>
-              </ModernCard>
-
-              {/* SECTION 2: Grading Workspace */}
-              <Grow in={true} timeout={600}>
-                <Box>
-                  <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar sx={{ bgcolor: gold.main, color: '#000' }}>
-                      <AssignmentIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h5" fontWeight="bold" color={maroon.dark}>
-                        Grading Workspace
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Review subject allocations and assign grades for each semester.
-                      </Typography>
-                    </Box>
-                  </Box>
-
+                <CardContent sx={{ p: applicants.length > 0 ? 2 : 0 }}>
                   {applicants.length > 0 ? (
                     applicants.map((applicant) => {
                       const applicantId = applicant.applicant?.applicantId;
@@ -762,14 +642,35 @@ const AdviserHomePage = () => {
                       return (
                         <StyledAccordion key={applicantId} defaultExpanded={false}>
                           <StyledAccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: maroon.main }} />}>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center" sx={{ width: '100%' }}>
-                              
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" sx={{ width: '100%', pr: 1 }}>
+
+                              {/* Avatar + Name + Program */}
                               <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
-                                <Avatar sx={{ bgcolor: maroon.main, fontWeight: 'bold' }}>
+                                <Avatar sx={{ bgcolor: maroon.main, width: 44, height: 44, fontWeight: 'bold', fontSize: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                                   {applicant.applicant?.firstName?.charAt(0)}
                                 </Avatar>
                                 <Box>
-                                  <Typography variant="h6" fontWeight="bold" color="text.primary">
+                                  <Typography
+                                    variant="subtitle1"
+                                    fontWeight={700}
+                                    color={maroon.dark}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedApplicant({
+                                        applicantId: applicant.applicant?.applicantId,
+                                        courseId: applicant.finalCourse?.courseId,
+                                      });
+                                      setDetailsOpen(true);
+                                    }}
+                                    sx={{
+                                      cursor: 'pointer',
+                                      display: 'inline',
+                                      '&:hover': {
+                                        textDecoration: 'underline',
+                                        color: maroon.main,
+                                      },
+                                    }}
+                                  >
                                     {`${applicant.applicant?.firstName || ""} ${applicant.applicant?.lastName || ""}`}
                                   </Typography>
                                   <Typography variant="body2" color="text.secondary">
@@ -778,80 +679,118 @@ const AdviserHomePage = () => {
                                 </Box>
                               </Stack>
 
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                              {/* Status + Accepted Date */}
+                              <Stack direction="row" spacing={2} alignItems="center" sx={{ display: { xs: 'none', md: 'flex' } }}>
                                 <Box sx={{ textAlign: 'right' }}>
-                                  <Typography variant="caption" display="block" color="text.secondary">PROGRESS</Typography>
-                                  <Typography variant="subtitle2" fontWeight="bold" color={maroon.main}>
-                                    {approvedRecords} / {totalRecords} Subjects
+                                  <Typography variant="caption" display="block" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 10 }}>Accepted On</Typography>
+                                  <Typography variant="body2" fontWeight={500} color="text.primary">
+                                    {applicant.acceptanceDate
+                                      ? new Date(applicant.acceptanceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                      : "—"}
                                   </Typography>
                                 </Box>
-                                <CircularProgress 
-                                  variant="determinate" 
-                                  value={progress} 
-                                  size={40} 
+                                <StatusChip label={applicant.status} size="small" status={applicant.status} />
+                              </Stack>
+
+                              {/* Progress */}
+                              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ display: { xs: 'none', sm: 'flex' } }}>
+                                <Box sx={{ textAlign: 'right' }}>
+                                  <Typography variant="caption" display="block" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 10 }}>Progress</Typography>
+                                  <Typography variant="subtitle2" fontWeight="bold" color={maroon.main}>
+                                    {approvedRecords} / {totalRecords}
+                                  </Typography>
+                                </Box>
+                                <CircularProgress
+                                  variant="determinate"
+                                  value={progress}
+                                  size={38}
                                   thickness={5}
-                                  sx={{ color: progress === 100 ? 'success.main' : maroon.main, opacity: 0.8 }} 
+                                  sx={{ color: progress === 100 ? 'success.main' : maroon.main, opacity: 0.85 }}
                                 />
-                              </Box>
+                              </Stack>
+
                             </Stack>
                           </StyledAccordionSummary>
-                          
-                          <AccordionDetails sx={{ p: 0, bgcolor: '#fafafa' }}>
-                            {Object.keys(records).map((semester) => (
-                              <Box key={semester} sx={{ p: 3, borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-                                  <BookIcon fontSize="small" sx={{ color: maroon.light }} />
-                                  <Typography variant="subtitle1" fontWeight="bold" color={maroon.dark}>
-                                    {semester}
-                                  </Typography>
-                                  <Chip label={`${records[semester].length} Subjects`} size="small" sx={{ height: 20, fontSize: 10 }} />
-                                </Stack>
 
-                                <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
-                                  <Table size="small">
-                                    <TableHead>
-                                      <TableRow>
-                                        <StyledTableCell sx={{ width: '30%' }}>Subject</StyledTableCell>
-                                        <StyledTableCell sx={{ width: '10%' }}>Grade</StyledTableCell>
-                                        <StyledTableCell sx={{ width: '20%' }}>Accreditation Process</StyledTableCell>
-                                        <StyledTableCell sx={{ width: '20%' }}>Substantive Basis</StyledTableCell>
-                                        <StyledTableCell sx={{ width: '12%' }} align="center">Status</StyledTableCell>
-                                        <StyledTableCell sx={{ width: '8%' }} align="center">Action</StyledTableCell>
-                                      </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                      {records[semester].map((rec) => (
-                                        <RecordRow
-                                          key={rec.id}
-                                          rec={rec}
-                                          applicantId={applicantId}
-                                          semester={semester}
-                                          editRow={editRow}
-                                          editFields={editFields}
-                                          handleEditFieldChange={handleEditFieldChange}
-                                          handleSaveEdit={handleSaveEdit}
-                                          handleCancelEdit={handleCancelEdit}
-                                          handleEditClick={handleEditClick}
-                                          handleStatusChange={handleStatusChange}
-                                        />
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                </Paper>
+                          {/* Grading Workspace — inline inside accordion */}
+                          <AccordionDetails sx={{ p: 0, bgcolor: '#fafafa' }}>
+                            {/* Grading sub-header */}
+                            <Box sx={{ px: 3, py: 1.5, borderBottom: `1px solid ${alpha(maroon.main, 0.08)}`, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Avatar sx={{ bgcolor: gold.main, color: '#000', width: 28, height: 28 }}>
+                                <AssignmentIcon sx={{ fontSize: 16 }} />
+                              </Avatar>
+                              <Typography variant="subtitle2" fontWeight={700} color={maroon.dark}>
+                                Grading Workspace
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                — Review subject allocations and assign grades for each semester
+                              </Typography>
+                            </Box>
+
+                            {Object.keys(records).length > 0 ? (
+                              Object.keys(records).map((semester) => (
+                                <Box key={semester} sx={{ p: 3, borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+                                    <BookIcon fontSize="small" sx={{ color: maroon.light }} />
+                                    <Typography variant="subtitle1" fontWeight="bold" color={maroon.dark}>
+                                      {semester}
+                                    </Typography>
+                                    <Chip label={`${records[semester].length} Subjects`} size="small" sx={{ height: 20, fontSize: 10 }} />
+                                  </Stack>
+
+                                  <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                                    <Table size="small">
+                                      <TableHead>
+                                        <TableRow>
+                                          <StyledTableCell sx={{ width: '30%' }}>Subject</StyledTableCell>
+                                          <StyledTableCell sx={{ width: '10%' }}>Grade</StyledTableCell>
+                                          <StyledTableCell sx={{ width: '20%' }}>Accreditation Process</StyledTableCell>
+                                          <StyledTableCell sx={{ width: '20%' }}>Substantive Basis</StyledTableCell>
+                                          <StyledTableCell sx={{ width: '12%' }} align="center">Status</StyledTableCell>
+                                          <StyledTableCell sx={{ width: '8%' }} align="center">Action</StyledTableCell>
+                                        </TableRow>
+                                      </TableHead>
+                                      <TableBody>
+                                        {records[semester].map((rec) => (
+                                          <RecordRow
+                                            key={rec.id}
+                                            rec={rec}
+                                            applicantId={applicantId}
+                                            semester={semester}
+                                            editRow={editRow}
+                                            editFields={editFields}
+                                            handleEditFieldChange={handleEditFieldChange}
+                                            handleSaveEdit={handleSaveEdit}
+                                            handleCancelEdit={handleCancelEdit}
+                                            handleEditClick={handleEditClick}
+                                            handleStatusChange={handleStatusChange}
+                                          />
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </Paper>
+                                </Box>
+                              ))
+                            ) : (
+                              <Box sx={{ textAlign: 'center', py: 4 }}>
+                                <AssignmentIcon sx={{ fontSize: 40, color: 'text.secondary', opacity: 0.2, mb: 1 }} />
+                                <Typography variant="body2" color="text.secondary">No grading records found for this student.</Typography>
                               </Box>
-                            ))}
+                            )}
                           </AccordionDetails>
                         </StyledAccordion>
                       );
                     })
                   ) : (
-                    <Paper sx={{ p: 4, textAlign: 'center', bgcolor: '#f5f5f5', borderStyle: 'dashed' }}>
-                      <Typography color="text.secondary">No students available for grading yet.</Typography>
-                    </Paper>
+                    <Box sx={{ textAlign: "center", py: 8 }}>
+                      <PeopleIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.2, mb: 2 }} />
+                      <Typography variant="h6" color="text.secondary">
+                        No assigned students found
+                      </Typography>
+                    </Box>
                   )}
-                </Box>
-              </Grow>
-            </Stack>
+                </CardContent>
+              </ModernCard>
           )}
         </Stack>
       </Container>
