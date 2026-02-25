@@ -11,6 +11,7 @@ import {
 	Link,
 	Paper,
 	Stack,
+	Box,
 	styled,
 	MenuItem,
 	Divider,
@@ -261,24 +262,42 @@ const EvaluatorAdviserLoginForm = ({
 	};
 
 	return (
-		<StyledPaper elevation={6}>
-			<Stack gap={1} alignItems="center">
-				<Typography variant="h5" textAlign="center" fontWeight="bold">
-					{currentFormType === "login" ? "Login Form" : "Signup Form"}
+		<StyledPaper elevation={0}>
+			{/* Header */}
+			<Box sx={{ mb: 0.5, textAlign: "center" }}>
+				<Typography variant="h5" fontWeight={700} sx={{ color: "#ffffff", letterSpacing: "-0.3px" }}>
+					{currentFormType === "login" ? "Welcome back" : "Create account"}
 				</Typography>
+				<Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", mt: 0.5, fontSize: "0.875rem" }}>
+					{currentFormType === "login"
+						? "Sign in to your evaluator account"
+						: "Fill in your details to get started"}
+				</Typography>
+			</Box>
 
+			{/* Pill-style tab switcher */}
+			<Box
+				sx={{
+					backgroundColor: "rgba(255,255,255,0.12)",
+					borderRadius: "10px",
+					p: "4px",
+					display: "inline-flex",
+					alignSelf: "center",
+				}}
+			>
 				<ToggleButtonGroup
 					value={currentFormType}
 					exclusive
 					onChange={handleFormToggle}
 					aria-label="Login or Signup"
+					sx={{ gap: 0 }}
 				>
 					<StyledToggleButton value="login">Login</StyledToggleButton>
 					<StyledToggleButton value="signup">Signup</StyledToggleButton>
 				</ToggleButtonGroup>
-			</Stack>
+			</Box>
 
-			<Divider sx={{ my: 2 }} />
+			<Divider sx={{ borderColor: "rgba(255,255,255,0.15)" }} />
 
 			<Stack gap={2}>
 				<form onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -421,39 +440,46 @@ const EvaluatorAdviserLoginForm = ({
 						type="submit"
 						variant="contained"
 						fullWidth
-						sx={{ backgroundColor: "#800000", borderRadius: "20px" }}
+						sx={{
+							backgroundColor: "#800000",
+							borderRadius: "10px",
+							mt: 1.5,
+							py: 1.35,
+							fontWeight: 700,
+							fontSize: "0.95rem",
+							letterSpacing: 0.4,
+							boxShadow: "0 4px 16px rgba(128,0,0,0.32)",
+							textTransform: "none",
+							"&:hover": {
+								backgroundColor: "#6a0000",
+								boxShadow: "0 6px 22px rgba(128,0,0,0.42)",
+							},
+							transition: "all 0.2s",
+						}}
 					>
-						{currentFormType === "login" ? "Login" : "Signup"}
+						{currentFormType === "login" ? "Sign In" : "Create Account"}
 					</Button>
 
 					{currentFormType === "login" && (
-						<Stack direction="row" justifyContent="center" sx={{ mt: 1 }}>
+						<Stack direction="row" justifyContent="flex-end" sx={{ mt: 0.5 }}>
 							<Link
 								component="button"
 								variant="body2"
 								onClick={() => navigate(roleConfigs[currentRole].forgotPasswordPath)}
 								sx={{
-									color: "#800000",
-									fontWeight: 600,
+									color: "rgba(255,255,255,0.85)",
+									fontWeight: 500,
 									textDecoration: "none",
-									background: "#fff8f6",
-									borderRadius: "8px",
-									px: 2,
-									py: 1,
-									boxShadow: "0 2px 8px 0 rgba(128,0,0,0.08)",
-									transition: "background 0.2s, color 0.2s",
+									fontSize: "0.85rem",
+									transition: "opacity 0.15s",
 									'&:hover': {
-										background: '#ffe5e0',
-										color: '#a00000',
-										textDecoration: 'underline',
+										opacity: 0.75,
+										textDecoration: "underline",
 									},
 								}}
 								aria-label="Forgot password?"
 							>
-								<span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-									<svg width="18" height="18" fill="none" viewBox="0 0 24 24" style={{ marginRight: 4 }}><path d="M12 17a2 2 0 100-4 2 2 0 000 4zm6-2V9a6 6 0 10-12 0v6a6 6 0 0012 0zm-6-8a4 4 0 014 4v6a4 4 0 01-8 0V9a4 4 0 014-4z" fill="#800000"/></svg>
-									Forgot password?
-								</span>
+								Forgot password?
 							</Link>
 						</Stack>
 					)}
@@ -464,41 +490,67 @@ const EvaluatorAdviserLoginForm = ({
 };
 
 export const StyledTextField = styled(TextField)({
-	marginBottom: 8,
-	backgroundColor: "#D9D9D9",
-	borderRadius: "12px",
+	marginBottom: 10,
+	backgroundColor: "#f8fafc",
+	borderRadius: "10px",
 	"& .MuiOutlinedInput-root": {
-		borderRadius: "12px",
+		borderRadius: "10px",
+		fontSize: "0.9rem",
+		"& fieldset": {
+			border: "1.5px solid #e2e8f0",
+			transition: "border-color 0.18s",
+		},
+		"&:hover fieldset": {
+			borderColor: "#94a3b8",
+		},
+		"&.Mui-focused fieldset": {
+			borderColor: "#800000",
+			borderWidth: "2px",
+		},
 	},
-	"& .MuiOutlinedInput-notchedOutline": {
-		borderRadius: "12px",
+	"& .MuiInputBase-input::placeholder": {
+		color: "#94a3b8",
+		opacity: 1,
 	},
 });
 
 export const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
-	backgroundColor: "#f5f5f5",
-	color: "black",
+	backgroundColor: "transparent",
+	color: "rgba(255,255,255,0.65)",
+	fontWeight: 600,
+	fontSize: "0.875rem",
+	border: "none !important",
+	borderRadius: "7px !important",
+	padding: "5px 22px",
+	textTransform: "none",
+	transition: "all 0.18s",
 	"&.Mui-selected": {
 		backgroundColor: "#800000",
 		color: "white",
+		boxShadow: "0 2px 8px rgba(128,0,0,0.4)",
 	},
-	"&:hover": {
-		backgroundColor: "#800000",
-		color: "white",
+	"&.Mui-selected:hover": {
+		backgroundColor: "#6a0000",
+	},
+	"&:hover:not(.Mui-selected)": {
+		backgroundColor: "rgba(255,255,255,0.1)",
+		color: "#ffffff",
 	},
 }));
 
 export const StyledPaper = styled(Paper)({
-	padding: 32,
+	padding: "40px 44px",
 	width: "100%",
 	maxWidth: 500,
 	display: "flex",
 	flexDirection: "column",
-	gap: 16,
-	borderRadius: 16,
-	background:
-		"linear-gradient(145deg, rgba(255, 255, 255, 0.11), rgba(128, 128, 128, 0.6))",
-	boxShadow: "inset 0px 0px 10px rgba(255, 255, 255, 0.5)",
+	gap: 14,
+	borderRadius: 24,
+	background: "rgba(15, 15, 20, 0.55)",
+	backdropFilter: "blur(20px)",
+	WebkitBackdropFilter: "blur(20px)",
+	border: "1px solid rgba(255, 255, 255, 0.1)",
+	boxShadow: "0 24px 80px rgba(0, 0, 0, 0.45), 0 4px 16px rgba(0,0,0,0.2)",
 });
 
 export default EvaluatorAdviserLoginForm;

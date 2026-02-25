@@ -29,7 +29,7 @@ const maroonTheme = {
   }
 }
 
-const MainLayout = ({ children, userType, data = "Account", adviserName, backgroundImage }) => {
+const MainLayout = ({ children, userType, data = "Account", adviserName, backgroundImage, blurBackground }) => {
   const location = useLocation();
   const [accepted, setAccepted] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -101,19 +101,34 @@ const MainLayout = ({ children, userType, data = "Account", adviserName, backgro
   return (
     <Stack
       sx={{
-        backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
-        backgroundSize: backgroundImage ? 'cover' : 'initial',
-        backgroundRepeat: backgroundImage ? 'no-repeat' : 'initial',
-        backgroundPosition: backgroundImage ? 'center' : 'initial',
-        filter: 'none',
+        backgroundImage: (backgroundImage && !blurBackground) ? `url(${backgroundImage})` : 'none',
+        backgroundSize: (backgroundImage && !blurBackground) ? 'cover' : 'initial',
+        backgroundRepeat: (backgroundImage && !blurBackground) ? 'no-repeat' : 'initial',
+        backgroundPosition: (backgroundImage && !blurBackground) ? 'center' : 'initial',
+        position: 'relative',
         minHeight: "100vh",
         width: "100%",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        // No blur effect applied
+        overflow: blurBackground ? 'hidden' : 'initial',
       }}
     >
+      {/* Blurred background layer (only when blurBackground is true) */}
+      {backgroundImage && blurBackground && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${backgroundImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(4px) brightness(0.75)',
+            transform: 'scale(1.06)',
+            zIndex: 0,
+          }}
+        />
+      )}
       {/* Enhanced Navbar */}
       <Paper 
         elevation={3} 
