@@ -6,6 +6,7 @@ import {
   Paper,
   Snackbar,
   Stack,
+  TextField,
   Typography,
   styled,
   CircularProgress,
@@ -15,7 +16,6 @@ import {
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
-import { StyledTextField } from "../../Login/LoginForm";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const ForgotPasswordRequestForm = ({ onSuccess }) => {
@@ -100,14 +100,14 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
         <Avatar sx={{ bgcolor: "#800000", width: 56, height: 56 }}>
           <LockResetIcon fontSize="medium" />
         </Avatar>
-        <Typography variant="h5" fontWeight="bold">
+        <Typography variant="h5" fontWeight="bold" sx={{ color: '#fff' }}>
           Reset Password
         </Typography>
         <Typography
           variant="body2"
-          color="textSecondary"
           textAlign="center"
           px={2}
+          sx={{ color: 'rgba(255,255,255,0.7)' }}
         >
           Enter your email and set a new password below.
         </Typography>
@@ -115,7 +115,7 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
 
       <form onSubmit={handleSubmit(onSubmit)} style={{ marginTop: 24 }}>
         <Stack spacing={2}>
-          <StyledTextField
+          <GlassTextField
             label="Email"
             {...register("email", {
               required: "Email is required",
@@ -128,10 +128,9 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
             helperText={errors.email?.message}
             fullWidth
             disabled={loading}
-            sx={{ backgroundColor: "#D9D9D9", borderRadius: 1 }}
           />
 
-          <StyledTextField
+          <GlassTextField
             label="New Password"
             type={showPassword ? "text" : "password"}
             {...register("newPassword", {
@@ -145,7 +144,6 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
             helperText={errors.newPassword?.message}
             fullWidth
             disabled={loading}
-            sx={{ backgroundColor: "#D9D9D9", borderRadius: 1 }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -161,7 +159,7 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
             }}
           />
 
-          <StyledTextField
+          <GlassTextField
             label="Confirm Password"
             type={showConfirmPassword ? "text" : "password"}
             {...register("confirmPassword", {
@@ -171,7 +169,6 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
             helperText={errors.confirmPassword?.message}
             fullWidth
             disabled={loading}
-            sx={{ backgroundColor: "#D9D9D9", borderRadius: 1 }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -191,10 +188,16 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
             type="submit"
             variant="contained"
             disabled={loading}
+            fullWidth
             sx={{
-              backgroundColor: "#800000",
-              borderRadius: 2,
-              textTransform: "none",
+              backgroundColor: '#800000',
+              borderRadius: '10px',
+              py: 1.35,
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '1rem',
+              boxShadow: '0 4px 15px rgba(128,0,0,0.4)',
+              '&:hover': { backgroundColor: '#6a0000' },
             }}
           >
             {loading ? (
@@ -226,10 +229,28 @@ const ForgotPasswordRequestForm = ({ onSuccess }) => {
 };
 
 const StyledPaper = styled(Paper)({
-  padding: 32,
-  width: "100%",
-  maxWidth: 420,
-  borderRadius: 16,
+  padding: '40px 44px',
+  width: '100%',
+  maxWidth: 440,
+  borderRadius: 24,
+  background: 'rgba(15,15,20,0.55)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  boxShadow: '0 24px 80px rgba(0,0,0,0.45)',
+});
+
+const GlassTextField = styled(TextField)({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 10,
+    backgroundColor: '#f8fafc',
+    '& fieldset': { borderColor: '#e2e8f0', borderWidth: '1.5px' },
+    '&:hover fieldset': { borderColor: '#800000' },
+    '&.Mui-focused fieldset': { borderColor: '#800000', borderWidth: '2px' },
+  },
+  '& .MuiInputLabel-root': { color: '#64748b' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#800000' },
+  marginBottom: 0,
 });
 
 export default ForgotPasswordRequestForm;

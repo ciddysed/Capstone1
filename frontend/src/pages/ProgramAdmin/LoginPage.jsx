@@ -3,39 +3,66 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Button, 
   Typography, 
-  Stack, 
+  Stack,
+  Box,
   TextField,
   InputAdornment,
   IconButton,
-  Alert
+  Alert,
+  Paper,
+  styled
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import backgroundImage from '../../assets/login-bg.png';
 import logo from '../../assets/logo.png';
-import { StyledPaper } from '../../components/Login/LoginForm';
-import MinimalLayout from '../../templates/MinimalLayout';
 
-// Styled TextField component
+// Styled TextField — matches the modern design
 const StyledTextField = ({ ...props }) => (
   <TextField
     {...props}
     sx={{
+      marginBottom: '10px',
+      backgroundColor: '#f8fafc',
+      borderRadius: '10px',
       '& .MuiOutlinedInput-root': {
         borderRadius: '10px',
+        fontSize: '0.9rem',
         '& fieldset': {
-          borderColor: '#ddd',
+          border: '1.5px solid #e2e8f0',
+          transition: 'border-color 0.18s',
         },
         '&:hover fieldset': {
-          borderColor: '#800000',
+          borderColor: '#94a3b8',
         },
         '&.Mui-focused fieldset': {
           borderColor: '#800000',
+          borderWidth: '2px',
         },
+      },
+      '& .MuiInputBase-input::placeholder': {
+        color: '#94a3b8',
+        opacity: 1,
       },
       ...props.sx
     }}
   />
 );
+
+// Frosted glass card
+const StyledPaper = styled(Paper)({
+  padding: '40px 44px',
+  width: '100%',
+  maxWidth: 460,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 14,
+  borderRadius: 24,
+  background: 'rgba(15, 15, 20, 0.55)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  boxShadow: '0 24px 80px rgba(0, 0, 0, 0.45), 0 4px 16px rgba(0,0,0,0.2)',
+});
 
 const ProgramAdminLoginPage = () => {
   const navigate = useNavigate();
@@ -88,82 +115,129 @@ const ProgramAdminLoginPage = () => {
   };
 
   return (
-    <MinimalLayout backgroundImage={backgroundImage}>
-      <Stack alignItems="center" spacing={2}>
-        <img src={logo} alt="Logo" />
-        <StyledPaper elevation={6} sx={{ maxWidth: 500 }}>
-          <Typography variant="h5" textAlign="center" fontWeight="bold" gutterBottom>
-            Program Admin Login
-          </Typography>
-          
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          
-          <form onSubmit={handleLogin}>
-            <Stack gap={2}>
-              <StyledTextField
-                type="email"
-                fullWidth
-                placeholder="Enter your email"
-                variant="outlined"
-                size="small"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+    <Box sx={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
+      {/* Blurred, darkened background */}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(4px) brightness(0.45)',
+          transform: 'scale(1.06)',
+          zIndex: 0,
+        }}
+      />
 
-              <StyledTextField
-                type={showPassword ? "text" : "password"}
-                fullWidth
-                placeholder="Enter your password"
-                variant="outlined"
-                size="small"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
+      {/* Centered content */}
+      <Box
+        sx={{
+          position: 'relative',
+          zIndex: 1,
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflowY: 'auto',
+          py: 5,
+          px: 2,
+        }}
+      >
+        <Stack alignItems="center" spacing={2.5} sx={{ width: '100%' }}>
+          <img
+            src={logo}
+            alt="Logo"
+            style={{
+              width: 320,
+              filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.6))',
+            }}
+          />
+          <StyledPaper elevation={0}>
+            {/* Header */}
+            <Box sx={{ mb: 0.5, textAlign: 'center' }}>
+              <Typography variant="h5" fontWeight={700} sx={{ color: '#ffffff', letterSpacing: '-0.3px' }}>
+                Welcome back
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 0.5, fontSize: '0.875rem' }}>
+                Sign in to your program admin account
+              </Typography>
+            </Box>
 
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                size="large"
-                disabled={loading}
-                sx={{ 
-                  backgroundColor: "#800000", 
-                  borderRadius: "20px",
-                  py: 1.5,
-                  mt: 2,
-                  '&:hover': {
-                    backgroundColor: "#600000"
-                  },
-                  '&:disabled': {
-                    backgroundColor: "#ccc"
-                  }
-                }}
-              >
-                {loading ? 'Logging in...' : 'Login'}
-              </Button>
-            </Stack>
-          </form>
-        </StyledPaper>
-      </Stack>
-    </MinimalLayout>
+            {error && (
+              <Alert severity="error" sx={{ borderRadius: '10px' }}>
+                {error}
+              </Alert>
+            )}
+
+            <form onSubmit={handleLogin}>
+              <Stack gap={0}>
+                <StyledTextField
+                  type="email"
+                  fullWidth
+                  placeholder="Enter your email"
+                  variant="outlined"
+                  size="small"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+
+                <StyledTextField
+                  type={showPassword ? 'text' : 'password'}
+                  fullWidth
+                  placeholder="Enter your password"
+                  variant="outlined"
+                  size="small"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  disabled={loading}
+                  sx={{
+                    backgroundColor: '#800000',
+                    borderRadius: '10px',
+                    py: 1.35,
+                    mt: 0.5,
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    letterSpacing: 0.4,
+                    boxShadow: '0 4px 16px rgba(128,0,0,0.32)',
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: '#6a0000',
+                      boxShadow: '0 6px 22px rgba(128,0,0,0.42)',
+                    },
+                    '&:disabled': { backgroundColor: '#555', boxShadow: 'none' },
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {loading ? 'Signing in...' : 'Sign In'}
+                </Button>
+              </Stack>
+            </form>
+          </StyledPaper>
+        </Stack>
+      </Box>
+    </Box>
   );
 };
 

@@ -200,6 +200,7 @@ const Homepage = () => {
   return (
     <MainLayout
       backgroundImage={backgroundImage}
+      blurBackground
       data={userFullName}
       userType={"applicant"}
     >

@@ -144,10 +144,10 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
           <Avatar sx={{ bgcolor: "#800000", width: 56, height: 56 }}>
             <LockIcon />
           </Avatar>
-          <Typography variant="h5" fontWeight="bold" color="error">
+          <Typography variant="h5" fontWeight="bold" sx={{ color: '#ff6b6b' }}>
             Invalid Reset Link
           </Typography>
-          <Typography variant="body2" color="textSecondary" textAlign="center" px={2}>
+          <Typography variant="body2" textAlign="center" px={2} sx={{ color: 'rgba(255,255,255,0.7)' }}>
             This reset link is invalid or has expired. Please request a new one.
           </Typography>
         </Stack>
@@ -159,8 +159,8 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
     return (
       <StyledPaper elevation={6}>
         <Stack spacing={2} alignItems="center">
-          <CircularProgress />
-          <Typography variant="body2">Validating reset link...</Typography>
+          <CircularProgress sx={{ color: '#fff' }} />
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>Validating reset link...</Typography>
         </Stack>
       </StyledPaper>
     );
@@ -172,14 +172,14 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
         <Avatar sx={{ bgcolor: "#800000", width: 56, height: 56 }}>
           <LockIcon />
         </Avatar>
-        <Typography variant="h5" fontWeight="bold">
+        <Typography variant="h5" fontWeight="bold" sx={{ color: '#fff' }}>
           Applicant Reset Password
         </Typography>
         <Typography
           variant="body2"
-          color="textSecondary"
           textAlign="center"
           px={2}
+          sx={{ color: 'rgba(255,255,255,0.7)' }}
         >
           Enter and confirm your new password below to complete your reset.
         </Typography>
@@ -187,7 +187,7 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
 
       <form onSubmit={handleSubmit(onSubmit)} style={{ marginTop: 24 }}>
         <Stack spacing={2}>
-          <TextField
+          <GlassTextField
             label="New Password"
             type={showPassword ? "text" : "password"}
             {...register("password", {
@@ -201,7 +201,6 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
             helperText={errors.password?.message}
             fullWidth
             disabled={loading}
-            sx={{ backgroundColor: "#D9D9D9", borderRadius: 1 }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -217,7 +216,7 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
             }}
           />
 
-          <TextField
+          <GlassTextField
             label="Confirm Password"
             type={showConfirm ? "text" : "password"}
             {...register("confirmPassword", {
@@ -227,7 +226,6 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
             helperText={errors.confirmPassword?.message}
             fullWidth
             disabled={loading}
-            sx={{ backgroundColor: "#D9D9D9", borderRadius: 1 }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -247,10 +245,16 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
             type="submit"
             variant="contained"
             disabled={loading}
+            fullWidth
             sx={{
-              backgroundColor: "#800000",
-              borderRadius: 2,
-              textTransform: "none",
+              backgroundColor: '#800000',
+              borderRadius: '10px',
+              py: 1.35,
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '1rem',
+              boxShadow: '0 4px 15px rgba(128,0,0,0.4)',
+              '&:hover': { backgroundColor: '#6a0000' },
             }}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : "Reset Password"}
@@ -276,10 +280,28 @@ const ResetPasswordForm = ({ onSuccessCallback }) => {
 };
 
 const StyledPaper = styled(Paper)({
-  padding: 32,
-  width: "100%",
-  maxWidth: 420,
-  borderRadius: 16,
+  padding: '40px 44px',
+  width: '100%',
+  maxWidth: 440,
+  borderRadius: 24,
+  background: 'rgba(15,15,20,0.55)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  boxShadow: '0 24px 80px rgba(0,0,0,0.45)',
+});
+
+const GlassTextField = styled(TextField)({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 10,
+    backgroundColor: '#f8fafc',
+    '& fieldset': { borderColor: '#e2e8f0', borderWidth: '1.5px' },
+    '&:hover fieldset': { borderColor: '#800000' },
+    '&.Mui-focused fieldset': { borderColor: '#800000', borderWidth: '2px' },
+  },
+  '& .MuiInputLabel-root': { color: '#64748b' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#800000' },
+  marginBottom: 0,
 });
 
 export default ResetPasswordForm;
