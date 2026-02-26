@@ -41,6 +41,7 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import CloseIcon from '@mui/icons-material/Close';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import toast from "../../../utils/toast";
 import { API_BASE } from '../../../config';
 
@@ -384,6 +385,7 @@ const DocumentPreview = ({ document, onPreview, onDownload, previewMode, onClose
 };
 
 const GradedAccreditation = () => {
+  const navigate = useNavigate();
   const [records, setRecords] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -393,6 +395,8 @@ const GradedAccreditation = () => {
   const [fullScreenMode, setFullScreenMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const saveTimers = useRef({});
   
   // Get applicantId from localStorage
@@ -426,10 +430,56 @@ const GradedAccreditation = () => {
     window.open(downloadUrl, '_blank', 'noopener,noreferrer');
   };
 
+  // Handle form submission
+  const handleSubmitForm = async () => {
+    if (!applicantId) {
+      toast.error('Applicant ID not found');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await axios.patch(
+        `https://eteeap-foth.onrender.com/api/applicants/${applicantId}/has-submitted?hasSubmitted=true`
+      );
+      setHasSubmitted(true);
+      toast.success('Form submitted successfully!');
+      
+      // Navigate back to AcceptedDashboard
+      setTimeout(() => {
+        navigate('/accepted-dashboard');
+      }, 1500);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast.error('Failed to submit form. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const flushTimers = () => {
     Object.values(saveTimers.current).forEach(clearTimeout);
     saveTimers.current = {};
   };
+
+  // Fetch hasSubmitted status
+  useEffect(() => {
+    if (!applicantId) return;
+
+    const fetchHasSubmitted = async () => {
+      try {
+        const response = await axios.get(
+          `https://eteeap-foth.onrender.com/api/applicants/${applicantId}/has-submitted`
+        );
+        setHasSubmitted(response.data.hasSubmitted);
+      } catch (error) {
+        console.error('Error fetching hasSubmitted status:', error);
+        setHasSubmitted(false); // Default to false if error
+      }
+    };
+
+    fetchHasSubmitted();
+  }, [applicantId]);
 
   // Fetch documents
   useEffect(() => {
@@ -710,6 +760,41 @@ const GradedAccreditation = () => {
             </AccordionDetails>
           </StyledAccordion>
         ))}
+        
+        {/* Submit Form Button */}
+        {hasSubmitted === false && (
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={handleSubmitForm}
+              disabled={submitting}
+              startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <AssignmentIcon />}
+              sx={{
+                bgcolor: maroon.main,
+                color: maroon.contrastText,
+                fontWeight: 600,
+                px: 4,
+                py: 1.5,
+                borderRadius: 2,
+                fontSize: '1rem',
+                textTransform: 'none',
+                boxShadow: '0 4px 12px rgba(106, 0, 0, 0.3)',
+                '&:hover': {
+                  bgcolor: maroon.dark,
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 6px 16px rgba(106, 0, 0, 0.4)',
+                },
+                '&:disabled': {
+                  bgcolor: alpha(maroon.main, 0.6),
+                  color: maroon.contrastText,
+                },
+              }}
+            >
+              {submitting ? 'Submitting...' : 'Submit Form'}
+            </Button>
+          </Box>
+        )}
       </Box>
     </Grow>
     );

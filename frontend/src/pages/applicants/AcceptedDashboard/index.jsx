@@ -399,6 +399,23 @@ const AcceptedDashboard = () => {
           axios.get(`https://eteeap-foth.onrender.com/api/applicant-subject-records/applicant/${applicantId}/organized-clean`),
         ]);
 
+        // Test the has-submitted endpoint
+        try {
+          const hasSubmittedResp = await axios.get(`https://eteeap-foth.onrender.com/api/applicants/${applicantId}/has-submitted`);
+          console.log('=== HAS-SUBMITTED ENDPOINT TEST ===');
+          console.log('applicantData.applicantId:', applicantResp.data.applicantId || applicantId);
+          console.log('applicantData.hasSubmitted:', hasSubmittedResp.data.hasSubmitted);
+          console.log('Full has-submitted response:', hasSubmittedResp.data);
+          console.log('====================================');
+          
+          // Add hasSubmitted to applicantData
+          setApplicantData({...applicantResp.data, hasSubmitted: hasSubmittedResp.data.hasSubmitted});
+        } catch (hasSubmittedError) {
+          console.error('Error testing has-submitted endpoint:', hasSubmittedError);
+          // Set applicantData without hasSubmitted if the endpoint fails
+          setApplicantData(applicantResp.data);
+        }
+
         if (!acceptedResp.data) {
           handleError("You have not been accepted yet.");
           navigate("/ApplicantHomePage");
@@ -436,7 +453,7 @@ const AcceptedDashboard = () => {
           forEnrollmentCount: allRecords.filter(r => r.status === 'FOR_ENROLLMENT').length,
         };
 
-        setApplicantData(applicantResp.data);
+        // setApplicantData is now handled in the has-submitted endpoint section above
         setAcceptanceData(acceptedResp.data);
         setSubjectRecords(processed);
         setCurriculumSummary(summary);
@@ -641,62 +658,65 @@ const AcceptedDashboard = () => {
             <Box>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>Overall Progress</Typography>
-                <Tooltip 
-                title={
-                  (curriculumSummary?.approvedCount || 0) === 0 
-                    ? (
-                        <Stack spacing={1.5} alignItems="center">
-                          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem', textAlign: 'center' }}>
-                            Hey {applicantData?.firstName || 'there'}, congrats on your acceptance. Please complete your self evaluation for your next step in the acceptance phase
-                          </Typography>
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => navigate('/evaluation-form')}
-                            sx={{
-                              bgcolor: gold.main,
-                              color: maroon.main,
-                              fontWeight: 700,
-                              fontSize: '0.75rem',
-                              textTransform: 'none',
-                              borderRadius: 1.5,
-                              px: 2,
-                              py: 0.5,
-                              '&:hover': {
-                                bgcolor: gold.light,
-                                transform: 'scale(1.05)',
-                              },
-                            }}
-                          >
-                            Start Self Evaluation
-                          </Button>
-                        </Stack>
-                      )
-                    : ""
-                }
-                open={(curriculumSummary?.approvedCount || 0) === 0}
-                arrow
-                placement="left"
-                componentsProps={{
-                  tooltip: {
-                    sx: {
-                      bgcolor: maroon.main,
-                      color: '#fff',
-                      fontWeight: 600,
-                      fontSize: '0.85rem',
-                      maxWidth: 320,
-                      p: 2,
-                      borderRadius: 2,
-                      boxShadow: `0 4px 12px ${alpha(maroon.main, 0.3)}`,
-                    }
-                  },
-                  arrow: { sx: { color: maroon.main } }
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 700, color: maroon.main }}>
-                  {curriculumSummary?.approvedCount || 0} / {curriculumSummary?.totalSubjects || 0} subjects Evaluated ({progressPercent}%)
-                </Typography>
-              </Tooltip>
+                {!applicantData?.hasSubmitted && (
+                  <Tooltip 
+                  title={
+                    <Stack spacing={1.5} alignItems="center">
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem', textAlign: 'center' }}>
+                        Hey {applicantData?.firstName || 'there'}, congrats on your acceptance. Please complete your self evaluation for your next step in the acceptance phase
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={() => navigate('/evaluation-form')}
+                        sx={{
+                          bgcolor: gold.main,
+                          color: maroon.main,
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          textTransform: 'none',
+                          borderRadius: 1.5,
+                          px: 2,
+                          py: 0.5,
+                          '&:hover': {
+                            bgcolor: gold.light,
+                            transform: 'scale(1.05)',
+                          },
+                        }}
+                      >
+                        Start Self Evaluation
+                      </Button>
+                    </Stack>
+                  }
+                  open={true}
+                  arrow
+                  placement="left"
+                  componentsProps={{
+                    tooltip: {
+                      sx: {
+                        bgcolor: maroon.main,
+                        color: '#fff',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        maxWidth: 320,
+                        p: 2,
+                        borderRadius: 2,
+                        boxShadow: `0 4px 12px ${alpha(maroon.main, 0.3)}`,
+                      }
+                    },
+                    arrow: { sx: { color: maroon.main } }
+                  }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: maroon.main }}>
+                    {curriculumSummary?.approvedCount || 0} / {curriculumSummary?.totalSubjects || 0} subjects Evaluated ({progressPercent}%)
+                  </Typography>
+                </Tooltip>
+                )}
+                {applicantData?.hasSubmitted && (
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: maroon.main }}>
+                    {curriculumSummary?.approvedCount || 0} / {curriculumSummary?.totalSubjects || 0} subjects Evaluated ({progressPercent}%)
+                  </Typography>
+                )}
               </Stack>
               <LinearProgress
                 variant="determinate"
@@ -761,7 +781,7 @@ const AcceptedDashboard = () => {
                             <TableCell sx={{ fontWeight: 700, color: maroon.main, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Code</TableCell>
                             <TableCell sx={{ fontWeight: 700, color: maroon.main, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Description</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 700, color: maroon.main, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Units</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 700, color: maroon.main, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Grade</TableCell>
+                            
                             <TableCell align="center" sx={{ fontWeight: 700, color: maroon.main, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Status</TableCell>
                           </TableRow>
                         </TableHead>
@@ -781,7 +801,7 @@ const AcceptedDashboard = () => {
                                 <TableCell sx={{ fontWeight: 700, color: maroon.main, fontSize: '0.85rem' }}>{record.subject?.subjectCode || 'N/A'}</TableCell>
                                 <TableCell sx={{ color: 'text.primary', fontSize: '0.85rem' }}>{record.subject?.descriptiveTitle || 'N/A'}</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>{record.subject?.units || 'N/A'}</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>{record.originalGrade || 'N/A'}</TableCell>
+                              
                                 <TableCell align="center"><StatusChip status={record.status} /></TableCell>
                               </TableRow>
                             </Tooltip>
