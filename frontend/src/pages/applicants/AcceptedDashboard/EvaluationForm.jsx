@@ -25,6 +25,7 @@ import {
   InputLabel,
   Button,
   Divider,
+  Avatar,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -65,18 +66,20 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: 500,
   '&.MuiTableCell-head': {
     backgroundColor: maroon.main,
-    color: maroon.contrastText,
-    fontSize: 14,
-    fontWeight: 600,
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
   },
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:nth-of-type(odd)': {
-    backgroundColor: alpha(gold.light, 0.15),
+    backgroundColor: alpha(maroon.main, 0.025),
   },
   '&:hover': {
-    backgroundColor: alpha(gold.light, 0.3),
+    backgroundColor: alpha(maroon.main, 0.05),
     transition: 'background-color 0.2s ease',
   },
   '&:last-child td, &:last-child th': {
@@ -86,28 +89,40 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 const InfoCard = styled(Card)(({ theme }) => ({
   height: '100%',
-  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
-  borderRadius: theme.shape.borderRadius * 1.5,
+  background: 'rgba(255,255,255,0.93)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid rgba(255,255,255,0.6)',
+  borderTop: `3px solid ${maroon.main}`,
+  borderRadius: theme.shape.borderRadius * 2,
+  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
   transition: 'box-shadow 0.3s ease',
   '&:hover': {
-    boxShadow: '0 4px 20px rgba(106, 0, 0, 0.15)',
+    boxShadow: `0 8px 28px ${alpha(maroon.main, 0.12)}`,
   },
-  borderTop: `3px solid ${maroon.main}`,
 }));
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   '&:before': {
     display: 'none',
   },
-  borderRadius: theme.shape.borderRadius * 1.5,
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-  marginBottom: theme.spacing(2),
+  background: 'rgba(255,255,255,0.93)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid rgba(255,255,255,0.6)',
+  borderRadius: `${theme.shape.borderRadius * 2}px !important`,
+  boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
+  marginBottom: theme.spacing(1.5),
+  overflow: 'hidden',
+  transition: 'box-shadow 0.25s ease',
+  '&.Mui-expanded': {
+    boxShadow: `0 6px 20px ${alpha(maroon.main, 0.12)}`,
+  },
 }));
 
 const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
-  backgroundColor: alpha(maroon.main, 0.1),
+  background: `linear-gradient(135deg, ${alpha(maroon.main, 0.08)} 0%, ${alpha(maroon.main, 0.04)} 100%)`,
+  borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`,
   '&.Mui-expanded': {
-    backgroundColor: alpha(maroon.main, 0.15),
+    background: `linear-gradient(135deg, ${alpha(maroon.main, 0.12)} 0%, ${alpha(maroon.main, 0.06)} 100%)`,
   },
   '& .MuiAccordionSummary-content': {
     alignItems: 'center',
@@ -115,13 +130,16 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
 }));
 
 const DocumentPreviewContainer = styled(Box)(({ theme }) => ({
-  backgroundColor: '#fff',
-  borderRadius: theme.shape.borderRadius * 1.5,
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+  background: 'rgba(255,255,255,0.93)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid rgba(255,255,255,0.6)',
+  borderTop: `3px solid ${maroon.main}`,
+  borderRadius: theme.shape.borderRadius * 2,
+  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
   display: 'flex',
   flexDirection: 'column',
   height: '100%',
-  borderLeft: `3px solid ${maroon.main}`,
+  overflow: 'hidden',
 }));
 
 // Helper functions
@@ -801,27 +819,46 @@ const GradedAccreditation = () => {
   };
 
   return (
-    <Box sx={{ bgcolor: '#f5f5f5', minHeight: '100vh' }}>
+    <Box sx={{ bgcolor: 'transparent', minHeight: '100vh' }}>
       {/* Header Section */}
       <Box sx={{ p: 2, height: 'auto', overflow: 'auto' }}>
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
-          <IconButton
-            onClick={() => window.history.back()}
-            size="small"
-            sx={{
-              color: maroon.main,
-              '&:hover': {
-                backgroundColor: alpha(maroon.main, 0.1),
-              },
-            }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <GradeIcon sx={{ color: maroon.main, fontSize: 28 }} />
-          <Typography variant="h6" fontWeight="bold" color={maroon.dark}>
-            Applicant Pre-Evaluation Form
-          </Typography>
-        </Stack>
+        {/* Gradient Header Banner */}
+        <Box sx={{
+          background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 60%, ${maroon.light} 100%)`,
+          borderRadius: 3,
+          p: { xs: 2.5, md: 3 },
+          mb: 2.5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          boxShadow: `0 8px 28px ${alpha(maroon.main, 0.35)}`,
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <Box sx={{ position: 'absolute', right: -20, top: -20, opacity: 0.06 }}>
+            <GradeIcon sx={{ fontSize: 160, color: '#fff' }} />
+          </Box>
+          <Box sx={{
+            width: 48, height: 48, borderRadius: '50%',
+            bgcolor: alpha('#fff', 0.15),
+            border: `2px solid ${alpha('#fff', 0.3)}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+            '&:hover': { bgcolor: alpha('#fff', 0.25) },
+          }} onClick={() => window.history.back()}>
+            <ArrowBackIcon sx={{ color: '#fff', fontSize: 22 }} />
+          </Box>
+          <Box>
+            <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1.2, textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>
+              Applicant Pre-Evaluation Form
+            </Typography>
+            <Typography variant="caption" sx={{ color: alpha('#fff', 0.75) }}>
+              Review and grade your subjects based on submitted documents
+            </Typography>
+          </Box>
+        </Box>
 
         {/* Main Content - Split Layout */}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2, height: 'calc(100vh - 140px)' }}>
@@ -830,32 +867,41 @@ const GradedAccreditation = () => {
           <Box
             sx={{
               width: '100%',
-              bgcolor: '#fff',
-              borderRadius: 1.5,
-              p: 2,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+              background: 'rgba(255,255,255,0.93)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255,255,255,0.6)',
+              borderTop: `3px solid ${maroon.main}`,
+              borderRadius: 2,
               overflow: 'auto',
               display: 'flex',
               flexDirection: 'column',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
             }}
           >
             {/* Title Section */}
-            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2, flexShrink: 0 }}>
-              <SchoolIcon sx={{ color: gold.main, fontSize: 22 }} />
-              <Box>
-                <Typography variant="subtitle1" fontWeight="600" color={maroon.main}>
-                  Subject Self-Evaluation & Grading
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Review and grade individual subjects based on your Transcript of Records and other submitted documents. 
-                </Typography>
-              </Box>
-            </Stack>
-
-            <Divider sx={{ mb: 2 }} />
+            <Box sx={{
+              px: 2.5, py: 2,
+              background: `linear-gradient(135deg, ${alpha(maroon.main, 0.08)} 0%, ${alpha(maroon.main, 0.03)} 100%)`,
+              borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`,
+              flexShrink: 0,
+            }}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <Avatar sx={{ bgcolor: maroon.main, color: '#fff', width: 36, height: 36, boxShadow: `0 2px 8px ${alpha(maroon.main, 0.35)}` }}>
+                  <SchoolIcon sx={{ fontSize: 20 }} />
+                </Avatar>
+                <Box>
+                  <Typography variant="subtitle1" fontWeight="700" color={maroon.main}>
+                    Subject Self-Evaluation & Grading
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Review and grade individual subjects based on your Transcript of Records and other submitted documents.
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
 
             {/* Scrollable Content */}
-            <Box sx={{ flex: 1, overflow: 'auto' }}>
+            <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
               {renderEvaluationContent()}
             </Box>
           </Box>
@@ -864,10 +910,17 @@ const GradedAccreditation = () => {
           <DocumentPreviewContainer>
             {/* Header */}
             {!fullScreenMode && (
-            <Box sx={{ p: 1.5, borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`, flexShrink: 0 }}>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
-                <DescriptionIcon sx={{ color: maroon.main, fontSize: 20 }} />
-                <Typography variant="subtitle1" fontWeight="600" color={maroon.main}>
+            <Box sx={{
+              px: 2, py: 1.5,
+              background: `linear-gradient(135deg, ${alpha(maroon.main, 0.08)} 0%, ${alpha(maroon.main, 0.03)} 100%)`,
+              borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`,
+              flexShrink: 0,
+            }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+                <Avatar sx={{ bgcolor: maroon.main, color: '#fff', width: 32, height: 32, boxShadow: `0 2px 8px ${alpha(maroon.main, 0.35)}` }}>
+                  <DescriptionIcon sx={{ fontSize: 18 }} />
+                </Avatar>
+                <Typography variant="subtitle1" fontWeight="700" color={maroon.main}>
                   Documents Preview
                 </Typography>
               </Stack>

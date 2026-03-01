@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, Stack, Paper, Grid, Card, CardContent,
-  Button, Divider, Chip, CircularProgress, Avatar, alpha,
+  Button, Chip, CircularProgress, Avatar, alpha,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Accordion, AccordionSummary, AccordionDetails, LinearProgress,
   Dialog, DialogContent, IconButton, Fade, Tooltip,
@@ -21,10 +21,8 @@ import {
   MenuBook as MenuBookIcon,
   Info as InfoIcon,
   Warning as WarningIcon,
-  Dashboard as DashboardIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { Link as RouterLink } from "react-router-dom";
 import axios from "axios";
 import PropTypes from "prop-types";
 import MainLayout from "../../../templates/MainLayout";
@@ -63,13 +61,14 @@ const statusColors = {
 // ──────────────────────────────────────────────────────────────
 const cardBase = {
   borderRadius: 3,
-  border: '1px solid',
-  borderColor: alpha(maroon.main, 0.08),
-  boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)',
+  background: 'rgba(255,255,255,0.93)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid rgba(255,255,255,0.6)',
+  boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)',
   overflow: 'hidden',
   transition: 'box-shadow 0.25s ease, transform 0.25s ease',
   '&:hover': {
-    boxShadow: '0 10px 25px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.04)',
+    boxShadow: '0 12px 32px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.06)',
     transform: 'translateY(-2px)',
   },
 };
@@ -307,16 +306,28 @@ EnrollmentSuccessModal.propTypes = {
 // ──────────────────────────────────────────────────────────────
 const SectionCard = ({ title, icon, accentColor = maroon.main, children }) => (
   <Card elevation={0} sx={{ ...cardBase, borderTop: `3px solid ${accentColor}`, mb: 3 }}>
-    <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
-      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2.5 }}>
-        <Avatar sx={{ bgcolor: alpha(accentColor, 0.08), color: accentColor, width: 40, height: 40 }}>
+    <Box sx={{
+      px: { xs: 2.5, md: 3.5 },
+      py: 2,
+      background: `linear-gradient(135deg, ${alpha(accentColor, 0.08)} 0%, ${alpha(accentColor, 0.03)} 100%)`,
+      borderBottom: `1px solid ${alpha(accentColor, 0.1)}`,
+    }}>
+      <Stack direction="row" alignItems="center" spacing={1.5}>
+        <Avatar sx={{
+          bgcolor: accentColor,
+          color: '#fff',
+          width: 38,
+          height: 38,
+          boxShadow: `0 2px 8px ${alpha(accentColor, 0.35)}`,
+        }}>
           {icon}
         </Avatar>
         <Typography variant="h6" sx={{ fontWeight: 700, color: accentColor, letterSpacing: 0.2 }}>
           {title}
         </Typography>
       </Stack>
-      <Divider sx={{ mb: 2.5, bgcolor: alpha(accentColor, 0.08) }} />
+    </Box>
+    <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
       {children}
     </CardContent>
   </Card>
@@ -511,6 +522,7 @@ const AcceptedDashboard = () => {
     return (
       <MainLayout
         backgroundImage={backgroundImage}
+        blurBackground
         userType="applicant"
         data={applicantData?.firstName ? `${applicantData.firstName} ${applicantData.lastName}` : "Applicant"}
       >
@@ -527,40 +539,10 @@ const AcceptedDashboard = () => {
   return (
     <MainLayout
       backgroundImage={backgroundImage}
+      blurBackground
       userType="applicant"
       data={applicantData?.firstName ? `${applicantData.firstName} ${applicantData.lastName}` : "Applicant"}
     >
-      {/* ── Navigation Bar ── */}
-      <Paper
-        elevation={0}
-        sx={{
-          mb: 3,
-          p: 1.5,
-          borderRadius: 2,
-          display: 'flex',
-          gap: 2,
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: gold[50],
-          border: `1px solid ${alpha(gold.main, 0.3)}`,
-        }}
-      >
-        <Button
-          component={RouterLink}
-          to="/accepted-dashboard"
-          startIcon={<DashboardIcon />}
-          sx={{
-            fontWeight: 600,
-            color: maroon.main,
-            textTransform: 'none',
-            '&.Mui-disabled': { color: maroon.main, opacity: 0.7 },
-          }}
-          disabled
-        >
-          Accepted Dashboard
-        </Button>
-      </Paper>
-
       {/* ── Congratulations Banner ── */}
       <Paper
         elevation={0}
@@ -568,46 +550,47 @@ const AcceptedDashboard = () => {
           p: { xs: 3, md: 5 },
           mb: 4,
           borderRadius: 3,
-          background: `linear-gradient(135deg, ${gold.light} 0%, ${gold.main} 100%)`,
-          border: `2px solid ${gold.dark}`,
+          background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 60%, ${maroon.light} 100%)`,
+          border: 'none',
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: `0 12px 40px ${alpha(gold.main, 0.2)}`,
+          boxShadow: `0 12px 40px ${alpha(maroon.main, 0.35)}`,
         }}
       >
         <Box sx={{ position: 'absolute', top: -50, right: -30, opacity: 0.06 }}>
-          <CelebrationIcon sx={{ fontSize: 280, color: maroon.main }} />
+          <CelebrationIcon sx={{ fontSize: 280, color: '#fff' }} />
         </Box>
         <Grid container spacing={3} alignItems="center" sx={{ position: 'relative', zIndex: 1 }}>
           <Grid item xs={12} md={8}>
             <Chip
-              icon={<EmojiEventsIcon sx={{ fontSize: 18, color: `${maroon.main} !important` }} />}
+              icon={<EmojiEventsIcon sx={{ fontSize: 18, color: `${gold.main} !important` }} />}
               label="ACCEPTED"
               sx={{
-                bgcolor: alpha('#fff', 0.6),
-                color: maroon.main,
+                bgcolor: alpha('#fff', 0.15),
+                color: '#fff',
                 fontWeight: 800,
                 letterSpacing: 1,
                 fontSize: '0.7rem',
                 height: 28,
                 mb: 2,
                 backdropFilter: 'blur(4px)',
+                border: `1px solid ${alpha('#fff', 0.3)}`,
               }}
             />
-            <Typography variant="h3" sx={{ color: maroon.main, fontWeight: 800, mb: 1, letterSpacing: -0.5, lineHeight: 1.2 }}>
+            <Typography variant="h3" sx={{ color: '#fff', fontWeight: 800, mb: 1, letterSpacing: -0.5, lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
               Congratulations, {applicantData?.firstName}!
             </Typography>
-            <Typography variant="h6" sx={{ color: maroon.dark, mb: 2, fontWeight: 700 }}>
+            <Typography variant="h6" sx={{ color: alpha('#fff', 0.9), mb: 2, fontWeight: 600 }}>
               You have been accepted to {acceptanceData?.finalCourse?.courseName}
             </Typography>
-            <Typography variant="body1" sx={{ color: maroon.dark, lineHeight: 1.7, maxWidth: 600 }}>
-              Your application was approved on <strong>{formatDate(acceptanceData?.acceptanceDate)}</strong>.
+            <Typography variant="body1" sx={{ color: alpha('#fff', 0.8), lineHeight: 1.7, maxWidth: 600 }}>
+              Your application was approved on <strong style={{ color: gold.main }}>{formatDate(acceptanceData?.acceptanceDate)}</strong>.
               Review your curriculum evaluation below and prepare for your ETEEAP journey!
             </Typography>
           </Grid>
           <Grid item xs={12} md={4} sx={{ textAlign: 'center', display: { xs: 'none', md: 'block' } }}>
-            <Box sx={{ width: 120, height: 120, borderRadius: '50%', bgcolor: alpha('#fff', 0.3), display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', border: `4px solid ${alpha('#fff', 0.4)}` }}>
-              <EmojiEventsIcon sx={{ fontSize: 64, color: maroon.main, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} />
+            <Box sx={{ width: 120, height: 120, borderRadius: '50%', bgcolor: alpha('#fff', 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', border: `4px solid ${alpha('#fff', 0.3)}`, backdropFilter: 'blur(8px)' }}>
+              <EmojiEventsIcon sx={{ fontSize: 64, color: gold.main, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))' }} />
             </Box>
           </Grid>
         </Grid>
@@ -777,12 +760,11 @@ const AcceptedDashboard = () => {
                     <TableContainer>
                       <Table size="small">
                         <TableHead>
-                          <TableRow sx={{ bgcolor: alpha(maroon.main, 0.03) }}>
-                            <TableCell sx={{ fontWeight: 700, color: maroon.main, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Code</TableCell>
-                            <TableCell sx={{ fontWeight: 700, color: maroon.main, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Description</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 700, color: maroon.main, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Units</TableCell>
-                            
-                            <TableCell align="center" sx={{ fontWeight: 700, color: maroon.main, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Status</TableCell>
+                          <TableRow sx={{ bgcolor: maroon.main }}>
+                            <TableCell sx={{ fontWeight: 700, color: '#fff', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Code</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: '#fff', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Description</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 700, color: '#fff', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Units</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 700, color: '#fff', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Status</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>

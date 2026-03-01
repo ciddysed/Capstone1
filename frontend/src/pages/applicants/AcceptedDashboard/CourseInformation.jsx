@@ -107,43 +107,50 @@ const CourseInformation = ({ course }) => {
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ color: maroon.main, fontWeight: 600 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: maroon.main, fontWeight: 700 }}>
           {course.courseCode ? `${course.courseCode}: ` : ''}{course.courseName}
         </Typography>
-        <Chip 
-          icon={<SchoolIcon />}
+        <Chip
+          icon={<SchoolIcon sx={{ fontSize: 16 }} />}
           label={course.department?.departmentName || "Department"}
-          variant="outlined"
-          color="secondary"
           size="small"
-          sx={{ borderColor: gold.main, color: gold.dark }}
+          sx={{ bgcolor: alpha(maroon.main, 0.08), color: maroon.main, fontWeight: 700, border: `1px solid ${alpha(maroon.main, 0.15)}` }}
         />
         {curriculum && (
-          <Typography variant="body2" sx={{ mt: 1.5, color: 'text.secondary' }}>
+          <Typography variant="body2" sx={{ mt: 1.5, color: 'text.secondary', lineHeight: 1.6 }}>
             {curriculum.description}
           </Typography>
         )}
       </Box>
-      
-      <Accordion 
-        expanded={expandedAccordion === 'overview'} 
+
+      <Accordion
+        expanded={expandedAccordion === 'overview'}
         onChange={handleAccordionChange('overview')}
-        sx={{ 
-          mb: 1,
-          boxShadow: 'none',
+        elevation={0}
+        sx={{
+          mb: 1.5,
+          background: 'rgba(255,255,255,0.93)',
+          backdropFilter: 'blur(12px)',
+          border: `1px solid ${alpha(maroon.main, 0.1)}`,
+          borderTop: `3px solid ${maroon.main}`,
+          borderRadius: '12px !important',
+          overflow: 'hidden',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
           '&:before': { display: 'none' },
-          border: `1px solid ${alpha(maroon.main, 0.2)}`,
-          borderRadius: '8px !important',
-          overflow: 'hidden'
+          '&.Mui-expanded': { boxShadow: `0 6px 20px ${alpha(maroon.main, 0.1)}` },
         }}
       >
         <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          sx={{ bgcolor: alpha(maroon.light, 0.05) }}
+          expandIcon={<ExpandMoreIcon sx={{ color: maroon.main }} />}
+          sx={{
+            background: `linear-gradient(135deg, ${alpha(maroon.main, 0.08)} 0%, ${alpha(maroon.main, 0.03)} 100%)`,
+            borderBottom: `1px solid ${alpha(maroon.main, 0.08)}`,
+            '&.Mui-expanded': { background: `linear-gradient(135deg, ${alpha(maroon.main, 0.12)} 0%, ${alpha(maroon.main, 0.05)} 100%)` },
+          }}
         >
-          <Typography variant="subtitle1" fontWeight={600}>Program Overview</Typography>
+          <Typography variant="subtitle1" fontWeight={700} color={maroon.main}>Program Overview</Typography>
         </AccordionSummary>
-        <AccordionDetails>
+        <AccordionDetails sx={{ pt: 2.5 }}>
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>Key Information</Typography>
@@ -198,25 +205,34 @@ const CourseInformation = ({ course }) => {
         </AccordionDetails>
       </Accordion>
       
-      <Accordion 
-        expanded={expandedAccordion === 'subjects'} 
+      <Accordion
+        expanded={expandedAccordion === 'subjects'}
         onChange={handleAccordionChange('subjects')}
-        sx={{ 
-          mb: 1,
-          boxShadow: 'none',
+        elevation={0}
+        sx={{
+          mb: 1.5,
+          background: 'rgba(255,255,255,0.93)',
+          backdropFilter: 'blur(12px)',
+          border: `1px solid ${alpha(maroon.main, 0.1)}`,
+          borderTop: `3px solid ${maroon.main}`,
+          borderRadius: '12px !important',
+          overflow: 'hidden',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
           '&:before': { display: 'none' },
-          border: `1px solid ${alpha(maroon.main, 0.2)}`,
-          borderRadius: '8px !important',
-          overflow: 'hidden'
+          '&.Mui-expanded': { boxShadow: `0 6px 20px ${alpha(maroon.main, 0.1)}` },
         }}
       >
         <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          sx={{ bgcolor: alpha(maroon.light, 0.05) }}
+          expandIcon={<ExpandMoreIcon sx={{ color: maroon.main }} />}
+          sx={{
+            background: `linear-gradient(135deg, ${alpha(maroon.main, 0.08)} 0%, ${alpha(maroon.main, 0.03)} 100%)`,
+            borderBottom: `1px solid ${alpha(maroon.main, 0.08)}`,
+            '&.Mui-expanded': { background: `linear-gradient(135deg, ${alpha(maroon.main, 0.12)} 0%, ${alpha(maroon.main, 0.05)} 100%)` },
+          }}
         >
-          <Typography variant="subtitle1" fontWeight={600}>Core Subjects</Typography>
+          <Typography variant="subtitle1" fontWeight={700} color={maroon.main}>Core Subjects</Typography>
         </AccordionSummary>
-        <AccordionDetails>
+        <AccordionDetails sx={{ pt: 2 }}>
           {curriculum?.subjects && curriculum.subjects.length > 0 ? (
             <List dense>
               {curriculum.subjects.slice(0, 5).map((subject) => (
@@ -253,11 +269,14 @@ const CourseInformation = ({ course }) => {
               variant="outlined" 
               size="small"
               sx={{ 
-                borderColor: gold.main,
-                color: gold.dark,
+                borderColor: maroon.main,
+                color: maroon.main,
+                fontWeight: 600,
+                borderRadius: 2,
+                textTransform: 'none',
                 '&:hover': { 
-                  borderColor: gold.dark,
-                  bgcolor: alpha(gold.light, 0.2)
+                  borderColor: maroon.dark,
+                  bgcolor: alpha(maroon.main, 0.05),
                 }
               }}
             >
@@ -267,24 +286,33 @@ const CourseInformation = ({ course }) => {
         </AccordionDetails>
       </Accordion>
       
-      <Accordion 
-        expanded={expandedAccordion === 'faculty'} 
+      <Accordion
+        expanded={expandedAccordion === 'faculty'}
         onChange={handleAccordionChange('faculty')}
-        sx={{ 
-          boxShadow: 'none',
+        elevation={0}
+        sx={{
+          background: 'rgba(255,255,255,0.93)',
+          backdropFilter: 'blur(12px)',
+          border: `1px solid ${alpha(maroon.main, 0.1)}`,
+          borderTop: `3px solid ${maroon.main}`,
+          borderRadius: '12px !important',
+          overflow: 'hidden',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
           '&:before': { display: 'none' },
-          border: `1px solid ${alpha(maroon.main, 0.2)}`,
-          borderRadius: '8px !important',
-          overflow: 'hidden'
+          '&.Mui-expanded': { boxShadow: `0 6px 20px ${alpha(maroon.main, 0.1)}` },
         }}
       >
         <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          sx={{ bgcolor: alpha(maroon.light, 0.05) }}
+          expandIcon={<ExpandMoreIcon sx={{ color: maroon.main }} />}
+          sx={{
+            background: `linear-gradient(135deg, ${alpha(maroon.main, 0.08)} 0%, ${alpha(maroon.main, 0.03)} 100%)`,
+            borderBottom: `1px solid ${alpha(maroon.main, 0.08)}`,
+            '&.Mui-expanded': { background: `linear-gradient(135deg, ${alpha(maroon.main, 0.12)} 0%, ${alpha(maroon.main, 0.05)} 100%)` },
+          }}
         >
-          <Typography variant="subtitle1" fontWeight={600}>Faculty</Typography>
+          <Typography variant="subtitle1" fontWeight={700} color={maroon.main}>Faculty</Typography>
         </AccordionSummary>
-        <AccordionDetails>
+        <AccordionDetails sx={{ pt: 2 }}>
           {curriculum?.faculty && curriculum.faculty.length > 0 ? (
             <List dense>
               {curriculum.faculty.map((faculty, index) => (

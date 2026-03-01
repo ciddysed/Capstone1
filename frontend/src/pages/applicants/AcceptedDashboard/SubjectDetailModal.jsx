@@ -1,7 +1,6 @@
 import React from "react";
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Button,
@@ -21,8 +20,6 @@ import {
   Cancel as CancelIcon,
   HourglassEmpty as PendingIcon,
   School as SchoolIcon,
-  Description as DescriptionIcon,
-  Info as InfoIcon
 } from "@mui/icons-material";
 import PropTypes from "prop-types";
 
@@ -99,61 +96,72 @@ const SubjectDetailModal = ({ open, onClose, subjectRecord }) => {
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+          borderRadius: 3,
+          overflow: 'hidden',
+          background: 'linear-gradient(135deg, #1a0000 0%, #3d0000 40%, #6A0000 100%)',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
         }
       }}
     >
       {/* Header */}
-      <DialogTitle
-        sx={{
-          bgcolor: maroon.main,
-          color: '#FFFFFF',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          py: 2
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SchoolIcon />
-          <Typography variant="h6" fontWeight={600}>
-            Subject Evaluation Details
-          </Typography>
-        </Box>
+      <Box sx={{
+        px: 3, py: 2.5,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: `1px solid ${alpha('#fff', 0.1)}`,
+      }}>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Box sx={{
+            width: 44, height: 44, borderRadius: '50%',
+            bgcolor: alpha('#fff', 0.15),
+            border: `2px solid ${alpha('#fff', 0.3)}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <SchoolIcon sx={{ color: gold.main, fontSize: 22 }} />
+          </Box>
+          <Box>
+            <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1.2 }}>
+              Subject Evaluation Details
+            </Typography>
+            <Typography variant="caption" sx={{ color: alpha('#fff', 0.6) }}>
+              Review your accreditation record
+            </Typography>
+          </Box>
+        </Stack>
         <IconButton
           onClick={onClose}
-          sx={{
-            color: '#FFFFFF',
-            '&:hover': { bgcolor: alpha('#FFFFFF', 0.2) }
-          }}
+          sx={{ color: alpha('#fff', 0.7), '&:hover': { bgcolor: alpha('#fff', 0.1), color: '#fff' } }}
         >
           <CloseIcon />
         </IconButton>
-      </DialogTitle>
+      </Box>
 
       {/* Content */}
-      <DialogContent sx={{ pt: 3, pb: 2 }}>
-        <Stack spacing={3}>
+      <DialogContent sx={{ pt: 3, pb: 2, background: 'rgba(255,255,255,0.97)' }}>
+        <Stack spacing={2.5}>
           {/* Subject Information */}
           <Paper
             elevation={0}
             sx={{
-              p: 2,
-              bgcolor: alpha(maroon.light, 0.05),
-              border: `1px solid ${alpha(maroon.main, 0.2)}`,
-              borderRadius: 2
+              p: 2.5,
+              background: 'rgba(255,255,255,0.93)',
+              backdropFilter: 'blur(12px)',
+              border: `1px solid ${alpha(maroon.main, 0.1)}`,
+              borderTop: `3px solid ${maroon.main}`,
+              borderRadius: 2,
+              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
             }}
           >
             <Grid container spacing={2}>
               <Grid item xs={12} md={8}>
-                <Typography variant="overline" color="text.secondary">
+                <Typography variant="overline" sx={{ color: alpha(maroon.main, 0.6), fontWeight: 700, fontSize: '0.65rem', letterSpacing: 1 }}>
                   Subject Code
                 </Typography>
-                <Typography variant="h5" fontWeight={700} color={maroon.main} gutterBottom>
+                <Typography variant="h5" fontWeight={800} color={maroon.main} gutterBottom>
                   {subjectRecord.subject?.subjectCode || 'N/A'}
                 </Typography>
-                <Typography variant="body1" fontWeight={500} gutterBottom>
+                <Typography variant="body1" fontWeight={600} color={maroon.dark} gutterBottom>
                   {subjectRecord.subject?.descriptiveTitle || 'N/A'}
                 </Typography>
                 {subjectRecord.subject?.description && (
@@ -163,29 +171,15 @@ const SubjectDetailModal = ({ open, onClose, subjectRecord }) => {
                 )}
               </Grid>
               <Grid item xs={12} md={4}>
-                <Stack spacing={1}>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Units
-                    </Typography>
-                    <Typography variant="h6" fontWeight={600}>
-                      {subjectRecord.subject?.units || 'N/A'}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Grade
-                    </Typography>
-                    <Chip
-                      label={subjectRecord.grade || 'N/A'}
-                      size="small"
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: '0.875rem',
-                        mt: 0.5
-                      }}
-                    />
-                  </Box>
+                <Stack spacing={1.5}>
+                  <Paper elevation={0} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: alpha(maroon.main, 0.04), border: `1px solid ${alpha(maroon.main, 0.08)}` }}>
+                    <Typography variant="caption" sx={{ color: alpha(maroon.main, 0.6), fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Units</Typography>
+                    <Typography variant="h6" fontWeight={800} color={maroon.main}>{subjectRecord.subject?.units || 'N/A'}</Typography>
+                  </Paper>
+                  <Paper elevation={0} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: alpha(maroon.main, 0.04), border: `1px solid ${alpha(maroon.main, 0.08)}` }}>
+                    <Typography variant="caption" sx={{ color: alpha(maroon.main, 0.6), fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Grade</Typography>
+                    <Typography variant="h6" fontWeight={800} color={maroon.main}>{subjectRecord.grade || 'N/A'}</Typography>
+                  </Paper>
                 </Stack>
               </Grid>
             </Grid>
@@ -194,56 +188,50 @@ const SubjectDetailModal = ({ open, onClose, subjectRecord }) => {
           {/* Semester Information */}
           {subjectRecord.subject?.semester && (
             <Box>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              <Typography variant="overline" sx={{ color: alpha(maroon.main, 0.6), fontWeight: 700, fontSize: '0.65rem', letterSpacing: 1 }}>
                 Academic Period
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
                 <Chip
                   label={`Year ${subjectRecord.subject.semester.yearLevel}`}
                   size="small"
-                  variant="outlined"
-                  sx={{ borderColor: gold.main, color: gold.dark }}
+                  sx={{ bgcolor: alpha(maroon.main, 0.08), color: maroon.main, fontWeight: 700, border: `1px solid ${alpha(maroon.main, 0.15)}` }}
                 />
                 <Chip
                   label={`Semester ${subjectRecord.subject.semester.semesterNumber}`}
                   size="small"
-                  variant="outlined"
-                  sx={{ borderColor: gold.main, color: gold.dark }}
+                  sx={{ bgcolor: alpha(maroon.main, 0.08), color: maroon.main, fontWeight: 700, border: `1px solid ${alpha(maroon.main, 0.15)}` }}
                 />
               </Box>
             </Box>
           )}
 
-          <Divider />
+          <Divider sx={{ opacity: 0.5 }} />
 
           {/* Evaluation Status */}
           <Box>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <InfoIcon fontSize="small" />
+            <Typography variant="overline" sx={{ color: alpha(maroon.main, 0.6), fontWeight: 700, fontSize: '0.65rem', letterSpacing: 1 }}>
               Evaluation Status
             </Typography>
             <Paper
               elevation={0}
               sx={{
-                p: 2,
+                mt: 1, p: 2,
                 bgcolor: getStatusBgColor(subjectRecord.status),
                 border: `2px solid ${getStatusColor(subjectRecord.status)}`,
-                borderRadius: 2
+                borderRadius: 2,
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                 {getStatusIcon(subjectRecord.status)}
-                <Typography variant="h6" fontWeight={700} sx={{ color: getStatusColor(subjectRecord.status) }}>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ color: getStatusColor(subjectRecord.status) }}>
                   {subjectRecord.status}
                 </Typography>
               </Box>
               <Typography variant="body2" color="text.secondary">
-                {subjectRecord.status === 'APPROVED' && 
-                  'This subject has been evaluated and accredited. Credit will be given for this course.'}
-                {subjectRecord.status === 'PENDING' && 
-                  'This subject is currently under evaluation. Please wait for the evaluator to complete the review.'}
-                {subjectRecord.status === 'REJECTED' && 
-                  'This subject was not accredited. You may need to take this course as part of your curriculum. Please review the evaluation details below.'}
+                {subjectRecord.status === 'APPROVED' && 'This subject has been evaluated and accredited. Credit will be given for this course.'}
+                {subjectRecord.status === 'PENDING' && 'This subject is currently under evaluation. Please wait for the evaluator to complete the review.'}
+                {subjectRecord.status === 'REJECTED' && 'This subject was not accredited. You may need to take this course as part of your curriculum.'}
               </Typography>
               {subjectRecord.recordDate && (
                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
@@ -256,20 +244,11 @@ const SubjectDetailModal = ({ open, onClose, subjectRecord }) => {
           {/* Process of Accreditation */}
           {subjectRecord.processOfAccreditation && (
             <Box>
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <DescriptionIcon fontSize="small" />
+              <Typography variant="overline" sx={{ color: alpha(maroon.main, 0.6), fontWeight: 700, fontSize: '0.65rem', letterSpacing: 1 }}>
                 Process of Accreditation
               </Typography>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2,
-                  bgcolor: alpha('#f5f5f5', 0.5),
-                  border: `1px solid ${alpha('#000', 0.1)}`,
-                  borderRadius: 2
-                }}
-              >
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+              <Paper elevation={0} sx={{ mt: 1, p: 2, bgcolor: alpha(maroon.main, 0.03), border: `1px solid ${alpha(maroon.main, 0.1)}`, borderRadius: 2 }}>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-line', color: 'text.primary' }}>
                   {subjectRecord.processOfAccreditation}
                 </Typography>
               </Paper>
@@ -279,20 +258,11 @@ const SubjectDetailModal = ({ open, onClose, subjectRecord }) => {
           {/* Substantive Basis */}
           {subjectRecord.substantiveBasis && (
             <Box>
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <DescriptionIcon fontSize="small" />
+              <Typography variant="overline" sx={{ color: alpha(maroon.main, 0.6), fontWeight: 700, fontSize: '0.65rem', letterSpacing: 1 }}>
                 Substantive Basis
               </Typography>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2,
-                  bgcolor: alpha('#f5f5f5', 0.5),
-                  border: `1px solid ${alpha('#000', 0.1)}`,
-                  borderRadius: 2
-                }}
-              >
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+              <Paper elevation={0} sx={{ mt: 1, p: 2, bgcolor: alpha(maroon.main, 0.03), border: `1px solid ${alpha(maroon.main, 0.1)}`, borderRadius: 2 }}>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-line', color: 'text.primary' }}>
                   {subjectRecord.substantiveBasis}
                 </Typography>
               </Paper>
@@ -302,72 +272,48 @@ const SubjectDetailModal = ({ open, onClose, subjectRecord }) => {
           {/* Course Details */}
           {subjectRecord.subject && (
             <Box>
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+              <Typography variant="overline" sx={{ color: alpha(maroon.main, 0.6), fontWeight: 700, fontSize: '0.65rem', letterSpacing: 1 }}>
                 Additional Course Information
               </Typography>
-              <Grid container spacing={2}>
+              <Grid container spacing={1.5} sx={{ mt: 0.5 }}>
                 <Grid item xs={6}>
-                  <Typography variant="caption" color="text.secondary">
-                    Lecture Hours
-                  </Typography>
-                  <Typography variant="body2" fontWeight={500}>
-                    {subjectRecord.subject.lecHours || 'N/A'} hours/week
-                  </Typography>
+                  <Paper elevation={0} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: alpha(maroon.main, 0.03), border: `1px solid ${alpha(maroon.main, 0.08)}` }}>
+                    <Typography variant="caption" color="text.secondary">Lecture Hours</Typography>
+                    <Typography variant="body2" fontWeight={600}>{subjectRecord.subject.lecHours || 'N/A'} hrs/week</Typography>
+                  </Paper>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="caption" color="text.secondary">
-                    Laboratory Hours
-                  </Typography>
-                  <Typography variant="body2" fontWeight={500}>
-                    {subjectRecord.subject.labHours || 'N/A'} hours/week
-                  </Typography>
+                  <Paper elevation={0} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: alpha(maroon.main, 0.03), border: `1px solid ${alpha(maroon.main, 0.08)}` }}>
+                    <Typography variant="caption" color="text.secondary">Laboratory Hours</Typography>
+                    <Typography variant="body2" fontWeight={600}>{subjectRecord.subject.labHours || 'N/A'} hrs/week</Typography>
+                  </Paper>
                 </Grid>
                 {subjectRecord.subject.prerequisites && (
                   <Grid item xs={12}>
-                    <Typography variant="caption" color="text.secondary">
-                      Prerequisites
-                    </Typography>
-                    <Typography variant="body2" fontWeight={500}>
-                      {subjectRecord.subject.prerequisites}
-                    </Typography>
+                    <Paper elevation={0} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: alpha(maroon.main, 0.03), border: `1px solid ${alpha(maroon.main, 0.08)}` }}>
+                      <Typography variant="caption" color="text.secondary">Prerequisites</Typography>
+                      <Typography variant="body2" fontWeight={600}>{subjectRecord.subject.prerequisites}</Typography>
+                    </Paper>
                   </Grid>
                 )}
               </Grid>
             </Box>
           )}
-
-          {/* Help Text for Rejected Status */}
-          {subjectRecord.status === 'REJECTED' && (
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                bgcolor: alpha('#ff9800', 0.1),
-                border: `1px solid ${alpha('#ff9800', 0.3)}`,
-                borderRadius: 2
-              }}
-            >
-              <Typography variant="subtitle2" fontWeight={600} color="#f57c00" gutterBottom>
-                Need Help?
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                If you believe this evaluation is incorrect or would like to appeal, please contact your program evaluator 
-                or visit the admissions office. You may be required to submit additional documentation.
-              </Typography>
-            </Paper>
-          )}
         </Stack>
       </DialogContent>
 
       {/* Actions */}
-      <DialogActions sx={{ px: 3, py: 2, bgcolor: alpha('#f5f5f5', 0.5) }}>
+      <DialogActions sx={{ px: 3, py: 2, bgcolor: alpha(maroon.main, 0.03), borderTop: `1px solid ${alpha(maroon.main, 0.1)}` }}>
         <Button
           onClick={onClose}
           variant="contained"
           sx={{
             bgcolor: maroon.main,
-            '&:hover': { bgcolor: maroon.dark },
-            px: 3
+            fontWeight: 700,
+            borderRadius: 2,
+            px: 3,
+            textTransform: 'none',
+            '&:hover': { bgcolor: maroon.dark, transform: 'translateY(-1px)', boxShadow: `0 4px 12px ${alpha(maroon.main, 0.35)}` },
           }}
         >
           Close
