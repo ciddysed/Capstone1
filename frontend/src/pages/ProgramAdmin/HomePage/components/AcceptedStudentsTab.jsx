@@ -65,17 +65,19 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': {
     backgroundColor: maroon.main,
     color: maroon.contrastText,
-    fontSize: 14,
-    fontWeight: 600,
+    fontSize: 13,
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
   },
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:nth-of-type(odd)': {
-    backgroundColor: alpha(gold.light, 0.15),
+    backgroundColor: alpha(maroon.main, 0.03),
   },
   '&:hover': {
-    backgroundColor: alpha(gold.light, 0.3),
+    backgroundColor: alpha(maroon.main, 0.07),
     transition: 'background-color 0.2s ease',
   },
   '&:last-child td, &:last-child th': {
@@ -102,13 +104,17 @@ const StyledChip = styled(Chip)(({ theme }) => ({
 
 const InfoCard = styled(Card)(({ theme }) => ({
   height: '100%',
-  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
-  borderRadius: theme.shape.borderRadius * 1.5,
-  transition: 'box-shadow 0.3s ease',
-  '&:hover': {
-    boxShadow: '0 4px 20px rgba(106, 0, 0, 0.15)',
-  },
+  background: 'rgba(255,255,255,0.93)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid rgba(255,255,255,0.6)',
   borderTop: `3px solid ${maroon.main}`,
+  boxShadow: '0 4px 16px rgba(106,0,0,0.10)',
+  borderRadius: theme.shape.borderRadius * 1.5,
+  transition: 'box-shadow 0.3s ease, transform 0.2s ease',
+  '&:hover': {
+    boxShadow: '0 8px 28px rgba(106, 0, 0, 0.18)',
+    transform: 'translateY(-2px)',
+  },
 }));
 
 const ActionButton = styled(Button)(({ theme }) => ({
@@ -260,17 +266,29 @@ const AcceptedStudentsTab = () => {
   );
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
-        <CheckCircleIcon sx={{ color: maroon.main, fontSize: 32 }} />
-        <Typography variant="h5" fontWeight="bold" color={maroon.dark}>
-          Accepted Students
-        </Typography>
-      </Stack>
+    <Box sx={{ p: 3, bgcolor: 'transparent' }}>
+      {/* Header Banner */}
+      <Box sx={{
+        background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 60%, ${maroon.light} 100%)`,
+        borderRadius: 3, p: 3, mb: 3,
+        display: 'flex', alignItems: 'center', gap: 2,
+        boxShadow: `0 4px 20px ${alpha(maroon.main, 0.35)}`
+      }}>
+        <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', borderRadius: '50%', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <CheckCircleIcon sx={{ color: '#fff', fontSize: 28 }} />
+        </Box>
+        <Box>
+          <Typography variant="h5" fontWeight="bold" color="#fff">
+            Accepted Students
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.75)' }}>
+            Overview of all accepted applicants
+          </Typography>
+        </Box>
+      </Box>
 
       {/* Filter Bar */}
-      <Paper sx={{ mb: 3, p: 2, borderRadius: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Paper elevation={0} sx={{ mb: 3, p: 2, borderRadius: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 16px rgba(106,0,0,0.08)' }}>
         <FormControl sx={{ minWidth: 160 }} size="small">
           <InputLabel>Status</InputLabel>
           <Select
@@ -313,11 +331,11 @@ const AcceptedStudentsTab = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <InfoCard>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" fontWeight="bold" color={maroon.main}>
+            <CardContent sx={{ textAlign: 'center', py: 3 }}>
+              <Typography variant="h3" fontWeight="bold" color={maroon.main} sx={{ lineHeight: 1 }}>
                 {totalAccepted}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 11 }}>
                 Total Accepted
               </Typography>
             </CardContent>
@@ -325,11 +343,11 @@ const AcceptedStudentsTab = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <InfoCard>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" fontWeight="bold" color="#2e7d32">
+            <CardContent sx={{ textAlign: 'center', py: 3 }}>
+              <Typography variant="h3" fontWeight="bold" color="#2e7d32" sx={{ lineHeight: 1 }}>
                 {acceptedCount}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 11 }}>
                 Recently Accepted
               </Typography>
             </CardContent>
@@ -348,10 +366,12 @@ const AcceptedStudentsTab = () => {
         </Box>
       ) : acceptedStudents.length > 0 ? (
         <>
-          <TableContainer component={Paper} sx={{ 
+          <TableContainer component={Paper} elevation={0} sx={{ 
             borderRadius: 2,
-            boxShadow: 'inset 0 0 8px rgba(0,0,0,0.05)',
-            backgroundColor: alpha(theme.palette.background.paper, 0.8),
+            background: 'rgba(255,255,255,0.93)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.6)',
+            boxShadow: '0 4px 20px rgba(106,0,0,0.10)',
             mb: 2
           }}>
             <Table>
@@ -371,7 +391,7 @@ const AcceptedStudentsTab = () => {
                   <StyledTableRow key={student.acceptedApplicantId}>
                     <StyledTableCell>
                       <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
+                      <Avatar sx={{ width: 36, height: 36, bgcolor: maroon.main }}>
                           {getInitials(
                             student.applicant ? 
                               `${student.applicant.firstName || ''} ${student.applicant.lastName || ''}`.trim() : 
@@ -486,19 +506,20 @@ const AcceptedStudentsTab = () => {
         maxWidth="md" 
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 2, boxShadow: '0 8px 40px -12px rgba(106, 0, 0, 0.3)' }
+          sx: { borderRadius: 3, boxShadow: '0 20px 60px rgba(106, 0, 0, 0.35)', overflow: 'hidden' }
         }}
       >
         {selectedStudent && (
           <>
             <DialogTitle sx={{ 
-              bgcolor: maroon.main,
+              background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 100%)`,
               color: 'white',
               display: 'flex',
               alignItems: 'center',
-              gap: 2
+              gap: 2,
+              boxShadow: `0 4px 12px ${alpha(maroon.main, 0.4)}`
             }}>
-              <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)' }}>
+              <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
                 {getInitials(
                   selectedStudent.applicant ? 
                     `${selectedStudent.applicant.firstName || ''} ${selectedStudent.applicant.lastName || ''}`.trim() : 
@@ -598,7 +619,7 @@ const AcceptedStudentsTab = () => {
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       Remarks
                     </Typography>
-                    <Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(gold.light, 0.1) }}>
+                    <Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(maroon.main, 0.04), borderColor: alpha(maroon.main, 0.2) }}>
                       <Typography variant="body2">
                         {selectedStudent.remarks}
                       </Typography>
@@ -607,8 +628,8 @@ const AcceptedStudentsTab = () => {
                 )}
               </Grid>
             </DialogContent>
-            <DialogActions sx={{ p: 2.5 }}>
-              <Button onClick={() => setOpenDialog(false)} variant="outlined">
+            <DialogActions sx={{ p: 2.5, bgcolor: alpha(maroon.main, 0.03) }}>
+              <Button onClick={() => setOpenDialog(false)} variant="outlined" sx={{ borderColor: maroon.main, color: maroon.main, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}>
                 Close
               </Button>
             </DialogActions>
@@ -617,8 +638,9 @@ const AcceptedStudentsTab = () => {
       </Dialog>
 
       {/* Edit Remarks Dialog */}
-      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Remarks</DialogTitle>
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden', boxShadow: '0 8px 40px rgba(106,0,0,0.25)' } }}>
+        <DialogTitle sx={{ background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 100%)`, color: '#fff', fontWeight: 700 }}>Edit Remarks</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -633,8 +655,8 @@ const AcceptedStudentsTab = () => {
             placeholder="Enter remarks for this accepted student..."
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenEditDialog(false)} variant="outlined">
+        <DialogActions sx={{ p: 2.5, bgcolor: alpha(maroon.main, 0.03) }}>
+          <Button onClick={() => setOpenEditDialog(false)} variant="outlined" sx={{ borderColor: maroon.main, color: maroon.main, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}>
             Cancel
           </Button>
           <ActionButton variant="contained" onClick={handleUpdateRemarks}>

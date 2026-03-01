@@ -73,17 +73,19 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.MuiTableCell-head': {
     backgroundColor: maroon.main,
     color: maroon.contrastText,
-    fontSize: 14,
-    fontWeight: 600,
+    fontSize: 13,
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
   },
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:nth-of-type(odd)': {
-    backgroundColor: alpha(gold.light, 0.15),
+    backgroundColor: alpha(maroon.main, 0.03),
   },
   '&:hover': {
-    backgroundColor: alpha(gold.light, 0.3),
+    backgroundColor: alpha(maroon.main, 0.07),
     transition: 'background-color 0.2s ease',
   },
   '&:last-child td, &:last-child th': {
@@ -346,7 +348,7 @@ const ProgramAdminNavigation = ({ children }) => {
                   <StyledTableCell>{application.applicationId || application.id}</StyledTableCell>
                   <StyledTableCell>
                     <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
+                      <Avatar sx={{ width: 36, height: 36, bgcolor: maroon.main }}>
                         {getInitials(application.applicantName)}
                       </Avatar>
                       <Typography variant="body2" fontWeight={500}>
@@ -433,16 +435,17 @@ const ProgramAdminNavigation = ({ children }) => {
         return (
           <Grow in={true} timeout={500}>
             <Paper 
-              elevation={3} 
+              elevation={0} 
               sx={{ 
                 p: 3, 
-                borderRadius: 2,
-                boxShadow: '0 8px 40px -12px rgba(106, 0, 0, 0.2)',
+                borderRadius: 3,
+                background: 'rgba(255,255,255,0.93)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.6)',
+                borderTop: `3px solid ${maroon.main}`,
+                boxShadow: '0 8px 32px rgba(106,0,0,0.12)',
                 overflow: 'hidden',
                 transition: 'all 0.3s ease',
-                '&:hover': {
-                  boxShadow: '0 12px 45px -10px rgba(106, 0, 0, 0.25)',
-                },
               }}
             >
               {renderApplicationsContent()}
@@ -493,10 +496,14 @@ const ProgramAdminNavigation = ({ children }) => {
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
+        position: 'relative',
       }}
     >
+      {/* ── Background blur overlay ── */}
+      <Box sx={{ position: 'absolute', inset: 0, backdropFilter: 'blur(8px)', bgcolor: 'rgba(255,255,255,0.18)', zIndex: 0 }} />
+
       {/* Left NavBar */}
-      <Box sx={{ width: 240, bgcolor: maroon.main, color: "white", p: 2 }}>
+      <Box sx={{ width: 240, background: `linear-gradient(180deg, ${maroon.dark} 0%, ${maroon.main} 100%)`, color: "white", p: 2, position: 'relative', zIndex: 1, boxShadow: '4px 0 24px rgba(0,0,0,0.28)' }}>
         {/* Logo */}
         <Stack
           sx={{
@@ -548,12 +555,14 @@ const ProgramAdminNavigation = ({ children }) => {
           display: "flex",
           flexDirection: "column",
           maxHeight: "100vh",
+          position: 'relative',
+          zIndex: 1,
         }}
       >
-        <Box sx={{ flexShrink: 0, bgcolor: "transparent", zIndex: 1100 }}>
+        <Box sx={{ flexShrink: 0, zIndex: 1100 }}>
           {/* Top Bar */}
-          <AppBar position="static" color="transparent" elevation={0}>
-            <Toolbar sx={{ justifyContent: "space-between", p: 0 }}>
+          <AppBar position="static" elevation={0} sx={{ bgcolor: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 2px 12px rgba(106,0,0,0.08)' }}>
+            <Toolbar sx={{ justifyContent: "space-between", px: 2 }}>
               <Typography variant="h6" fontWeight="bold" color={maroon.dark}>
                 {getPageTitle()}
               </Typography>
@@ -594,15 +603,19 @@ const ProgramAdminNavigation = ({ children }) => {
           {shouldShowFilters() && (
             <Box
               sx={{
-                display: "flex",  
+                display: "flex",
                 justifyContent: "flex-end",
                 gap: 2,
                 flexWrap: "wrap",
                 px: 2,
-                py: 1,
+                py: 1.5,
                 position: "sticky",
                 top: "64px",
                 zIndex: 1000,
+                background: 'rgba(255,255,255,0.85)',
+                backdropFilter: 'blur(12px)',
+                borderBottom: '1px solid rgba(255,255,255,0.5)',
+                boxShadow: '0 2px 8px rgba(106,0,0,0.06)',
               }}
             >
               <FormControl size="small" sx={{ minWidth: 150 }}>

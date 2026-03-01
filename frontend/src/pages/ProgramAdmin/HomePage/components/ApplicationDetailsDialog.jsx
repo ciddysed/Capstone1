@@ -191,11 +191,13 @@ const getInitials = (name) => {
     .slice(0, 2);
 };
 
-const ApplicationDetailsDialog = ({ 
-  open, 
-  onClose, 
-  application, 
-  onRefreshApplications 
+const ApplicationDetailsDialog = ({
+  open,
+  onClose,
+  application,
+  onRefreshApplications,
+  onUpdateApplication = null,
+  onRemoveApplication = null
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -206,7 +208,6 @@ const ApplicationDetailsDialog = ({
   const [preferenceEvaluations, setPreferenceEvaluations] = useState({});
   const [loadingEvaluations, setLoadingEvaluations] = useState(false);
   const [newStatus, setNewStatus] = useState("");
-  const [updateLoading, setUpdateLoading] = useState(false);
   const [forwardingLoading, setForwardingLoading] = useState(false);
   
   const [showAcceptDialog, setShowAcceptDialog] = useState(false);
@@ -221,7 +222,7 @@ const ApplicationDetailsDialog = ({
   const [applicationNotes, setApplicationNotes] = useState("");
   const [notesLoading, setNotesLoading] = useState(false);
   const [notesEdit, setNotesEdit] = useState(false);
-  const [notesSaveLoading, setNotesSaveLoading] = useState(false);
+  const [notesSaveLoading] = useState(false);
   const [notesError, setNotesError] = useState("");
   const [notesStatus, setNotesStatus] = useState(""); // <-- store status from GET
 
@@ -263,6 +264,7 @@ const ApplicationDetailsDialog = ({
   // Fetch application details including preferences and documents
   const fetchApplicationDetails = useCallback(async (applicationId) => {
     setLoadingPreferences(true);
+    setNotesLoading(true);
     try {
       const response = await axios.get(`${API_URL}/applications/${applicationId}`);
       const applicationData = response.data;
@@ -270,6 +272,11 @@ const ApplicationDetailsDialog = ({
       if (!applicationData.documents) {
         applicationData.documents = [];
       }
+      
+      // Extract and set notes from the application data (avoid duplicate fetch)
+      setApplicationNotes(applicationData.applicationNotes || "");
+      setNotesStatus(applicationData.status || "");
+      setNotesLoading(false);
       
       setSelectedApplication(prev => ({
         ...applicationData,
@@ -310,8 +317,20 @@ const ApplicationDetailsDialog = ({
         }
       }
 
-      if (prefsToUse.length > 0 && applicationData.applicant?.applicantId) {
-        await fetchEvaluationStatusesForPreferences(applicationData.applicant.applicantId, prefsToUse);
+      // Fetch evaluations and check if already sent in parallel
+      const applicantId = applicationData.applicant?.applicantId;
+      if (prefsToUse.length > 0 && applicantId) {
+        const evalPromise = fetchEvaluationStatusesForPreferences(applicantId, prefsToUse);
+        const checkSentPromise = axios.get(`https://eteeap-foth.onrender.com/api/evaluations/by-application/${applicationId}`)
+          .then(evalRes => {
+            setAlreadySentToEvaluator(Array.isArray(evalRes.data) && evalRes.data.length > 0);
+          })
+          .catch(() => {
+            setAlreadySentToEvaluator(false);
+          });
+        
+        // Wait for both to complete in parallel
+        await Promise.all([evalPromise, checkSentPromise]);
       }
 
     } catch (error) {
@@ -322,6 +341,7 @@ const ApplicationDetailsDialog = ({
         coursePreferences: []
       }));
       setCoursePreferences([]);
+      setNotesLoading(false);
     } finally {
       setLoadingPreferences(false);
     }
@@ -329,20 +349,30 @@ const ApplicationDetailsDialog = ({
 
   // Update application status
   const updateApplicationStatus = async () => {
-    setUpdateLoading(true);
+    const applicationId = selectedApplication.applicationId || selectedApplication.id;
+    const previousStatus = selectedApplication.status;
+    
+    // Optimistic update - update UI immediately
+    if (onUpdateApplication) {
+      onUpdateApplication(applicationId, { status: newStatus });
+    }
+    
+    // Close dialog immediately for instant UX
+    toast.success("Application status updated");
+    handleCloseDialog();
+    
+    // Make API call in background (fire and forget)
     try {
-      const applicationId = selectedApplication.applicationId || selectedApplication.id;
       const url = `${API_URL}/applications/${applicationId}/update-status?status=${newStatus}`;
-      
       await axios.put(url);
-      
-      await onRefreshApplications();
-      handleCloseDialog();
     } catch (error) {
       console.error("Error updating application status:", error);
-      toast.error(`Failed to update application status: ${error.response?.data?.message || error.message}`);
-    } finally {
-      setUpdateLoading(false);
+      toast.error(`Failed to update status: ${error.response?.data?.message || error.message}`);
+      
+      // Revert optimistic update on error
+      if (onUpdateApplication) {
+        onUpdateApplication(applicationId, { status: previousStatus });
+      }
     }
   };
 
@@ -419,8 +449,7 @@ const ApplicationDetailsDialog = ({
         }
         
         toast.success(`Successfully forwarded ${forwardedCount} course preference${forwardedCount > 1 ? 's' : ''} for evaluation`);
-        await onRefreshApplications();
-        // Refresh evaluation statuses
+        // Only refresh evaluation statuses, not the entire application list
         await fetchEvaluationStatusesForPreferences(applicantId, coursePreferences);
       } else {
         throw new Error(`Server responded with status: ${response.status}`);
@@ -641,10 +670,14 @@ const ApplicationDetailsDialog = ({
       const applicationId = selectedApplication.applicationId || selectedApplication.id;
       await axios.put(`${API_URL}/applications/${applicationId}/update-status?status=APPROVED`);
       
+      // Optimistic update - remove from list immediately
+      if (onRemoveApplication) {
+        onRemoveApplication(applicationId);
+      }
+      
       toast.success("Applicant accepted and recorded.");
       setShowAcceptDialog(false);
       setAcceptRemarks("");
-      await onRefreshApplications();
       handleCloseDialog();
     } catch (error) {
       console.error("Error accepting applicant:", error);
@@ -663,53 +696,19 @@ const ApplicationDetailsDialog = ({
   else if (forwardableCount === 0) forwardButtonLabel = "All Forwarded";
   else forwardButtonLabel = `Forward ${forwardableCount} Course${forwardableCount > 1 ? 's' : ''}`;
 
-  // Check if application already has evaluations (for note display)
-  useEffect(() => {
-    const checkAlreadySent = async () => {
-      if (!selectedApplication) return;
-      const applicationId = selectedApplication.applicationId || selectedApplication.id;
-      if (!applicationId) return;
-      try {
-        const evalRes = await axios.get(`https://eteeap-foth.onrender.com/api/evaluations/by-application/${applicationId}`);
-        setAlreadySentToEvaluator(Array.isArray(evalRes.data) && evalRes.data.length > 0);
-      } catch {
-        setAlreadySentToEvaluator(false);
-      }
-    };
-    checkAlreadySent();
-    // Only run when dialog opens or selectedApplication changes
-  }, [selectedApplication]);
-
-  // Fetch application notes and status when dialog opens or selectedApplication changes
-  useEffect(() => {
-    const fetchNotes = async () => {
-      if (!selectedApplication) return;
-      const applicationId = selectedApplication.applicationId || selectedApplication.id;
-      if (!applicationId) return;
-      setNotesLoading(true);
-      setNotesError("");
-      try {
-        const res = await axios.get(`https://eteeap-foth.onrender.com/api/applications/${applicationId}`);
-        setApplicationNotes(res.data.applicationNotes || "");
-        setNotesStatus(res.data.status || ""); // fetch status for later PUT
-      } catch (err) {
-        console.error("Error loading application notes:", err);
-        setNotesError("Failed to load application notes.");
-        setApplicationNotes("");
-        setNotesStatus("");
-      } finally {
-        setNotesLoading(false);
-      }
-    };
-    fetchNotes();
-  }, [selectedApplication]);
+  // Notes and evaluator check are now handled in fetchApplicationDetails (parallel optimization)
 
   // Save notes handler (PUT with status as parameter)
   const handleSaveNotes = async () => {
     if (!selectedApplication) return;
     const applicationId = selectedApplication.applicationId || selectedApplication.id;
-    setNotesSaveLoading(true);
-    setNotesError("");
+    const previousNotes = applicationNotes;
+    
+    // Close edit mode immediately for instant UX
+    setNotesEdit(false);
+    toast.success("Saving notes...");
+    
+    // Save in background
     try {
       await axios.put(
         `https://eteeap-foth.onrender.com/api/applications/${applicationId}`,
@@ -718,13 +717,12 @@ const ApplicationDetailsDialog = ({
           status: notesStatus // always send status to avoid null
         }
       );
-      setNotesEdit(false);
-      toast.success("Application notes updated.");
+      toast.success("Application notes saved.");
     } catch (err) {
       console.error("Error saving application notes:", err);
-      setNotesError("Failed to save notes.");
-    } finally {
-      setNotesSaveLoading(false);
+      toast.error("Failed to save notes.");
+      // Revert on error
+      setApplicationNotes(previousNotes);
     }
   };
 
@@ -1267,11 +1265,10 @@ const ApplicationDetailsDialog = ({
               <ActionButton 
                 variant="contained"
                 onClick={updateApplicationStatus}
-                disabled={updateLoading || newStatus === selectedApplication.status}
-                startIcon={updateLoading ? <CircularProgress size={20} /> : null}
+                disabled={newStatus === selectedApplication.status}
                 sx={{ borderRadius: 2, px: 3 }}
               >
-                {updateLoading ? "Updating..." : "Update Status"}
+                Update Status
               </ActionButton>
             </DialogActions>
           </>
@@ -1374,6 +1371,8 @@ ApplicationDetailsDialog.propTypes = {
     coursePreferences: PropTypes.arrayOf(PropTypes.object),
   }),
   onRefreshApplications: PropTypes.func.isRequired,
+  onUpdateApplication: PropTypes.func,
+  onRemoveApplication: PropTypes.func,
 };
 
 export default ApplicationDetailsDialog;
