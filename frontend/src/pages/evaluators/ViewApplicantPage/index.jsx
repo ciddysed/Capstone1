@@ -20,7 +20,6 @@ import {
   Select,
   MenuItem,
   TextField,
-  Divider,
   Alert,
   CircularProgress,
   Chip,
@@ -80,24 +79,18 @@ const customTheme = createTheme({
 
 const AnimatedPaper = styled(Paper)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 1.5,
-  boxShadow: '0 8px 40px -12px rgba(106, 0, 0, 0.2)',
+  background: 'rgba(255,255,255,0.93)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid rgba(255,255,255,0.6)',
+  borderTop: `3px solid ${maroon.main}`,
+  boxShadow: '0 4px 24px rgba(106,0,0,0.12)',
   overflow: 'hidden',
-  transition: 'all 0.3s ease',
+  transition: 'box-shadow 0.3s ease, transform 0.2s ease',
   '&:hover': {
-    boxShadow: '0 12px 45px -10px rgba(106, 0, 0, 0.25)',
+    boxShadow: '0 8px 32px rgba(106,0,0,0.18)',
+    transform: 'translateY(-1px)',
   },
 }));
-
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
-  backgroundColor: maroon.main,
-  width: 56,
-  height: 56,
-  color: '#FFFFFF',
-}));
-
-
-
-
 
 const ActionButton = styled(Button)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 1.5,
@@ -720,30 +713,42 @@ const ViewApplicantPage = () => {
   return (
     <ThemeProvider theme={customTheme}>
       <ListLayout>
-        {/* Header */}
-        <Box sx={{ display: "flex", alignItems: "center", mb: 3, mt: 1 }}>
+        {/* Header Banner */}
+        <Box sx={{
+          background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 60%, ${maroon.light} 100%)`,
+          borderRadius: 3, p: 2.5, mb: 3,
+          display: 'flex', alignItems: 'center', gap: 2,
+          boxShadow: `0 4px 20px ${alpha(maroon.main, 0.35)}`
+        }}>
           <IconButton
             onClick={() => navigate("/evaluator/applicants")}
-            sx={{ mr: 1 }}
-            color="primary"
+            sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}
           >
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h5" fontWeight="bold" color={maroon.dark} sx={{ 
-            borderBottom: `2px solid ${gold.main}`,
-            paddingBottom: 1,
-            display: 'inline-block'
-          }}>
-            Applicant Evaluation
-          </Typography>
+          <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AssignmentIcon sx={{ color: '#fff', fontSize: 24 }} />
+          </Box>
+          <Box>
+            <Typography variant="h5" fontWeight="bold" color="#fff">
+              Applicant Evaluation
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.75)' }}>
+              Review applicant profile, documents and submit evaluation
+            </Typography>
+          </Box>
         </Box>
 
         {/* Admin Forwarding Information */}
         {checkForwardStatus() && (
           <Fade in={true} timeout={800}>
-            <AnimatedPaper elevation={3} sx={{ p: 2, mb: 3, bgcolor: alpha(gold.light, 0.2), borderLeft: `4px solid ${gold.main}` }}>
+            <AnimatedPaper elevation={0} sx={{ p: 2, mb: 3 }}>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems="center">
-                <Box>
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Box sx={{ bgcolor: alpha(maroon.main, 0.1), borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <SendIcon sx={{ color: maroon.main, fontSize: 18 }} />
+                  </Box>
+                  <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: maroon.main }}>
                     Forwarded for Evaluation
                   </Typography>
@@ -762,6 +767,7 @@ const ViewApplicantPage = () => {
                     )}
                   </Typography>
                 </Box>
+                </Stack>
                 <StyledChip 
                   label="Ready for Evaluation" 
                   color="primary" 
@@ -773,27 +779,26 @@ const ViewApplicantPage = () => {
           </Fade>
         )}
         
-        <Grid container spacing={2} sx={{ alignItems: 'flex-start' }}>
+        <Grid container spacing={2} sx={{ alignItems: 'flex-start', justifyContent: 'center' }}>
           {/* Applicant Profile Section */}
           <Grid item xs={12} md={3}>
             <Grow in={true} timeout={600}>
-              <AnimatedPaper elevation={3} sx={{ p: 3, height: '100%' }}>
-                <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                  <StyledAvatar>
-                    {applicant ? getInitials(
-                      [applicant.firstName, applicant.lastName].filter(Boolean).join(" ")
-                    ) : "??"}
-                  </StyledAvatar>
+              <AnimatedPaper elevation={0} sx={{ height: '100%', overflow: 'hidden' }}>
+                {/* Profile card header strip */}
+                <Box sx={{ background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 100%)`, p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', width: 52, height: 52, fontSize: '1.2rem', fontWeight: 700, boxShadow: `0 2px 8px ${alpha(maroon.main, 0.4)}` }}>
+                    {applicant ? getInitials([applicant.firstName, applicant.lastName].filter(Boolean).join(" ")) : "??"}
+                  </Avatar>
                   <Box>
-                    <Typography variant="h6" fontWeight="bold" color={maroon.main}>
+                    <Typography variant="h6" fontWeight="bold" color="#fff">
                       Applicant Profile
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.75)' }}>
                       ID: {applicantId || "N/A"}
                     </Typography>
                   </Box>
-                </Stack>
-                <Divider sx={{ mb: 3, borderColor: alpha(gold.main, 0.5) }} />
+                </Box>
+                <Box sx={{ p: 3 }}>
                 
                 <Stack spacing={2.5}>
                   <DetailRowStyled 
@@ -842,6 +847,7 @@ const ViewApplicantPage = () => {
                     value={applicant?.gender || "-"} 
                   />
                 </Stack>
+                </Box>
               </AnimatedPaper>
             </Grow>
           </Grid>
@@ -851,22 +857,24 @@ const ViewApplicantPage = () => {
             <Stack spacing={3} height="100%">
               {/* Applied Course */}
               <Grow in={true} timeout={700}>
-                <AnimatedPaper elevation={3} sx={{ p: 3 }}>
-                  <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
-                    <SchoolIcon sx={{ color: maroon.main }} />
+                <AnimatedPaper elevation={0} sx={{ overflow: 'hidden' }}>
+                  {/* Course card header strip */}
+                  <Box sx={{ background: `linear-gradient(135deg, ${alpha(maroon.main, 0.08)} 0%, ${alpha(maroon.main, 0.03)} 100%)`, borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`, p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ bgcolor: maroon.main, borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 2px 8px ${alpha(maroon.main, 0.35)}` }}>
+                      <SchoolIcon sx={{ color: '#fff', fontSize: 20 }} />
+                    </Box>
                     <Typography variant="h6" fontWeight="bold" color={maroon.main}>
                       Course Applied For
                     </Typography>
-                  </Stack>
-                  <Divider sx={{ mb: 2, borderColor: alpha(gold.main, 0.5) }} />
-                  
+                  </Box>
+                  <Box sx={{ p: 3 }}>
                   {selectedCourse ? (
                     <Box 
                       sx={{ 
-                        bgcolor: alpha(gold.light, 0.3), 
+                        bgcolor: alpha(maroon.main, 0.05), 
                         p: 2, 
                         borderRadius: 2, 
-                        borderLeft: `3px solid ${gold.main}` 
+                        borderLeft: `3px solid ${maroon.main}` 
                       }}
                     >
                       <Typography variant="body1" fontWeight={600}>
@@ -883,19 +891,23 @@ const ViewApplicantPage = () => {
                       No course selection available
                     </Typography>
                   )}
+                  </Box>
                 </AnimatedPaper>
               </Grow>
 
               {/* Uploaded Documents */}
               <Grow in={true} timeout={800}>
-                <AnimatedPaper elevation={3} sx={{ p: 3, flex: 1 }}>
-                  <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
-                    <DescriptionIcon sx={{ color: maroon.main }} />
+                <AnimatedPaper elevation={0} sx={{ flex: 1, overflow: 'hidden' }}>
+                  {/* Documents card header strip */}
+                  <Box sx={{ background: `linear-gradient(135deg, ${alpha(maroon.main, 0.08)} 0%, ${alpha(maroon.main, 0.03)} 100%)`, borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`, p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ bgcolor: maroon.main, borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 2px 8px ${alpha(maroon.main, 0.35)}` }}>
+                      <DescriptionIcon sx={{ color: '#fff', fontSize: 20 }} />
+                    </Box>
                     <Typography variant="h6" fontWeight="bold" color={maroon.main}>
                       Submitted Documents
                     </Typography>
-                  </Stack>
-                  <Divider sx={{ mb: 3, borderColor: alpha(gold.main, 0.5) }} />
+                  </Box>
+                  <Box sx={{ p: 3 }}>
                   
                   <Box sx={{ 
                     bgcolor: alpha(theme.palette.background.default, 0.5),
@@ -944,6 +956,8 @@ const ViewApplicantPage = () => {
                                     borderColor: maroon.main,
                                     color: maroon.main,
                                     textTransform: 'none',
+                                    borderRadius: 2,
+                                    fontWeight: 600,
                                     '&:hover': {
                                       borderColor: maroon.dark,
                                       bgcolor: alpha(maroon.main, 0.08),
@@ -981,6 +995,7 @@ const ViewApplicantPage = () => {
                       })}
                     </List>
                   </Box>
+                  </Box>
                 </AnimatedPaper>
               </Grow>
             </Stack>
@@ -989,19 +1004,24 @@ const ViewApplicantPage = () => {
           {/* Right Section - Evaluation Form (Vertical) */}
           <Grid item xs={12} md={4}>
             <Grow in={true} timeout={900}>
-              <AnimatedPaper elevation={3} sx={{ p: 3, height: '100%' }}>
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
-                  <AssignmentIcon sx={{ color: maroon.main }} />
-                  <Typography variant="h6" fontWeight="bold" color={maroon.main}>
-                    Evaluation Form
-                  </Typography>
-                </Stack>
-                {currentEvaluation && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                    Evaluation #{currentEvaluation.evaluationId}
-                  </Typography>
-                )}
-                <Divider sx={{ mb: 3, borderColor: alpha(gold.main, 0.5) }} />
+              <AnimatedPaper elevation={0} sx={{ height: '100%', overflow: 'hidden' }}>
+                {/* Evaluation form card header strip */}
+                <Box sx={{ background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 100%)`, p: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <AssignmentIcon sx={{ color: '#fff', fontSize: 22 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold" color="#fff">
+                      Evaluation Form
+                    </Typography>
+                    {currentEvaluation && (
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)' }}>
+                        Evaluation #{currentEvaluation.evaluationId}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+                <Box sx={{ p: 3 }}>
 
                 {applicant && !checkForwardStatus() && (
                   <Alert 
@@ -1172,15 +1192,17 @@ const ViewApplicantPage = () => {
                       textAlign: 'center', 
                       py: 1.5,
                       px: 2,
-                      bgcolor: alpha(theme.palette.grey[500], 0.1),
+                      bgcolor: alpha(maroon.main, 0.05),
+                      border: `1px solid ${alpha(maroon.main, 0.15)}`,
                       borderRadius: 2,
                     }}>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color={maroon.main} fontWeight={600}>
                         🔒 Evaluation has been finalized
                       </Typography>
                     </Box>
                   )}
                 </Stack>
+                </Box>
               </AnimatedPaper>
             </Grow>
           </Grid>
@@ -1192,13 +1214,18 @@ const ViewApplicantPage = () => {
           onClose={() => setConfirmDialogOpen(false)}
           maxWidth="sm"
           fullWidth
+          PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden', boxShadow: '0 20px 60px rgba(106,0,0,0.3)' } }}
         >
           <DialogTitle sx={{ 
-            bgcolor: evaluationStatus === "APPROVED" ? alpha('#2e7d32', 0.1) : alpha('#d32f2f', 0.1),
-            color: evaluationStatus === "APPROVED" ? '#2e7d32' : '#d32f2f',
+            background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 100%)`,
+            color: '#fff',
             fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
           }}>
-            ⚠️ Confirm Final Decision
+            <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>⚠️</Box>
+            Confirm Final Decision
           </DialogTitle>
           <DialogContent sx={{ pt: 3 }}>
             <Typography variant="body1" gutterBottom>
@@ -1214,13 +1241,16 @@ const ViewApplicantPage = () => {
               Are you sure you want to proceed?
             </Typography>
           </DialogContent>
-          <DialogActions sx={{ p: 2, gap: 1 }}>
+          <DialogActions sx={{ p: 2.5, bgcolor: alpha(maroon.main, 0.03), gap: 1 }}>
             <Button 
               onClick={() => setConfirmDialogOpen(false)}
               variant="outlined"
               sx={{ 
-                borderColor: 'grey.400',
-                color: 'text.secondary',
+                borderColor: maroon.main,
+                color: maroon.main,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
               }}
             >
               Cancel
@@ -1230,6 +1260,9 @@ const ViewApplicantPage = () => {
               variant="contained"
               sx={{ 
                 bgcolor: evaluationStatus === "APPROVED" ? '#2e7d32' : '#d32f2f',
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
                 '&:hover': {
                   bgcolor: evaluationStatus === "APPROVED" ? '#1b5e20' : '#b71c1c',
                 },
