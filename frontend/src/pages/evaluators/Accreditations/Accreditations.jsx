@@ -13,7 +13,6 @@ import {
   Stack,
   Avatar,
   alpha,
-  useTheme,
   Select,
   MenuItem,
   Button,
@@ -56,9 +55,11 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: 500,
   '&.MuiTableCell-head': {
     backgroundColor: maroon.main,
-    color: maroon.contrastText,
-    fontSize: 14,
-    fontWeight: 600,
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
   },
 }));
 
@@ -77,30 +78,36 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 const InfoCard = styled(Card)(({ theme }) => ({
   height: '100%',
-  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
-  borderRadius: theme.shape.borderRadius * 1.5,
-  transition: 'box-shadow 0.3s ease',
+  background: 'rgba(255, 255, 255, 0.93)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  boxShadow: '0 4px 24px rgba(106, 0, 0, 0.12), 0 1px 4px rgba(0,0,0,0.06)',
+  borderRadius: theme.shape.borderRadius * 2,
+  transition: 'box-shadow 0.3s ease, transform 0.2s ease',
   '&:hover': {
-    boxShadow: '0 4px 20px rgba(106, 0, 0, 0.15)',
+    boxShadow: '0 8px 32px rgba(106, 0, 0, 0.18)',
+    transform: 'translateY(-1px)',
   },
+  border: `1px solid rgba(255,255,255,0.6)`,
   borderTop: `3px solid ${maroon.main}`,
+  overflow: 'hidden',
 }));
 
 const ActionButton = styled(Button)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius * 1.5,
+  borderRadius: theme.shape.borderRadius * 2,
   textTransform: 'none',
   fontWeight: 600,
   boxShadow: 'none',
   backgroundColor: maroon.main,
+  color: '#fff',
   '&:hover': {
     backgroundColor: maroon.dark,
-    boxShadow: '0 4px 12px rgba(106, 0, 0, 0.25)',
+    boxShadow: '0 4px 12px rgba(106, 0, 0, 0.3)',
   },
 }));
 
 const Accreditations = () => {
     const navigate = useNavigate();
-  const theme = useTheme();
   const evaluatorId = localStorage.getItem("evaluatorId");
   const [acceptedApplicants, setAcceptedApplicants] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -233,65 +240,78 @@ const Accreditations = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
-        <SchoolIcon sx={{ color: maroon.main, fontSize: 32 }} />
-        <Typography variant="h5" fontWeight="bold" color={maroon.dark}>
-          Start Accreditation Process
-        </Typography>
-      </Stack>
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
+      {/* Gradient Page Header */}
+      <Box
+        sx={{
+          background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 60%, ${maroon.light} 100%)`,
+          borderRadius: 3,
+          px: 3, py: 2.5,
+          mb: 3,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          boxShadow: '0 4px 20px rgba(106,0,0,0.25)',
+        }}
+      >
+        <Box sx={{ width: 50, height: 50, borderRadius: '50%', bgcolor: alpha('#fff', 0.15), border: `2px solid ${alpha('#fff', 0.3)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <SchoolIcon sx={{ color: gold.main, fontSize: 28 }} />
+        </Box>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="white" sx={{ lineHeight: 1.2 }}>
+            Start Accreditation Process
+          </Typography>
+          <Typography variant="caption" sx={{ color: alpha('#fff', 0.75) }}>
+            Select accepted applicants from your department to begin the accreditation process
+          </Typography>
+        </Box>
+      </Box>
 
-      {/* Info Card */}
+      {/* Course Filter */}
       <InfoCard sx={{ mb: 3 }}>
         <CardContent>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <PersonAddIcon sx={{ color: gold.main, fontSize: 24 }} />
-            <Box>
-              <Typography variant="h6" fontWeight="bold" color={maroon.main}>
-                Ready for Accreditation
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+            <PersonAddIcon sx={{ color: maroon.main, fontSize: 22 }} />
+            <Typography variant="subtitle1" fontWeight={700} color={maroon.main}>
+              Filter Applicants
+            </Typography>
+          </Stack>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            {/* Course Filter */}
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: 'text.secondary' }}>
+                Filter by Course:
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Select accepted applicants from your department to begin the accreditation process
-              </Typography>
+              <Select
+                value={selectedCourse}
+                onChange={e => setSelectedCourse(e.target.value)}
+                displayEmpty
+                sx={{
+                  width: "100%",
+                  borderRadius: 2,
+                  bgcolor: 'rgba(255,255,255,0.8)',
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: alpha(maroon.main, 0.25) },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: maroon.main },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: maroon.main },
+                }}
+              >
+                <MenuItem value="">All Courses</MenuItem>
+                {courses.map(course => (
+                  <MenuItem key={course.courseId} value={course.courseId}>
+                    {course.courseName}
+                  </MenuItem>
+                ))}
+              </Select>
             </Box>
           </Stack>
         </CardContent>
       </InfoCard>
 
-      {/* Course and Adviser Filters */}
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
-        {/* Course Filter */}
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-            Filter by Course:
-          </Typography>
-          <Select
-            value={selectedCourse}
-            onChange={e => setSelectedCourse(e.target.value)}
-            displayEmpty
-            sx={{ 
-              width: "100%",
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-              }
-            }}
-          >
-            <MenuItem value="">All Courses</MenuItem>
-            {courses.map(course => (
-              <MenuItem key={course.courseId} value={course.courseId}>
-                {course.courseName}
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
-      </Stack>
-
       {/* Main Content */}
       <Grow in={true} timeout={500}>
         <InfoCard>
           <CardContent sx={{ p: 0 }}>
-            <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
+            <Box sx={{ p: 3, borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`, background: `linear-gradient(90deg, ${alpha(maroon.main, 0.04)} 0%, transparent 100%)` }}>
               <Stack direction="row" spacing={2} alignItems="center">
                 <AssignmentIcon sx={{ color: maroon.main }} />
                 <Box>

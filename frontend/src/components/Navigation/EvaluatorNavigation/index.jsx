@@ -171,14 +171,27 @@ const EvaluatorNavigation = ({ children }) => {
   return (
     <Box
       sx={{
-        display: "flex",
+        position: "relative",
         height: "100vh",
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundSize: "cover",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center",
+        overflow: "hidden",
       }}
     >
+      {/* Blurred background layer */}
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
+          filter: "blur(4px) brightness(0.75)",
+          transform: "scale(1.06)",
+          zIndex: 0,
+        }}
+      />
+      {/* Content layer */}
+      <Box sx={{ position: "relative", zIndex: 1, display: "flex", height: "100vh", width: "100%" }}>
       {/* Left NavBar */}
       <Box sx={{ width: 240, bgcolor: "#800000", color: "white", p: 2 }}>
         {/* Logo */}
@@ -277,6 +290,7 @@ const EvaluatorNavigation = ({ children }) => {
         >
           {renderContent()}
         </Box>
+      </Box>
       </Box>
     </Box>
   );

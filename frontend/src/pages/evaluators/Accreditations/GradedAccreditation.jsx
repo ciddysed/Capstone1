@@ -73,9 +73,11 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: 500,
   '&.MuiTableCell-head': {
     backgroundColor: maroon.main,
-    color: maroon.contrastText,
-    fontSize: 14,
-    fontWeight: 600,
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
   },
 }));
 
@@ -94,13 +96,18 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 const InfoCard = styled(Card)(({ theme }) => ({
   height: '100%',
-  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
-  borderRadius: theme.shape.borderRadius * 1.5,
+  background: 'rgba(255, 255, 255, 0.93)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  boxShadow: '0 4px 24px rgba(106, 0, 0, 0.12), 0 1px 4px rgba(0,0,0,0.06)',
+  borderRadius: theme.shape.borderRadius * 2,
   transition: 'box-shadow 0.3s ease',
   '&:hover': {
-    boxShadow: '0 4px 20px rgba(106, 0, 0, 0.15)',
+    boxShadow: '0 8px 32px rgba(106, 0, 0, 0.18)',
   },
+  border: '1px solid rgba(255,255,255,0.6)',
   borderTop: `3px solid ${maroon.main}`,
+  overflow: 'hidden',
 }));
 
 
@@ -108,15 +115,24 @@ const StyledAccordion = styled(Accordion)(({ theme }) => ({
   '&:before': {
     display: 'none',
   },
-  borderRadius: theme.shape.borderRadius * 1.5,
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+  borderRadius: `${theme.shape.borderRadius * 2}px !important`,
+  background: 'rgba(255,255,255,0.93)',
+  backdropFilter: 'blur(10px)',
+  WebkitBackdropFilter: 'blur(10px)',
+  boxShadow: '0 2px 12px rgba(106,0,0,0.09), 0 1px 3px rgba(0,0,0,0.05)',
   marginBottom: theme.spacing(2),
+  border: '1px solid rgba(255,255,255,0.6)',
+  overflow: 'hidden',
+  transition: 'box-shadow 0.2s ease',
+  '&.Mui-expanded': {
+    boxShadow: '0 6px 24px rgba(106,0,0,0.14)',
+  },
 }));
 
 const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
-  backgroundColor: alpha(maroon.main, 0.1),
+  background: `linear-gradient(90deg, ${alpha(maroon.main, 0.08)} 0%, ${alpha(maroon.main, 0.03)} 100%)`,
   '&.Mui-expanded': {
-    backgroundColor: alpha(maroon.main, 0.15),
+    background: `linear-gradient(90deg, ${alpha(maroon.main, 0.13)} 0%, ${alpha(maroon.main, 0.06)} 100%)`,
   },
   '& .MuiAccordionSummary-content': {
     alignItems: 'center',
@@ -124,13 +140,17 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
 }));
 
 const DocumentPreviewContainer = styled(Box)(({ theme }) => ({
-  backgroundColor: '#fff',
-  borderRadius: theme.shape.borderRadius * 1.5,
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+  background: 'rgba(255,255,255,0.93)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  borderRadius: theme.shape.borderRadius * 2,
+  boxShadow: '0 4px 24px rgba(106,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)',
   display: 'flex',
   flexDirection: 'column',
   height: '100%',
-  borderLeft: `3px solid ${maroon.main}`,
+  border: '1px solid rgba(255,255,255,0.6)',
+  borderTop: `3px solid ${maroon.main}`,
+  overflow: 'hidden',
 }));
 
 // Helper functions to avoid nested ternaries
@@ -728,42 +748,64 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
   };
 
   const modalContent = (
-    <Box sx={{ p: 2, height: '100%', overflow: 'auto' }}>
-      {/* Header with Back Button */}
-      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+    <Box sx={{ p: 2, height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+      {/* Gradient Page Header */}
+      <Box
+        sx={{
+          background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 60%, ${maroon.light} 100%)`,
+          borderRadius: 3,
+          px: 3, py: 2,
+          mb: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          boxShadow: '0 4px 20px rgba(106,0,0,0.25)',
+        }}
+      >
         <IconButton
           onClick={onClose}
           size="small"
           sx={{
-            color: maroon.main,
-            '&:hover': {
-              backgroundColor: alpha(maroon.main, 0.1),
-            },
+            color: alpha('#fff', 0.85),
+            bgcolor: alpha('#fff', 0.1),
+            border: `1px solid ${alpha('#fff', 0.2)}`,
+            '&:hover': { bgcolor: alpha('#fff', 0.2), color: '#fff' },
           }}
         >
-          <ArrowBackIcon />
+          <ArrowBackIcon fontSize="small" />
         </IconButton>
-        <GradeIcon sx={{ color: maroon.main, fontSize: 28 }} />
-        <Typography variant="h6" fontWeight="bold" color={maroon.dark}>
-          Graded Accreditation Record
-        </Typography>
-      </Stack>
+        <Box sx={{ width: 42, height: 42, borderRadius: '50%', bgcolor: alpha('#fff', 0.15), border: `2px solid ${alpha('#fff', 0.3)}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <GradeIcon sx={{ color: gold.main, fontSize: 24 }} />
+        </Box>
+        <Box>
+          <Typography variant="h6" fontWeight={700} color="white" sx={{ lineHeight: 1.2 }}>
+            Graded Accreditation Record
+          </Typography>
+          <Typography variant="caption" sx={{ color: alpha('#fff', 0.75) }}>
+            Review and grade subjects for accreditation
+          </Typography>
+        </Box>
+      </Box>
 
       {/* Main Content - Split Layout */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, height: 'calc(100vh - 140px)' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, flex: 1, minHeight: 0 }}>
         
         {/* Left Side: Subject Evaluation & Grading */}
-        <Box sx={{ overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ overflow: 'auto', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           
       {/* Compact Header Section */}
       <Box
         sx={{
           width: '100%',
-          bgcolor: '#fff',
-          borderRadius: 1.5,
+          background: 'rgba(255,255,255,0.93)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderRadius: 2,
           p: 1.5,
           mb: 2,
-          boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+          boxShadow: '0 2px 12px rgba(106,0,0,0.09)',
+          border: '1px solid rgba(255,255,255,0.6)',
+          borderTop: `3px solid ${maroon.main}`,
         }}
       >
         <Stack
@@ -774,9 +816,11 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
         >
           {/* Left Side: Title + Description */}
           <Stack direction="row" spacing={1.5} alignItems="center">
-            <SchoolIcon sx={{ color: gold.main, fontSize: 22 }} />
+            <Box sx={{ width: 36, height: 36, borderRadius: '50%', bgcolor: alpha(maroon.main, 0.1), border: `1.5px solid ${alpha(maroon.main, 0.25)}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <SchoolIcon sx={{ color: maroon.main, fontSize: 20 }} />
+            </Box>
             <Box>
-              <Typography variant="subtitle1" fontWeight="600" color={maroon.main}>
+              <Typography variant="subtitle1" fontWeight={700} color={maroon.main}>
                 Subject Evaluation & Grading
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -1108,10 +1152,12 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
         <DocumentPreviewContainer>
           {/* Header */}
           {!fullScreenMode && (
-          <Box sx={{ p: 1.5, borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`, flexShrink: 0 }}>
+          <Box sx={{ p: 1.5, borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`, flexShrink: 0, background: `linear-gradient(90deg, ${alpha(maroon.main, 0.05)} 0%, transparent 100%)` }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
-              <DescriptionIcon sx={{ color: maroon.main, fontSize: 20 }} />
-              <Typography variant="subtitle1" fontWeight="600" color={maroon.main}>
+              <Box sx={{ width: 30, height: 30, borderRadius: '50%', bgcolor: alpha(maroon.main, 0.1), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <DescriptionIcon sx={{ color: maroon.main, fontSize: 16 }} />
+              </Box>
+              <Typography variant="subtitle1" fontWeight={700} color={maroon.main}>
                 Documents Preview
               </Typography>
             </Stack>
@@ -1255,7 +1301,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
         },
       }}
     >
-      <DialogContent sx={{ p: 0, bgcolor: '#f5f5f5', height: '100vh' }}>
+      <DialogContent sx={{ p: 0, background: 'linear-gradient(135deg, #1a0000 0%, #3d0000 40%, #6A0000 100%)', height: '100vh', overflow: 'hidden' }}>
         {modalContent}
       </DialogContent>
     </Dialog>

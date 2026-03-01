@@ -14,7 +14,6 @@
     Avatar,
     Button,
     alpha,
-    useTheme,
     Card,
     CardContent,
     Grow,
@@ -64,9 +63,11 @@
     fontWeight: 500,
     '&.MuiTableCell-head': {
       backgroundColor: maroon.main,
-      color: maroon.contrastText,
-      fontSize: 14,
-      fontWeight: 600,
+      color: '#ffffff',
+      fontSize: 13,
+      fontWeight: 700,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
     },
   }));
 
@@ -85,31 +86,39 @@
 
   const InfoCard = styled(Card)(({ theme }) => ({
     height: '100%',
-    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
-    borderRadius: theme.shape.borderRadius * 1.5,
-    transition: 'box-shadow 0.3s ease',
+    background: 'rgba(255, 255, 255, 0.93)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    boxShadow: '0 4px 24px rgba(106, 0, 0, 0.12), 0 1px 4px rgba(0,0,0,0.06)',
+    borderRadius: theme.shape.borderRadius * 2,
+    transition: 'box-shadow 0.3s ease, transform 0.2s ease',
     '&:hover': {
-      boxShadow: '0 4px 20px rgba(106, 0, 0, 0.15)',
+      boxShadow: '0 8px 32px rgba(106, 0, 0, 0.18)',
+      transform: 'translateY(-1px)',
     },
+    border: `1px solid rgba(255,255,255,0.6)`,
     borderTop: `3px solid ${maroon.main}`,
+    overflow: 'hidden',
   }));
 
   const ActionButton = styled(Button)(({ theme }) => ({
-    borderRadius: theme.shape.borderRadius * 1.5,
+    borderRadius: theme.shape.borderRadius * 2,
     textTransform: 'none',
     fontWeight: 600,
     boxShadow: 'none',
     backgroundColor: maroon.main,
+    color: '#fff',
     '&:hover': {
       backgroundColor: maroon.dark,
-      boxShadow: '0 4px 12px rgba(106, 0, 0, 0.25)',
+      boxShadow: '0 4px 12px rgba(106, 0, 0, 0.3)',
     },
   }));
 
   const StyledDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialog-paper': {
-      borderRadius: theme.shape.borderRadius * 2,
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+      borderRadius: theme.shape.borderRadius * 2.5,
+      boxShadow: '0 24px 64px rgba(0, 0, 0, 0.22)',
+      overflow: 'hidden',
     },
   }));
 
@@ -184,19 +193,25 @@
     return (
       <StyledDialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
         <DialogTitle sx={{ 
-          backgroundColor: alpha(maroon.main, 0.1), 
-          borderBottom: `2px solid ${maroon.main}`,
+          background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 60%, ${maroon.light} 100%)`,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           fontWeight: 'bold',
-          color: maroon.dark,
+          color: '#ffffff',
+          px: 3,
+          py: 2,
         }}>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <PersonIcon sx={{ color: maroon.main }} />
-            <span>Applicant Details</span>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Box sx={{ width: 36, height: 36, borderRadius: '50%', bgcolor: alpha('#fff', 0.15), border: `2px solid ${alpha('#fff', 0.3)}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <PersonIcon sx={{ color: gold.main, fontSize: 20 }} />
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700} color="white" sx={{ lineHeight: 1.2 }}>Applicant Details</Typography>
+              <Typography variant="caption" sx={{ color: alpha('#fff', 0.75) }}>Full profile and accreditation records</Typography>
+            </Box>
           </Stack>
-          <IconButton onClick={onClose} size="small">
+          <IconButton onClick={onClose} size="small" sx={{ color: alpha('#fff', 0.8), '&:hover': { color: '#fff', bgcolor: alpha('#fff', 0.1) } }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -429,8 +444,20 @@
           )}
         </DialogContent>
 
-        <DialogActions sx={{ p: 2, backgroundColor: alpha(gold.light, 0.05) }}>
-          <Button onClick={onClose} sx={{ color: maroon.main, fontWeight: 600 }}>
+        <DialogActions sx={{ p: 2, bgcolor: alpha(gold.light, 0.1), borderTop: `1px solid ${alpha(maroon.main, 0.1)}` }}>
+          <Button
+            onClick={onClose}
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              borderColor: alpha(maroon.main, 0.4),
+              color: maroon.main,
+              fontWeight: 600,
+              textTransform: 'none',
+              px: 3,
+              '&:hover': { borderColor: maroon.main, bgcolor: alpha(maroon.main, 0.05) },
+            }}
+          >
             Close
           </Button>
         </DialogActions>
@@ -439,7 +466,6 @@
   };
 
   const AccreditedAccounts = () => {
-    const theme = useTheme();
     const [accreditedApplicants, setAccreditedApplicants] = useState([]);
     const [loading, setLoading] = useState(true);
     const location = useLocation();
@@ -519,19 +545,37 @@
     return (
       <>
         <Box sx={{ p: 2 }}>
-          {/* Header */}
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-            <PersonIcon sx={{ color: maroon.main, fontSize: 28 }} />
-            <Typography variant="h6" fontWeight="bold" color={maroon.dark}>
-              Accredited Applicants
-            </Typography>
-          </Stack>
+          {/* Gradient Page Header */}
+          <Box
+            sx={{
+              background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 60%, ${maroon.light} 100%)`,
+              borderRadius: 3,
+              px: 3, py: 2.5,
+              mb: 2.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              boxShadow: '0 4px 20px rgba(106,0,0,0.25)',
+            }}
+          >
+            <Box sx={{ width: 46, height: 46, borderRadius: '50%', bgcolor: alpha('#fff', 0.15), border: `2px solid ${alpha('#fff', 0.3)}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <PersonIcon sx={{ color: gold.main, fontSize: 26 }} />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={700} color="white" sx={{ lineHeight: 1.2 }}>
+                Accredited Applicants
+              </Typography>
+              <Typography variant="caption" sx={{ color: alpha('#fff', 0.75) }}>
+                Students who have completed the accreditation process
+              </Typography>
+            </Box>
+          </Box>
 
           {/* Main Content */}
           <Grow in={true} timeout={500}>
             <InfoCard>
               <CardContent sx={{ p: 0 }}>
-                <Box sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}`, bgcolor: alpha(maroon.main, 0.02) }}>
+                <Box sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${alpha(maroon.main, 0.1)}`, background: `linear-gradient(90deg, ${alpha(maroon.main, 0.04)} 0%, transparent 100%)` }}>
                   <Stack direction="row" spacing={1.5} alignItems="center">
                     <AssignmentIcon sx={{ color: maroon.main, fontSize: 20 }} />
                     <Box>
