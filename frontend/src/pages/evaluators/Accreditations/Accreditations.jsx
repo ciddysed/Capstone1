@@ -119,6 +119,7 @@ const Accreditations = () => {
   const [curriculums, setCurriculums] = useState([]);
   const [selectedCurriculumId, setSelectedCurriculumId] = useState("");
   const [accreditLoading, setAccreditLoading] = useState(false);
+  const [loadingCurriculum, setLoadingCurriculum] = useState(false);
 
   useEffect(() => {
     // Fetch evaluator department
@@ -195,6 +196,41 @@ const Accreditations = () => {
     }
   }, [departmentId]);
 
+  // Auto-fetch curriculum based on selected applicant's course
+  useEffect(() => {
+    if (selectedApplicant?.finalCourse?.courseId && confirmOpen) {
+      setLoadingCurriculum(true);
+      fetch(`https://eteeap-foth.onrender.com/api/curriculums/course/${selectedApplicant.finalCourse.courseId}`)
+        .then(res => {
+          if (res.ok) return res.json();
+          throw new Error('No curriculum found for this course');
+        })
+        .then(curriculum => {
+          setSelectedCurriculumId(curriculum.id);
+          toast.success('Curriculum automatically selected');
+        })
+        .catch(() => {
+          // Fallback: if no direct course-curriculum relationship exists,
+          // try to find a curriculum matching the course's department
+          const courseDeptId = selectedApplicant.finalCourse?.department?.departmentId;
+          if (courseDeptId && curriculums.length > 0) {
+            const matchingCurriculum = curriculums.find(c => 
+              c.department?.departmentId === courseDeptId
+            );
+            if (matchingCurriculum) {
+              setSelectedCurriculumId(matchingCurriculum.id);
+              toast.info('Curriculum auto-selected based on department');
+            } else {
+              toast.warning('Please select a curriculum manually');
+            }
+          } else {
+            toast.warning('Please select a curriculum manually');
+          }
+        })
+        .finally(() => setLoadingCurriculum(false));
+    }
+  }, [selectedApplicant, confirmOpen, curriculums]);
+
   const displayedApplicants = acceptedApplicants.filter(a => {
     const matchesCourse = !selectedCourse || a.finalCourse.courseId === selectedCourse;
     return matchesCourse;
@@ -202,6 +238,7 @@ const Accreditations = () => {
 
   const handleAccreditClick = applicant => {
     setSelectedApplicant(applicant);
+    setSelectedCurriculumId(""); // Reset curriculum selection
     setConfirmOpen(true);
   };
 
@@ -212,14 +249,23 @@ const Accreditations = () => {
     }
 
     setAccreditLoading(true);
+    toast.info("Creating curriculum records... This may take a moment.");
+    
     try {
       const applicantId = selectedApplicant.applicant?.applicantId;
       const params = new URLSearchParams({ curriculumId: selectedCurriculumId });
       const url = `https://eteeap-foth.onrender.com/api/applicants/${applicantId}/create-curriculum-record?${params.toString()}`;
       const response = await fetch(url, { method: "POST" });
+      
       if (response.ok) {
-        // Close modal immediately
+        toast.success("Curriculum records created successfully!");
+        
+        // Wait a moment to ensure records are fully committed to database
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Close modal
         setConfirmOpen(false);
+        
         // Redirect to accredited accounts and open the modal for this applicant
         navigate(`/evaluator/accredited-accounts`, {
           state: {
@@ -533,17 +579,20 @@ const Accreditations = () => {
                 variant="overline"
                 sx={{ color: maroon.main, fontWeight: 700, letterSpacing: 1, fontSize: 10 }}
               >
-                Select Curriculum
+                Curriculum
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-              Choose the curriculum that will be used for this accreditation process.
+              {loadingCurriculum 
+                ? "Automatically selecting curriculum based on course..." 
+                : "The curriculum will be used for this accreditation process."}
             </Typography>
             <Select
               value={selectedCurriculumId}
               onChange={e => setSelectedCurriculumId(e.target.value)}
               displayEmpty
               fullWidth
+              disabled={loadingCurriculum}
               sx={{
                 borderRadius: 2,
                 '& .MuiOutlinedInput-notchedOutline': {
@@ -638,7 +687,7 @@ const Accreditations = () => {
           <ActionButton
             onClick={handleConfirmAccredit}
             variant="contained"
-            disabled={!selectedCurriculumId || accreditLoading}
+            disabled={!selectedCurriculumId || accreditLoading || loadingCurriculum}
             startIcon={
               accreditLoading
                 ? <CircularProgress size={16} sx={{ color: 'white' }} />
@@ -649,13 +698,13 @@ const Accreditations = () => {
               px: 3,
               textTransform: 'none',
               fontWeight: 700,
-              bgcolor: (!selectedCurriculumId || accreditLoading) ? 'grey.300' : maroon.main,
+              bgcolor: (!selectedCurriculumId || accreditLoading || loadingCurriculum) ? 'grey.300' : maroon.main,
               '&:hover': {
-                bgcolor: (!selectedCurriculumId || accreditLoading) ? 'grey.300' : maroon.dark,
+                bgcolor: (!selectedCurriculumId || accreditLoading || loadingCurriculum) ? 'grey.300' : maroon.dark,
               },
             }}
           >
-            {accreditLoading ? 'Processing...' : 'Start Accreditation'}
+            {accreditLoading ? 'Creating Records...' : loadingCurriculum ? 'Loading...' : 'Start Accreditation'}
           </ActionButton>
         </Box>
       </Dialog>

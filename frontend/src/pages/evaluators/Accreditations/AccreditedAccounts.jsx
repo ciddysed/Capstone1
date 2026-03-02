@@ -37,6 +37,7 @@
 
   import GradedAccreditation from "./GradedAccreditation";
   import { API_BASE } from '../../../config';
+  import toast from '../../../utils/toast';
 
   const API_ACCEPTED = `${API_BASE}/accepted-applicants`;
   const API_SUBJECT_RECORDS = `${API_BASE}/applicant-subject-records`;
@@ -476,15 +477,56 @@
       applicantId: null,
       curriculumId: null,
     });
+    const [pollingRecords, setPollingRecords] = useState(false);
 
-    // Open modal automatically if redirected with state
+    // Open modal automatically if redirected with state - with polling
     useEffect(() => {
       if (location.state?.openApplicantId && location.state?.openCurriculumId) {
-        setSelectedModalData({
-          applicantId: location.state.openApplicantId,
-          curriculumId: location.state.openCurriculumId,
-        });
-        setGradedModalOpen(true);
+        const applicantId = location.state.openApplicantId;
+        const curriculumId = location.state.openCurriculumId;
+        
+        setPollingRecords(true);
+        toast.info("Loading accreditation records...");
+        
+        let pollCount = 0;
+        const maxPolls = 20; // Maximum 10 seconds (20 * 500ms)
+        
+        const checkRecords = async () => {
+          try {
+            const res = await fetch(`${API_SUBJECT_RECORDS}/applicant/${applicantId}`);
+            
+            if (!res.ok) {
+              throw new Error('Failed to fetch records');
+            }
+            
+            const records = await res.json();
+            
+            if (records && records.length > 0) {
+              // Records are ready, open the modal
+              setSelectedModalData({
+                applicantId,
+                curriculumId,
+              });
+              setGradedModalOpen(true);
+              setPollingRecords(false);
+              toast.success("Accreditation records loaded successfully!");
+            } else if (pollCount < maxPolls) {
+              // Records not ready yet, wait and try again
+              pollCount++;
+              setTimeout(checkRecords, 500);
+            } else {
+              // Timeout - records still not available
+              setPollingRecords(false);
+              toast.error("Records are taking longer than expected. Please refresh the page.");
+            }
+          } catch (error) {
+            console.error("Error checking records:", error);
+            setPollingRecords(false);
+            toast.error("Failed to load accreditation records. Please try again.");
+          }
+        };
+        
+        checkRecords();
       }
     }, [location.state]);
 
@@ -706,6 +748,43 @@
           applicantId={selectedModalData.applicantId}
           curriculumId={selectedModalData.curriculumId}
         />
+
+        {/* Polling Overlay */}
+        {pollingRecords && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              bgcolor: alpha('#000', 0.5),
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+            }}
+          >
+            <Card
+              sx={{
+                p: 4,
+                minWidth: 300,
+                textAlign: 'center',
+                bgcolor: 'white',
+                borderRadius: 3,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+              }}
+            >
+              <CircularProgress size={48} sx={{ color: maroon.main, mb: 2 }} />
+              <Typography variant="h6" fontWeight={600} color={maroon.main} gutterBottom>
+                Preparing Accreditation Records
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Please wait while we load the curriculum records...
+              </Typography>
+            </Card>
+          </Box>
+        )}
       </>
     );
   };
