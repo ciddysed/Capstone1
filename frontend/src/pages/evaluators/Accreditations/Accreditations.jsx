@@ -24,6 +24,7 @@ import { styled } from "@mui/material/styles";
 import SchoolIcon from '@mui/icons-material/School';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import toast from "../../../utils/toast";
 
 const API_URL = 'https://eteeap-foth.onrender.com/api/accepted-applicants';
 const EVALUATOR_API = 'https://eteeap-foth.onrender.com/api/evaluators';
@@ -107,6 +108,7 @@ const Accreditations = () => {
   const [selectedCourse, setSelectedCourse] = useState("");
   const [loading, setLoading] = useState(true);
   const [departmentId, setDepartmentId] = useState(null);
+  const [processingApplicantId, setProcessingApplicantId] = useState(null);
 
   useEffect(() => {
     // Fetch evaluator department
@@ -178,14 +180,76 @@ const Accreditations = () => {
     return matchesCourse;
   });
 
-  const handleAccreditClick = applicant => {
-    // Navigate directly to accredited accounts with applicant info
-    navigate(`/evaluator/accredited-accounts`, {
-      state: {
-        openApplicantId: applicant.applicant?.applicantId,
-        applicantData: applicant
+  const handleAccreditClick = async (applicant) => {
+    const applicantId = applicant.applicant?.applicantId;
+    setProcessingApplicantId(applicantId);
+    toast.info("Processing accreditation... This may take a moment.");
+
+    try {
+      const courseId = applicant.finalCourse?.courseId;
+
+      // Step 1: Auto-fetch curriculum based on course
+      let selectedCurriculumId = null;
+      
+      try {
+        const curriculumResponse = await fetch(`https://eteeap-foth.onrender.com/api/curriculums/course/${courseId}`);
+        if (curriculumResponse.ok) {
+          const curriculum = await curriculumResponse.json();
+          selectedCurriculumId = curriculum.id;
+        } else {
+          throw new Error('No direct course-curriculum match');
+        }
+      } catch {
+        // Fallback: find curriculum by department
+        const courseDeptId = applicant.finalCourse?.department?.departmentId;
+        if (courseDeptId && departmentId) {
+          try {
+            const deptCurriculumsResponse = await fetch(`https://eteeap-foth.onrender.com/api/curriculums?departmentId=${courseDeptId}`);
+            const deptCurriculums = await deptCurriculumsResponse.json();
+            if (deptCurriculums.length > 0) {
+              selectedCurriculumId = deptCurriculums[0].id;
+            }
+          } catch (err) {
+            console.error('Error fetching department curriculums:', err);
+          }
+        }
       }
-    });
+
+      if (!selectedCurriculumId) {
+        toast.error("No matching curriculum found for this course. Please contact admin.");
+        setProcessingApplicantId(null);
+        return;
+      }
+
+      // Step 2: Create curriculum records
+      toast.info("Creating curriculum records...");
+      const params = new URLSearchParams({ curriculumId: selectedCurriculumId });
+      const url = `https://eteeap-foth.onrender.com/api/applicants/${applicantId}/create-curriculum-record?${params.toString()}`;
+      const response = await fetch(url, { method: "POST" });
+      
+      if (response.ok) {
+        toast.success("Curriculum records created successfully!");
+        
+        // Wait a moment to ensure records are fully committed to database
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Navigate to accredited accounts and open the grading modal for this applicant
+        navigate(`/evaluator/accredited-accounts`, {
+          state: {
+            openApplicantId: applicantId,
+            openCurriculumId: selectedCurriculumId
+          }
+        });
+      } else {
+        const errorText = await response.text();
+        toast.error(`Failed to create curriculum record: ${response.status} ${errorText}`);
+      }
+    } catch (err) {
+      console.error("Error creating curriculum record:", err);
+      toast.error("Network error while creating curriculum record. Please try again.");
+    } finally {
+      setProcessingApplicantId(null);
+    }
   };
 
   return (
@@ -332,8 +396,16 @@ const Accreditations = () => {
                           variant="contained"
                           size="small"
                           onClick={() => handleAccreditClick(app)}
+                          disabled={processingApplicantId === app.applicant?.applicantId}
+                          startIcon={
+                            processingApplicantId === app.applicant?.applicantId
+                              ? <CircularProgress size={16} sx={{ color: 'white' }} />
+                              : <AssignmentIcon />
+                          }
                         >
-                          Start Accreditation
+                          {processingApplicantId === app.applicant?.applicantId
+                            ? 'Processing...'
+                            : 'Start Accreditation'}
                         </ActionButton>
                       </StyledTableCell>
                     </StyledTableRow>
