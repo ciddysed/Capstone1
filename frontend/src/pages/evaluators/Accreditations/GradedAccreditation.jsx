@@ -24,6 +24,7 @@ import {
   Autocomplete,
   Dialog,
   DialogContent,
+  DialogActions,
   MenuItem,
   Select,
   FormControl,
@@ -37,8 +38,6 @@ import GradeIcon from '@mui/icons-material/Grade';
 import SchoolIcon from '@mui/icons-material/School';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import BookIcon from '@mui/icons-material/Book';
-import PersonIcon from '@mui/icons-material/Person';
-import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DescriptionIcon from '@mui/icons-material/Description';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -168,7 +167,7 @@ const getStatusTextColor = (status) => {
 
 const getGradeStyles = (hasGrade) => ({
   fontWeight: hasGrade ? 600 : 400,
-  color: hasGrade ? 'text.primary' : 'text.secondary'
+  color: hasGrade ? '#000000' : '#666666'
 });
 
 const getFileIcon = (fileType, size = 'small') => {
@@ -434,13 +433,17 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
   const [advisers, setAdvisers] = useState([]);
   const [selectedAdviser, setSelectedAdviser] = useState(null);
   const [existingAssignment, setExistingAssignment] = useState(null);
-  const [savingAdviser, setSavingAdviser] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [selectedDocumentType, setSelectedDocumentType] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
   const [fullScreenMode, setFullScreenMode] = useState(false);
   const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [applicantStatus, setApplicantStatus] = useState('PENDING');
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState('PENDING');
+  const [modalAdviser, setModalAdviser] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const saveTimers = useRef({});
 
   const flushTimers = () => {
@@ -649,78 +652,66 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
     fetchAdvisers();
   }, []);
 
-  // Handle adviser selection and save to backend
-  const handleAdviserChange = async (event, newValue) => {
-    setSelectedAdviser(newValue);
-    
-    if (!newValue || !applicantId) return;
+  // Handle accreditation status update
+  const handleUpdateAccreditationStatus = async (newStatus) => {
+    if (!applicantId) return;
 
-    setSavingAdviser(true);
+    setUpdatingStatus(true);
     try {
-      if (existingAssignment) {
-        // Update existing assignment - backend only accepts notes in PUT
-        const updateRes = await axios.put(`${API_BASE}/assignments/${existingAssignment.assignmentId}`, {
-          notes: existingAssignment.notes || ""
-        });
-        console.log("Assignment updated successfully:", updateRes.data);
-        toast.success("Adviser assignment updated successfully.");
-        // Update the existing assignment state without re-selecting
-        setExistingAssignment(updateRes.data);
-      } else {
-        // Create new assignment
-        const createRes = await axios.post(`${API_BASE}/assignments`, {
-          applicantId: applicantId,
-          evaluatorId: newValue.evaluatorId,
-          notes: ""
-        });
-        console.log("Assignment created successfully:", createRes.data);
-        toast.success("Adviser assigned successfully.");
-        // Set the newly created assignment
-        if (createRes.data?.assignmentId) {
-          setExistingAssignment(createRes.data);
+      const params = new URLSearchParams();
+      params.append('accreditationStatus', newStatus);
+      
+      const response = await axios.patch(
+        `${API_BASE}/applicants/${applicantId}/accreditation-status?${params.toString()}`,
+        null,
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+      
+      if (response.data?.message) {
+        setApplicantStatus(newStatus);
+        
+        // If status is APPROVED and adviser is selected, assign adviser
+        if (newStatus === 'APPROVED' && modalAdviser) {
+          try {
+            if (existingAssignment) {
+              // Update existing assignment
+              await axios.put(`${API_BASE}/assignments/${existingAssignment.assignmentId}`, {
+                notes: existingAssignment.notes || ""
+              });
+            } else {
+              // Create new assignment
+              const assignRes = await axios.post(`${API_BASE}/assignments`, {
+                applicantId: applicantId,
+                evaluatorId: modalAdviser.evaluatorId,
+                notes: ""
+              });
+              if (assignRes.data?.assignmentId) {
+                setExistingAssignment(assignRes.data);
+              }
+            }
+            toast.success("Accreditation status updated and adviser assigned successfully!");
+          } catch (assignError) {
+            console.error("Error assigning adviser:", assignError);
+            toast.success(response.data.message); // Status was updated, just adviser failed
+            toast.error("Status updated but failed to assign adviser. Please try again.");
+          }
+        } else {
+          toast.success(response.data.message);
         }
+        
+        setStatusModalOpen(false);
+        setModalAdviser(null);
       }
     } catch (error) {
-      console.error("Error saving adviser assignment:", error);
-      console.error("Error details:", error.response?.data || error.message);
-      toast.error("Failed to save adviser assignment. Please try again.");
-      // Reset selected adviser on error
-      setSelectedAdviser(null);
+      console.error('Error updating accreditation status:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update accreditation status. Please try again.';
+      toast.error(errorMessage);
     } finally {
-      setSavingAdviser(false);
+      setUpdatingStatus(false);
     }
   };
 
   // Handle delete/clear adviser assignment
-  const handleDeleteAssignment = async () => {
-    if (!existingAssignment) {
-      toast.info("No assignment to delete");
-      return;
-    }
-
-    // Confirm deletion
-    if (!globalThis.confirm("Are you sure you want to delete this adviser assignment?")) {
-      return;
-    }
-
-    setSavingAdviser(true);
-    try {
-      await axios.delete(`${API_BASE}/assignments/${existingAssignment.assignmentId}`);
-      console.log("Assignment deleted successfully");
-      toast.success("Adviser assignment deleted successfully.");
-      
-      // Clear the selection
-      setSelectedAdviser(null);
-      setExistingAssignment(null);
-    } catch (error) {
-      console.error("Error deleting adviser assignment:", error);
-      console.error("Error details:", error.response?.data || error.message);
-      toast.error("Failed to delete adviser assignment. Please try again.");
-    } finally {
-      setSavingAdviser(false);
-    }
-  };
-
   // Accreditation function (bulk create records from curriculum)
 
 
@@ -829,70 +820,44 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
             </Box>
           </Stack>
 
-          {/* Right Side: Adviser Selection */}
-          <Stack direction="row" spacing={1} alignItems="center">
-            <PersonIcon sx={{ color: maroon.main, fontSize: 20 }} />
-            <Autocomplete
-              options={advisers}
-              value={selectedAdviser}
-              onChange={handleAdviserChange}
-              getOptionLabel={(option) =>
-                option?.firstName
-                  ? `${option.firstName} ${option.lastName}`
-                  : option?.name || option?.email?.split("@")[0] || ""
+          {/* Right Side: Status and Action */}
+          <Stack direction="row" spacing={2} alignItems="center">
+            {/* Current Status Display */}
+            <Chip
+              label={applicantStatus}
+              color={
+                applicantStatus === 'APPROVED' ? 'success' :
+                applicantStatus === 'REJECTED' ? 'error' :
+                applicantStatus === 'UNDER_REVIEW' ? 'info' :
+                applicantStatus === 'CONDITIONAL' ? 'warning' :
+                'default'
               }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Assign Adviser"
-                  size="small"
-                  sx={{ 
-                    width: 200,
-                    '& .MuiInputBase-root': {
-                      fontSize: 13,
-                    }
-                  }}
-                  slotProps={{
-                    input: {
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {savingAdviser ? <CircularProgress size={16} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    },
-                  }}
-                />
-              )}
-              disabled={savingAdviser}
-              noOptionsText="No evaluators found"
-              sx={{
-                '& .MuiAutocomplete-listbox': {
-                  '& .MuiAutocomplete-option': {
-                    fontSize: 13,
-                    py: 0.75,
-                  },
-                },
-              }}
+              size="small"
+              variant="outlined"
+              sx={{ fontSize: 12, fontWeight: 600 }}
             />
 
-            {/* Delete Button */}
-            {selectedAdviser && existingAssignment && (
-              <Tooltip title="Delete assignment">
-                <IconButton
-                  size="small"
-                  onClick={handleDeleteAssignment}
-                  disabled={savingAdviser}
-                  sx={{
-                    color: '#d32f2f',
-                    '&:hover': { bgcolor: 'rgba(211,47,47,0.1)' },
-                  }}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
+            {/* Update Accreditation Status Button */}
+            <Button
+              variant="contained"
+              onClick={() => {
+                setSelectedStatus(applicantStatus);
+                setModalAdviser(selectedAdviser);
+                setStatusModalOpen(true);
+              }}
+              sx={{
+                bgcolor: maroon.main,
+                '&:hover': { bgcolor: maroon.dark },
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+              startIcon={<GradeIcon />}
+            >
+              Update Status
+            </Button>
           </Stack>
         </Stack>
       </Box>
@@ -1287,24 +1252,194 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
     );
 
   return (
-    <Dialog
-      open={isOpen}
-      onClose={onClose}
-      maxWidth="xl"
-      fullWidth
-      fullScreen
-      slotProps={{
-        paper: {
-          sx: {
-            borderRadius: 0,
+    <>
+      <Dialog
+        open={isOpen}
+        onClose={onClose}
+        maxWidth="xl"
+        fullWidth
+        fullScreen
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 0,
+            },
           },
-        },
-      }}
-    >
-      <DialogContent sx={{ p: 0, background: 'linear-gradient(135deg, #1a0000 0%, #3d0000 40%, #6A0000 100%)', height: '100vh', overflow: 'hidden' }}>
-        {modalContent}
-      </DialogContent>
-    </Dialog>
+        }}
+      >
+        <DialogContent sx={{ p: 0, background: 'linear-gradient(135deg, #1a0000 0%, #3d0000 40%, #6A0000 100%)', height: '100vh', overflow: 'hidden' }}>
+          {modalContent}
+        </DialogContent>
+      </Dialog>
+
+      {/* Accreditation Status Update Modal */}
+      <Dialog
+        open={statusModalOpen}
+        onClose={() => setStatusModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              overflow: 'hidden'
+            }
+          }
+        }}
+      >
+        <Box sx={{ 
+          background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 100%)`,
+          p: 3,
+          color: 'white'
+        }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Box sx={{ 
+              width: 40, 
+              height: 40, 
+              borderRadius: '50%', 
+              bgcolor: alpha('#fff', 0.15), 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center' 
+            }}>
+              <GradeIcon sx={{ color: gold.main, fontSize: 22 }} />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={700}>
+                Update Accreditation Status
+              </Typography>
+              <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                Change the applicant's accreditation status
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
+
+        <DialogContent sx={{ p: 3 }}>
+          <Stack spacing={2.5}>
+            {/* Status Selection */}
+            <FormControl fullWidth>
+              <InputLabel>Accreditation Status</InputLabel>
+              <Select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                label="Accreditation Status"
+                disabled={updatingStatus}
+              >
+                <MenuItem value="PENDING">PENDING</MenuItem>
+                <MenuItem value="UNDER_REVIEW">UNDER_REVIEW</MenuItem>
+                <MenuItem value="DOCUMENTS_REQUIRED">DOCUMENTS_REQUIRED</MenuItem>
+                <MenuItem value="APPROVED">APPROVED</MenuItem>
+                <MenuItem value="REJECTED">REJECTED</MenuItem>
+                <MenuItem value="CONDITIONAL">CONDITIONAL</MenuItem>
+                <MenuItem value="ON_HOLD">ON_HOLD</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Current Status */}
+            <Typography variant="body2" color="text.secondary">
+              Current Status: <strong sx={{ color: maroon.main }}>{applicantStatus}</strong>
+            </Typography>
+
+            <Divider />
+
+            {/* Adviser Assignment - Only when APPROVED */}
+            {selectedStatus === 'APPROVED' && (
+              <Stack spacing={1.5}>
+                <Box sx={{ 
+                  bgcolor: alpha('#4caf50', 0.08),
+                  p: 1.5,
+                  borderRadius: 1.5,
+                  border: `1px solid ${alpha('#4caf50', 0.3)}`
+                }}>
+                  <Typography 
+                    variant="caption" 
+                    color="success.main" 
+                    sx={{ fontWeight: 600 }}
+                  >
+                    ✓ Approved status allows adviser assignment
+                  </Typography>
+                </Box>
+
+                <Autocomplete
+                  options={advisers}
+                  value={modalAdviser}
+                  onChange={(e, value) => setModalAdviser(value)}
+                  disabled={updatingStatus}
+                  getOptionLabel={(option) =>
+                    option?.firstName
+                      ? `${option.firstName} ${option.lastName}`
+                      : option?.name || option?.email?.split("@")[0] || ""
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Assign Adviser"
+                      placeholder="Search and select adviser..."
+                      helperText="Select an adviser to assign after approval"
+                    />
+                  )}
+                  noOptionsText="No advisers found"
+                  sx={{
+                    '& .MuiAutocomplete-listbox': {
+                      '& .MuiAutocomplete-option': {
+                        fontSize: 13,
+                        py: 1,
+                      },
+                    },
+                  }}
+                />
+              </Stack>
+            )}
+
+            {/* Info for Non-Approved Status */}
+            {selectedStatus !== 'APPROVED' && (
+              <Box sx={{ 
+                bgcolor: alpha('#ff9800', 0.08),
+                p: 1.5,
+                borderRadius: 1.5,
+                border: `1px solid ${alpha('#ff9800', 0.3)}`
+              }}>
+                <Typography 
+                  variant="caption" 
+                  color="warning.main" 
+                  sx={{ fontWeight: 600 }}
+                >
+                  Adviser assignment will be available after approval
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, bgcolor: alpha(gold.light, 0.1) }}>
+          <Button
+            onClick={() => setStatusModalOpen(false)}
+            disabled={updatingStatus}
+            sx={{ 
+              color: 'text.secondary',
+              '&:hover': { bgcolor: alpha('#9e9e9e', 0.05) }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleUpdateAccreditationStatus(selectedStatus)}
+            variant="contained"
+            disabled={updatingStatus || selectedStatus === applicantStatus}
+            startIcon={updatingStatus ? <CircularProgress size={16} /> : <GradeIcon />}
+            sx={{
+              bgcolor: maroon.main,
+              '&:hover': { bgcolor: maroon.dark },
+              borderRadius: 2,
+              px: 3
+            }}
+          >
+            {updatingStatus ? 'Updating...' : 'Update Status'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 

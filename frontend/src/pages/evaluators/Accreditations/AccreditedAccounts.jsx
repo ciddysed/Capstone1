@@ -665,6 +665,7 @@
                           <StyledTableCell>Course</StyledTableCell>
                           <StyledTableCell>Acceptance Date</StyledTableCell>
                           <StyledTableCell align="center">Actions</StyledTableCell>
+                          <StyledTableCell>Accreditation Status</StyledTableCell>                         
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -690,6 +691,7 @@
                                   : "-"}
                               </Typography>
                             </StyledTableCell>
+                      
                             <StyledTableCell align="center">
                               <Stack direction="row" spacing={1} justifyContent="center">
                                 <ActionButton
@@ -721,6 +723,20 @@
                                   Accredit
                                 </ActionButton>
                               </Stack>
+                            </StyledTableCell>
+                            <StyledTableCell>
+                              <Chip
+                                label={app.applicant?.accreditationStatus || 'PENDING'}
+                                color={
+                                  app.applicant?.accreditationStatus === 'APPROVED' ? 'success' :
+                                  app.applicant?.accreditationStatus === 'REJECTED' ? 'error' :
+                                  app.applicant?.accreditationStatus === 'UNDER_REVIEW' ? 'info' :
+                                  app.applicant?.accreditationStatus === 'CONDITIONAL' ? 'warning' :
+                                  'default'
+                                }
+                                size="small"
+                                variant="outlined"
+                              />
                             </StyledTableCell>
                           </StyledTableRow>
                         ))}
