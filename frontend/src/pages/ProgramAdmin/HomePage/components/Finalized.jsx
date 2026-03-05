@@ -35,13 +35,6 @@ const maroon = {
   contrastText: '#FFFFFF',
 };
 
-const gold = {
-  light: '#FFF0B9',
-  main: '#FFC72C',
-  dark: '#D4A500',
-  contrastText: '#000000',
-};
-
 const API_URL = "https://eteeap-foth.onrender.com/api/accepted-applicants";
 
 // Styled components

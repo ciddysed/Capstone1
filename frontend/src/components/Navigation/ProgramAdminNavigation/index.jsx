@@ -38,7 +38,6 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ChatIcon from "@mui/icons-material/Chat";
 import PersonIcon from '@mui/icons-material/Person';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import logo from "../../../assets/logo.png";
 import backgroundImage from "../../../assets/login-bg.png";
 import { useNavigate } from "react-router-dom";

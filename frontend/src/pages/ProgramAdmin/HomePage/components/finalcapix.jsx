@@ -4,14 +4,8 @@ import {
   Box,
   Typography,
   alpha,
-  useTheme,
-  Paper,
   CircularProgress,
-  Avatar,
   Stack,
-  Grid,
-  Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
@@ -28,21 +22,13 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   FormControl,
   InputLabel,
   Select,
-  MenuItem,
-  TextField,
-  Autocomplete
+  MenuItem
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import PersonIcon from '@mui/icons-material/Person';
 import SchoolIcon from '@mui/icons-material/School';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GradeIcon from '@mui/icons-material/Grade';
@@ -57,7 +43,6 @@ import axios from 'axios';
 
 // API configuration
 const API_BASE = "https://eteeap-foth.onrender.com/api";
-const EVALUATOR_API = `${API_BASE}/evaluators`;
 
 // Custom maroon and gold color palette
 const maroon = {
@@ -98,22 +83,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '&:last-child td, &:last-child th': {
     border: 0,
   },
-}));
-
-const InfoCard = styled(Card)(({ theme }) => ({
-  height: '100%',
-  background: 'rgba(255, 255, 255, 0.93)',
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
-  boxShadow: '0 4px 24px rgba(106, 0, 0, 0.12), 0 1px 4px rgba(0,0,0,0.06)',
-  borderRadius: theme.shape.borderRadius * 2,
-  transition: 'box-shadow 0.3s ease',
-  '&:hover': {
-    boxShadow: '0 8px 32px rgba(106, 0, 0, 0.18)',
-  },
-  border: '1px solid rgba(255,255,255,0.6)',
-  borderTop: `3px solid ${maroon.main}`,
-  overflow: 'hidden',
 }));
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
@@ -184,16 +153,6 @@ const getFileIcon = (fileType, size = 'small') => {
     return <ImageIcon fontSize={iconSize} sx={{ color: '#1976d2', ...iconStyle }} />;
   }
   return <DescriptionIcon fontSize={iconSize} sx={iconStyle} />;
-};
-
-const getInitials = (name) => {
-  if (!name) return "??";
-  return name
-    .split(' ')
-    .map(part => part.charAt(0))
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
 };
 
 const getGradeStyles = (hasGrade) => ({
@@ -363,7 +322,6 @@ const DocumentPreview = ({ document, onPreview, onDownload, previewMode, onClose
 };
 
 const FinalCapix = () => {
-  const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const { applicantId, applicantName, finalCourse } = location.state || {};
@@ -377,7 +335,6 @@ const FinalCapix = () => {
   const [fullScreenMode, setFullScreenMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [documentsLoading, setDocumentsLoading] = useState(false);
-  const [applicantData, setApplicantData] = useState(null);
 
   // Handle document preview inline
   const handlePreviewDocument = (documentId) => {
@@ -444,8 +401,7 @@ const FinalCapix = () => {
         setRecords(sortSemesterSubjects(recordsResponse.data));
 
         // Fetch applicant details
-        const applicantResponse = await axios.get(`${API_BASE}/applicants/${applicantId}`);
-        setApplicantData(applicantResponse.data);
+        await axios.get(`${API_BASE}/applicants/${applicantId}`);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {

@@ -157,16 +157,6 @@ const AcceptedStudentsTab = () => {
     }
   };
 
-  // Get status color
-  const getStatusColor = (status) => {
-    const statusMap = {
-      ACCEPTED: "success",
-      ENROLLED: "info",
-      WITHDRAWN: "warning",
-    };
-    return statusMap[status] || "default";
-  };
-
   // Get accreditation status color
   const getAccreditationStatusColor = (status) => {
     const statusMap = {
