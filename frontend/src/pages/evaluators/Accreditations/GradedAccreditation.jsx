@@ -444,6 +444,8 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
   const [selectedStatus, setSelectedStatus] = useState('PENDING');
   const [modalAdviser, setModalAdviser] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [hasSubmittedSelfEvaluation, setHasSubmittedSelfEvaluation] = useState(null);
+  const [checkingSelfEvaluation, setCheckingSelfEvaluation] = useState(true);
   const saveTimers = useRef({});
 
   const flushTimers = () => {
@@ -651,6 +653,31 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
     };
     fetchAdvisers();
   }, []);
+
+  // Check if applicant has submitted self-evaluation
+  useEffect(() => {
+    if (!applicantId || !isOpen) {
+      setCheckingSelfEvaluation(false);
+      return;
+    }
+
+    setCheckingSelfEvaluation(true);
+    // Fetch the applicant data to check hasSubmitted field
+    axios
+      .get(`${API_BASE}/applicants/${applicantId}`)
+      .then((res) => {
+        const hasSubmitted = res.data?.hasSubmitted || false;
+        setHasSubmittedSelfEvaluation(hasSubmitted);
+      })
+      .catch((err) => {
+        console.error("Failed to check self-evaluation status:", err);
+        // Default to false if there's an error
+        setHasSubmittedSelfEvaluation(false);
+      })
+      .finally(() => {
+        setCheckingSelfEvaluation(false);
+      });
+  }, [applicantId, isOpen]);
 
   // Handle accreditation status update
   const handleUpdateAccreditationStatus = async (newStatus) => {
@@ -1436,6 +1463,122 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
             }}
           >
             {updatingStatus ? 'Updating...' : 'Update Status'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Self-Evaluation Not Submitted Modal - Blocking */}
+      <Dialog
+        open={isOpen && hasSubmittedSelfEvaluation === false}
+        maxWidth="sm"
+        fullWidth
+        disableEscapeKeyDown
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              overflow: 'hidden',
+              boxShadow: '0 24px 48px rgba(0, 0, 0, 0.4)'
+            }
+          }
+        }}
+      >
+        <Box sx={{ 
+          background: `linear-gradient(135deg, ${maroon.dark} 0%, ${maroon.main} 100%)`,
+          p: 3,
+          color: 'white'
+        }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Box sx={{ 
+              width: 50, 
+              height: 50, 
+              borderRadius: '50%', 
+              bgcolor: alpha('#fff', 0.15), 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              border: `2px solid ${alpha('#fff', 0.3)}`
+            }}>
+              <AssignmentIcon sx={{ color: gold.main, fontSize: 28 }} />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={700}>
+                Self-Evaluation Required
+              </Typography>
+              <Typography variant="caption" sx={{ opacity: 0.85 }}>
+                Applicant action needed
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
+
+        <DialogContent sx={{ p: 4 }}>
+          <Stack spacing={3}>
+            {/* Warning Message */}
+            <Box sx={{ 
+              bgcolor: alpha('#ff9800', 0.08),
+              p: 2.5,
+              borderRadius: 2,
+              border: `2px solid ${alpha('#ff9800', 0.3)}`,
+              textAlign: 'center'
+            }}>
+              <Typography variant="body1" fontWeight={600} color="text.primary" gutterBottom>
+                Cannot Start Accreditation
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                The applicant has not yet submitted their Pre-Evaluation Self-Assessment. 
+                The accreditation process can only begin after the applicant completes and submits their self-evaluation.
+              </Typography>
+            </Box>
+
+            {/* Instructions */}
+            <Stack spacing={1.5} sx={{ 
+              bgcolor: alpha(maroon.main, 0.05),
+              p: 2,
+              borderRadius: 1.5,
+              borderLeft: `4px solid ${maroon.main}`
+            }}>
+              <Typography variant="subtitle2" fontWeight={600} color={maroon.main}>
+                Next Steps:
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ pl: 1 }}>
+                • Contact the applicant to complete their self-assessment
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ pl: 1 }}>
+                • Wait for the applicant to submit their evaluation
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ pl: 1 }}>
+                • Return to this page once the submission is complete
+              </Typography>
+            </Stack>
+
+            {checkingSelfEvaluation && (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, py: 1 }}>
+                <CircularProgress size={20} />
+                <Typography variant="body2" color="text.secondary">
+                  Checking submission status...
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2.5, bgcolor: alpha(gold.light, 0.1), borderTop: `1px solid ${alpha(maroon.main, 0.1)}` }}>
+          <Button
+            onClick={onClose}
+            variant="contained"
+            fullWidth
+            sx={{
+              bgcolor: maroon.main,
+              '&:hover': { bgcolor: maroon.dark },
+              borderRadius: 2,
+              py: 1.2,
+              fontSize: 15,
+              fontWeight: 600,
+              textTransform: 'none'
+            }}
+          >
+            Go Back
           </Button>
         </DialogActions>
       </Dialog>

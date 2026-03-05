@@ -1,5 +1,5 @@
   import React, { useEffect, useState } from "react";
-  import { useLocation } from "react-router-dom";
+  import { useLocation, useNavigate } from "react-router-dom";
   import {
     Box,
     Typography,
@@ -470,6 +470,7 @@
     const [accreditedApplicants, setAccreditedApplicants] = useState([]);
     const [loading, setLoading] = useState(true);
     const location = useLocation();
+    const navigate = useNavigate();
     const [gradedModalOpen, setGradedModalOpen] = useState(false);
     const [detailsModalOpen, setDetailsModalOpen] = useState(false);
     const [selectedApplicant, setSelectedApplicant] = useState(null);
@@ -478,12 +479,18 @@
       curriculumId: null,
     });
     const [pollingRecords, setPollingRecords] = useState(false);
+    const [returnToAccreditations, setReturnToAccreditations] = useState(false);
 
     // Open modal automatically if redirected with state - with polling
     useEffect(() => {
       if (location.state?.openApplicantId && location.state?.openCurriculumId) {
         const applicantId = location.state.openApplicantId;
         const curriculumId = location.state.openCurriculumId;
+        
+        // Store the returnToAccreditations flag
+        if (location.state?.returnToAccreditations) {
+          setReturnToAccreditations(true);
+        }
         
         setPollingRecords(true);
         toast.info("Loading accreditation records...");
@@ -582,6 +589,12 @@
     const handleCloseGradedModal = () => {
       setGradedModalOpen(false);
       setSelectedModalData({ applicantId: null, curriculumId: null });
+      
+      // If we came from Accreditations page, navigate back there
+      if (returnToAccreditations) {
+        setReturnToAccreditations(false);
+        navigate('/evaluator/accreditations');
+      }
     };
 
     return (
