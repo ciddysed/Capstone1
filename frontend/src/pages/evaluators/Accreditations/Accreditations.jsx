@@ -405,7 +405,7 @@ const Accreditations = () => {
                         >
                           {processingApplicantId === app.applicant?.applicantId
                             ? 'Processing...'
-                            : 'Start Accreditation'}
+                            : 'Open Accreditation'}
                         </ActionButton>
                       </StyledTableCell>
                     </StyledTableRow>
