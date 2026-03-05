@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import PropTypes from 'prop-types';
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -428,6 +429,7 @@ const DocumentPreview = ({ document, onPreview, onDownload, previewMode, onClose
 };
 
 const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => {
+  const navigate = useNavigate();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [advisers, setAdvisers] = useState([]);
@@ -1565,7 +1567,7 @@ const GradedAccreditation = ({ applicantId, curriculumId, onClose, isOpen }) => 
 
         <DialogActions sx={{ p: 2.5, bgcolor: alpha(gold.light, 0.1), borderTop: `1px solid ${alpha(maroon.main, 0.1)}` }}>
           <Button
-            onClick={onClose}
+            onClick={() => navigate('/evaluator/applicants')}
             variant="contained"
             fullWidth
             sx={{
