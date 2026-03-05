@@ -38,6 +38,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ChatIcon from "@mui/icons-material/Chat";
 import PersonIcon from '@mui/icons-material/Person';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import logo from "../../../assets/logo.png";
 import backgroundImage from "../../../assets/login-bg.png";
 import { useNavigate } from "react-router-dom";
@@ -48,6 +49,7 @@ import axios from "axios";
 import AcceptedStudentsTab from "../../../pages/ProgramAdmin/HomePage/components/AcceptedStudentsTab";
 import ApplicationDetailsDialog from "../../../pages/ProgramAdmin/HomePage/components/ApplicationDetailsDialog";
 import ProgramAdminNotificationCenter from "../../Notifications/ProgramAdminNotificationCenter";
+import Finalized from "../../../pages/ProgramAdmin/HomePage/components/Finalized";
 import ProgramAdminChat from "./ProgramAdminChat";
 
 const API_URL = "https://eteeap-foth.onrender.com/api/program-admins";
@@ -145,7 +147,7 @@ const getStatusChipColor = (status) => {
 const ProgramAdminNavigation = ({ children }) => {
   const theme = useTheme();
   const [activeButton, setActiveButton] = useState("Applications");
-  const navItems = ["Applications", "Accepted Students", "Logout"];
+  const navItems = ["Applications", "Accepted Students", "Finalized Accreditations", "Logout"];
   const navigate = useNavigate();
   const chatRef = useRef(null);
 
@@ -462,6 +464,8 @@ const ProgramAdminNavigation = ({ children }) => {
         );
       case "Accepted Students":
         return <AcceptedStudentsTab />;
+      case "Finalized Accreditations":
+        return <Finalized />;
       default:
         return children;
     }
@@ -474,6 +478,8 @@ const ProgramAdminNavigation = ({ children }) => {
         return "Applications Management";
       case "Accepted Students":
         return "Accepted Students";
+      case "Finalized Accreditations":
+        return "Finalized Accreditations";
       default:
         return "Program Administration";
     }

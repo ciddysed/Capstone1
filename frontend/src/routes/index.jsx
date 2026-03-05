@@ -38,6 +38,7 @@ import AdviserApplicantsListPage from "../pages/advisers/ApplicantsListPage";
 import AdviserViewApplicantPage from "../pages/advisers/ViewApplicantPage";
 import AdviserGradedAccreditationsPage from "../pages/advisers/GradedAccreditationsPage";
 import Notifications from "../pages/evaluators/ApplicantsListPage/Notifications";
+import FinalCapix from "../pages/ProgramAdmin/HomePage/components/finalcapix";
 
 const AppRoutes = () => {
   return useRoutes([
@@ -243,6 +244,14 @@ const AppRoutes = () => {
       element: (
         <ProgramAdminProtectedRoute>
           <ProgramAdminHomePage />
+        </ProgramAdminProtectedRoute>
+      ),
+    },
+    {
+      path: "/program-admin/final-capix",
+      element: (
+        <ProgramAdminProtectedRoute>
+          <FinalCapix />
         </ProgramAdminProtectedRoute>
       ),
     },

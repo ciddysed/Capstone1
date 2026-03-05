@@ -37,7 +37,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import SchoolIcon from '@mui/icons-material/School';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import EditIcon from '@mui/icons-material/Edit';
+import NoteIcon from '@mui/icons-material/Note';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import axios from "axios";
@@ -163,6 +163,20 @@ const AcceptedStudentsTab = () => {
       ACCEPTED: "success",
       ENROLLED: "info",
       WITHDRAWN: "warning",
+    };
+    return statusMap[status] || "default";
+  };
+
+  // Get accreditation status color
+  const getAccreditationStatusColor = (status) => {
+    const statusMap = {
+      PENDING: "warning",
+      UNDER_REVIEW: "info",
+      DOCUMENTS_REQUIRED: "warning",
+      APPROVED: "success",
+      REJECTED: "error",
+      CONDITIONAL: "warning",
+      ON_HOLD: "default"
     };
     return statusMap[status] || "default";
   };
@@ -382,7 +396,7 @@ const AcceptedStudentsTab = () => {
                   <StyledTableCell>Final Course</StyledTableCell>
                   <StyledTableCell>Department</StyledTableCell>
                   <StyledTableCell>Acceptance Date</StyledTableCell>
-                  <StyledTableCell>Status</StyledTableCell>
+                  
                   <StyledTableCell align="center">Actions</StyledTableCell>
                 </TableRow>
               </TableHead>
@@ -424,14 +438,7 @@ const AcceptedStudentsTab = () => {
                           day: 'numeric',
                         }) : 'N/A'}
                     </StyledTableCell>
-                    <StyledTableCell>
-                      <StyledChip 
-                        label={student.status} 
-                        color={getStatusColor(student.status)} 
-                        variant="outlined" 
-                        size="small"
-                      />
-                    </StyledTableCell>
+                    
                     <StyledTableCell align="center">
                       <Stack direction="row" spacing={1} justifyContent="center">
                         <Tooltip title="View Details">
@@ -461,7 +468,7 @@ const AcceptedStudentsTab = () => {
                               }
                             }}
                           >
-                            <EditIcon fontSize="small" />
+                            <NoteIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       </Stack>
@@ -606,11 +613,11 @@ const AcceptedStudentsTab = () => {
                 <Grid item xs={12}>
                   <Divider sx={{ my: 2 }} />
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Status
+                    Accreditation Status
                   </Typography>
                   <StyledChip 
-                    label={selectedStudent.status} 
-                    color={getStatusColor(selectedStudent.status)} 
+                    label={selectedStudent.applicant?.accreditationStatus || 'N/A' } 
+                    color={getAccreditationStatusColor(selectedStudent.applicant?.accreditationStatus)} 
                     variant="outlined"
                   />
                 </Grid>
